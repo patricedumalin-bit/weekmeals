@@ -515,10 +515,20 @@ function AppContent({ user, onSignOut }: { user: any; onSignOut?: () => void }) 
     }
   };
 
-  const handleSaveCustomMeals = (mealIndex: number, customMeals: CustomMeal[]) => {
+  const handleSaveCustomMeals = async (mealIndex: number, customMeals: CustomMeal[]) => {
     if (!weeklyPlan) return;
     const meal = weeklyPlan.meals[mealIndex];
     if (!meal) return;
+
+    const wasCustom = (meal.customMeals && meal.customMeals.length > 0);
+    const isNowCustom = (customMeals && customMeals.length > 0);
+
+    if (isNowCustom && !wasCustom) {
+      if (!isPremium && (userData?.recipeCount || 0) >= 20) {
+        alert("Limite de 20 recettes atteinte. Passez en premium pour ajouter plus de recettes.");
+        return;
+      }
+    }
 
     const updatedMeals = [...weeklyPlan.meals];
     updatedMeals[mealIndex] = {
@@ -530,16 +540,35 @@ function AppContent({ user, onSignOut }: { user: any; onSignOut?: () => void }) 
       ...weeklyPlan,
       meals: updatedMeals
     });
+
+    if (isNowCustom && !wasCustom) {
+      if (userData?.subscriptionStatus !== 'premium') {
+        if (user.uid === 'local-guest') {
+          setUserData(prev => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
+          return;
+        }
+        await setDoc(doc(db, 'users', user.uid), {
+          recipeCount: (userData?.recipeCount || 0) + 1
+        }, { merge: true });
+        setUserData(prev => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
+      }
+    }
   };
 
-  const handleConvertCustomToRecipe = (
+  const handleConvertCustomToRecipe = async (
     name: string,
     categoryId: string,
     cookingMode: CookingModeType,
     customIngredients: CustomMealIngredient[]
   ) => {
+    if (!isPremium && (userData?.recipeCount || 0) >= 20) {
+      alert("Limite de 20 recettes atteinte. Passez en premium pour ajouter plus de recettes.");
+      return;
+    }
+
+    const newRecipeId = `recipe-${Date.now()}`;
     const newRecipe: Recipe = {
-      id: `recipe-${Date.now()}`,
+      id: newRecipeId,
       title: name,
       categoryId,
       servings: 4,
@@ -557,8 +586,31 @@ function AppContent({ user, onSignOut }: { user: any; onSignOut?: () => void }) 
       isCustom: true,
       cookingMode
     };
-    handleSaveRecipe(newRecipe);
-    alert('Recette enregistrée avec succès !');
+
+    await handleSaveRecipe(newRecipe);
+
+    // Automatically select the recipe in the active meal slot if the picker is open
+    if (recipePickerTarget && weeklyPlan) {
+      const { mealIndex } = recipePickerTarget;
+      const targetMeal = weeklyPlan.meals[mealIndex];
+      if (targetMeal) {
+        const currentIds = targetMeal.recipeIds || [];
+        if (!currentIds.includes(newRecipeId) && currentIds.length < 3) {
+          const updatedMeals = [...weeklyPlan.meals];
+          updatedMeals[mealIndex] = {
+            ...targetMeal,
+            recipeIds: [...currentIds, newRecipeId],
+            customMeals: [] // Clear custom meals so it transitions perfectly into a library recipe
+          };
+          handleUpdateWeeklyPlan({
+            ...weeklyPlan,
+            meals: updatedMeals
+          });
+        }
+      }
+    }
+
+    alert('Recette enregistrée et ajoutée au repas avec succès !');
   };
 
   // Trigger Print

@@ -85,7 +85,7 @@ export function calculateShoppingList(
             order: 99
           };
 
-          const key = `${ingredient.id}_${customIng.unit}_custom_${meal.id}_${customMeal.id}`;
+          const key = `${ingredient.id}_${customIng.unit}`;
           const scaledQty = customIng.quantity * (mealServings / 4);
 
           const source: ShoppingSource = {
@@ -99,24 +99,24 @@ export function calculateShoppingList(
             servings: mealServings
           };
 
-        if (aggregatedMap.has(key)) {
-          const existing = aggregatedMap.get(key)!;
-          existing.totalQuantity += scaledQty;
-          existing.sources.push(source);
-        } else {
-          aggregatedMap.set(key, {
-            ingredientId: ingredient.id,
-            ingredientName: ingredient.name,
-            categoryId: category.id,
-            categoryName: category.name,
-            categoryIcon: category.icon,
-            categoryColor: category.color,
-            totalQuantity: scaledQty,
-            unit: customIng.unit,
-            checked: !!checkedMap[key],
-            sources: [source]
-          });
-        }
+          if (aggregatedMap.has(key)) {
+            const existing = aggregatedMap.get(key)!;
+            existing.totalQuantity += scaledQty;
+            existing.sources.push(source);
+          } else {
+            aggregatedMap.set(key, {
+              ingredientId: ingredient.id,
+              ingredientName: ingredient.name,
+              categoryId: category.id,
+              categoryName: category.name,
+              categoryIcon: category.icon,
+              categoryColor: category.color,
+              totalQuantity: scaledQty,
+              unit: customIng.unit,
+              checked: !!checkedMap[key],
+              sources: [source]
+            });
+          }
       }
     }
   }

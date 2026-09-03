@@ -399,7 +399,8 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               .filter((r): r is Recipe => Boolean(r));
 
             const maxSlots = 3;
-            const emptySlotsCount = Math.max(0, maxSlots - assignedRecipes.length);
+            const customMealsCount = meal.customMeals?.length || 0;
+            const emptySlotsCount = Math.max(0, maxSlots - assignedRecipes.length - customMealsCount);
             const displayLabel = translateMealLabel(meal.mealNumber, meal.label);
 
             return (
@@ -576,7 +577,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
                   {/* Render Empty Slots up to 3 */}
                   {Array.from({ length: emptySlotsCount }).map((_, emptyIdx) => {
-                    const slotNum = assignedRecipes.length + emptyIdx + 1;
+                    const slotNum = assignedRecipes.length + customMealsCount + emptyIdx + 1;
                     const isDisabled = !isPremium && slotNum > 1;
 
                     return (
