@@ -4,6 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth, db } from './lib/firebase';
+import Auth from './components/Auth';
 import { 
   ActiveTab, 
   Recipe, 
@@ -25,7 +29,8 @@ import {
   saveWeeklyPlan, 
   saveCheckedMap, 
   saveCustomShoppingItems, 
-  resetToDefaults 
+  resetToDefaults,
+  clearDatabase
 } from './utils/storage';
 import { calculateShoppingList } from './utils/calculator';
 import { Header } from './components/Header';
@@ -40,8 +45,32 @@ import { RecipeEditorModal } from './components/RecipeEditorModal';
 import { PrintableSheet } from './components/PrintableSheet';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 
-function AppContent() {
+function AppContent({ user }: { user: any }) {
   const { translateMealLabel } = useLanguage();
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserData = async () => {
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        setUserData(userDoc.data());
+      }
+    };
+    fetchUserData();
+  }, [user]);
+
+  const isPremium = userData?.subscriptionStatus === 'premium';
+  
+  const canAddRecipe = () => {
+    if (isPremium) return true;
+    return (userData?.recipeCount || 0) < 20;
+  };
+
+  const canAddMeal = () => {
+    if (userData?.subscriptionStatus === 'premium') return true;
+    return (userData?.mealCount || 0) < 3;
+  };
 
   // Main Data States
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -129,13 +158,25 @@ function AppContent() {
     });
   };
 
-  const handleSaveRecipe = (recipe: Recipe) => {
+  const handleSaveRecipe = async (recipe: Recipe) => {
     const exists = recipes.some(r => r.id === recipe.id);
+    if (!exists && !(await canAddRecipe())) {
+      alert("Limite de 20 recettes atteinte. Passez en premium pour ajouter plus de recettes.");
+      return;
+    }
+    
     const updated = exists
       ? recipes.map(r => (r.id === recipe.id ? recipe : r))
       : [recipe, ...recipes];
     setRecipes(updated);
     saveRecipes(updated);
+
+    if (!exists && userData?.subscriptionStatus !== 'premium') {
+      await updateDoc(doc(db, 'users', user.uid), {
+        recipeCount: (userData?.recipeCount || 0) + 1
+      });
+      setUserData(prev => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
+    }
   };
 
   const handleDeleteRecipe = (recipeId: string) => {
@@ -239,6 +280,20 @@ function AppContent() {
     setCustomItems([]);
   };
 
+  const handleClearDatabase = () => {
+    console.log('Handle clear database called');
+    alert('Vider la base appelé');
+    clearDatabase();
+    setRecipes([]);
+    setRecipeCategories([]);
+    setIngredients([]);
+    setIngredientCategories([]);
+    setWeeklyPlan({ meals: [] });
+    setCheckedMap({});
+    setCustomItems([]);
+    window.location.reload();
+  };
+
   const handleImportDatabase = (data: any) => {
     if (data.recipes && Array.isArray(data.recipes)) {
       setRecipes(data.recipes);
@@ -264,7 +319,7 @@ function AppContent() {
   };
 
   // Recipe Picker selection toggle
-  const handleTogglePickerRecipe = (recipeId: string) => {
+  const handleTogglePickerRecipe = async (recipeId: string) => {
     if (!recipePickerTarget || !weeklyPlan) return;
     const { mealIndex } = recipePickerTarget;
     const meal = weeklyPlan.meals[mealIndex];
@@ -279,6 +334,10 @@ function AppContent() {
     } else {
       // Add up to 3
       if (currentIds.length >= 3) return;
+      if (!(await canAddMeal())) {
+        alert("Limite de 3 repas atteinte. Passez en premium pour ajouter plus de repas.");
+        return;
+      }
       updatedIds = [...currentIds, recipeId];
     }
 
@@ -292,6 +351,13 @@ function AppContent() {
       ...weeklyPlan,
       meals: updatedMeals
     });
+
+    if (userData?.subscriptionStatus !== 'premium') {
+      await updateDoc(doc(db, 'users', user.uid), {
+        mealCount: (userData?.mealCount || 0) + 1
+      });
+      setUserData(prev => ({ ...prev, mealCount: (prev.mealCount || 0) + 1 }));
+    }
   };
 
   const handleSaveCustomMeals = (mealIndex: number, customMeals: CustomMeal[]) => {
@@ -387,6 +453,7 @@ function AppContent() {
         checkedShoppingItems={checkedItemsCount}
         onPrint={handlePrint}
         onReset={handleResetDatabase}
+        isPremium={userData?.subscriptionStatus === 'premium'}
       />
 
       {/* Main Container */}
@@ -399,6 +466,7 @@ function AppContent() {
             ingredients={ingredients}
             ingredientCategories={ingredientCategories}
             onUpdatePlan={handleUpdateWeeklyPlan}
+            isPremium={userData?.subscriptionStatus === 'premium'}
             onOpenRecipePicker={(mealIdx, slotIdx) => {
               setRecipePickerTarget({ mealIndex: mealIdx, slotIndex: slotIdx });
             }}
@@ -458,6 +526,7 @@ function AppContent() {
             onDeleteIngredientCategory={handleDeleteIngredientCategory}
             onImportDatabase={handleImportDatabase}
             onResetDatabase={handleResetDatabase}
+            onClearDatabase={handleClearDatabase}
             onOpenRecipeEditor={(recipe) => {
               setRecipeEditorState({ isOpen: true, recipeToEdit: recipe || null });
             }}
@@ -558,9 +627,32 @@ function AppContent() {
 }
 
 export default function App() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
   return (
     <LanguageProvider>
-      <AppContent />
+      <AppContent user={user} />
     </LanguageProvider>
   );
 }

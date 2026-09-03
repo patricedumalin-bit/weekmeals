@@ -47,6 +47,7 @@ interface DatabaseManagerProps {
   onDeleteIngredientCategory: (catId: string) => void;
   onImportDatabase: (data: any) => void;
   onResetDatabase: () => void;
+  onClearDatabase: () => void;
   onOpenRecipeEditor: (recipeToEdit?: Recipe | null) => void;
   onPreviewRecipe: (recipe: Recipe) => void;
 }
@@ -73,6 +74,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   onDeleteIngredientCategory,
   onImportDatabase,
   onResetDatabase,
+  onClearDatabase,
   onOpenRecipeEditor,
   onPreviewRecipe
 }) => {
@@ -698,7 +700,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             </label>
           </div>
 
-          <div className="md:col-span-2 backdrop-blur-xl bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/20 rounded-2xl p-5 shadow-md shadow-slate-900/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="md:col-span-2 bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/20 rounded-2xl p-5 shadow-md shadow-slate-900/5 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="text-sm font-bold text-rose-900 dark:text-rose-300 flex items-center gap-2">
                 <RotateCcw className="w-4 h-4 text-rose-600" />
@@ -708,16 +710,27 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 {t('resetDefaultsDesc')}
               </p>
             </div>
-            <button
-              onClick={() => {
-                if (confirm(t('confirmReset'))) {
-                  onResetDatabase();
-                }
-              }}
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20 transition-all shrink-0"
-            >
-              {t('resetDefaultsBtn')}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  console.log('Vider la base clicked');
+                  onClearDatabase();
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-md shadow-rose-600/20 transition-all shrink-0 border-2 border-red-500"
+              >
+                Vider la base
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(t('confirmReset'))) {
+                    onResetDatabase();
+                  }
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600/50 hover:bg-rose-700/50 text-white shadow-md shadow-rose-600/10 transition-all shrink-0"
+              >
+                {t('resetDefaultsBtn')}
+              </button>
+            </div>
           </div>
         </div>
       )}

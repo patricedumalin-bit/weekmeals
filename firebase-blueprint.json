@@ -1,0 +1,19 @@
+{
+  "users": {
+    "userId": {
+      "recipeCount": "number",
+      "mealCount": "number",
+      "subscriptionStatus": "string"
+    }
+  },
+  "recipes": {
+    "recipeId": {
+      "userId": "string"
+    }
+  },
+  "meals": {
+    "mealId": {
+      "userId": "string"
+    }
+  }
+}

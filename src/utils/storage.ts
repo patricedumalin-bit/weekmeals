@@ -38,16 +38,18 @@ export function loadStoredData() {
     if (rawRecipes) {
       try {
         const parsed: Recipe[] = JSON.parse(rawRecipes);
-        const parsedMap = new Map<string, Recipe>(parsed.map(r => [r.id, r]));
-        // Ensure all built-in recipes exist, preserving any user edits or new recipes
-        const merged: Recipe[] = [...parsed];
-        const existingIds = new Set(parsed.map(r => r.id));
-        for (const defaultRecipe of INITIAL_RECIPES) {
-          if (!existingIds.has(defaultRecipe.id)) {
-            merged.push(defaultRecipe);
+        if (parsed.length === 0) {
+          recipes = [];
+        } else {
+          const merged: Recipe[] = [...parsed];
+          const existingIds = new Set(parsed.map(r => r.id));
+          for (const defaultRecipe of INITIAL_RECIPES) {
+            if (!existingIds.has(defaultRecipe.id)) {
+              merged.push(defaultRecipe);
+            }
           }
+          recipes = merged;
         }
-        recipes = merged;
       } catch (e) {
         recipes = INITIAL_RECIPES;
       }
@@ -57,14 +59,18 @@ export function loadStoredData() {
     if (rawIngredients) {
       try {
         const parsedIngs: Ingredient[] = JSON.parse(rawIngredients);
-        const existingIngIds = new Set(parsedIngs.map(i => i.id));
-        const mergedIngs = [...parsedIngs];
-        for (const defaultIng of INITIAL_INGREDIENTS) {
-          if (!existingIngIds.has(defaultIng.id)) {
-            mergedIngs.push(defaultIng);
+        if (parsedIngs.length === 0) {
+          ingredients = [];
+        } else {
+          const existingIngIds = new Set(parsedIngs.map(i => i.id));
+          const mergedIngs = [...parsedIngs];
+          for (const defaultIng of INITIAL_INGREDIENTS) {
+            if (!existingIngIds.has(defaultIng.id)) {
+              mergedIngs.push(defaultIng);
+            }
           }
+          ingredients = mergedIngs;
         }
-        ingredients = mergedIngs;
       } catch (e) {
         ingredients = INITIAL_INGREDIENTS;
       }
@@ -134,6 +140,18 @@ export function resetToDefaults() {
   localStorage.removeItem(STORAGE_KEYS.WEEKLY_PLAN);
   localStorage.removeItem(STORAGE_KEYS.SHOPPING_CHECKED);
   localStorage.removeItem(STORAGE_KEYS.CUSTOM_SHOPPING);
+}
+
+export function clearDatabase() {
+  console.log('Clearing database in localStorage...');
+  localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.RECIPE_CATEGORIES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.INGREDIENTS, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.INGREDIENT_CATEGORIES, JSON.stringify([]));
+  localStorage.setItem(STORAGE_KEYS.WEEKLY_PLAN, JSON.stringify({ meals: [] }));
+  localStorage.setItem(STORAGE_KEYS.SHOPPING_CHECKED, JSON.stringify({}));
+  localStorage.setItem(STORAGE_KEYS.CUSTOM_SHOPPING, JSON.stringify([]));
+  console.log('Database cleared.');
 }
 
 export function exportDatabaseJson(data: {

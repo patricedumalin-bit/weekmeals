@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /recipes/{recipeId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'premium' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.recipeCount < 20
+      );
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+    match /meals/{mealId} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'premium' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.mealCount < 3
+      );
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+  }
+}

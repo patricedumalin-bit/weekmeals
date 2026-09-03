@@ -28,9 +28,9 @@ interface WeeklyPlannerProps {
   ingredientCategories: IngredientCategory[];
   onUpdatePlan: (newPlan: WeeklyPlan) => void;
   onOpenRecipePicker: (mealIndex: number, slotIndex: number) => void;
-  onSaveCustomToRecipe: (name: string, categoryId: string, cookingMode: CookingModeType, ingredients: CustomMealIngredient[]) => void;
   onPreviewRecipe: (recipe: Recipe, servings?: number, mealIndex?: number, recipeIndex?: number) => void;
   onGoToShopping: () => void;
+  isPremium: boolean;
 }
 
 export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
@@ -42,7 +42,8 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   onUpdatePlan,
   onOpenRecipePicker,
   onPreviewRecipe,
-  onGoToShopping
+  onGoToShopping,
+  isPremium
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
   const recipeMap = new Map<string, Recipe>(recipes.map(r => [r.id, r]));
@@ -57,7 +58,16 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
   // Change total number of meals without specifying days
   const handleSetMealCount = (newCount: number) => {
-    const clamped = Math.max(1, Math.min(21, newCount));
+    let limit = 21;
+    if (!isPremium) limit = 3;
+    
+    const clamped = Math.max(1, Math.min(limit, newCount));
+    
+    if (!isPremium && newCount > 3) {
+      alert("La version gratuite est limitée à 3 repas. Passez en premium pour ajouter plus de repas.");
+      return;
+    }
+
     let updatedMeals: MealSlot[] = [...weeklyPlan.meals];
 
     if (clamped > updatedMeals.length) {
@@ -567,21 +577,30 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   {/* Render Empty Slots up to 3 */}
                   {Array.from({ length: emptySlotsCount }).map((_, emptyIdx) => {
                     const slotNum = assignedRecipes.length + emptyIdx + 1;
+                    const isDisabled = !isPremium && slotNum > 1;
+
                     return (
                       <button
                         key={`empty-${emptyIdx}`}
+                        disabled={isDisabled}
                         onClick={() => onOpenRecipePicker(mealIdx, slotNum - 1)}
-                        className="p-4 rounded-xl border-2 border-dashed border-slate-300/70 dark:border-slate-700/70 hover:border-emerald-500 dark:hover:border-emerald-400 backdrop-blur-md bg-white/40 dark:bg-slate-800/30 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/20 flex flex-col items-center justify-center text-center transition-all group min-h-[100px]"
+                        className={`p-4 rounded-xl border-2 border-dashed ${
+                          isDisabled 
+                            ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
+                            : 'border-slate-300/70 dark:border-slate-700/70 hover:border-emerald-500 dark:hover:border-emerald-400 backdrop-blur-md bg-white/40 dark:bg-slate-800/30 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/20'
+                        } flex flex-col items-center justify-center text-center transition-all group min-h-[100px]`}
                       >
-                        <div className="w-7 h-7 rounded-full bg-slate-200/80 dark:bg-slate-700/80 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors mb-1">
+                        <div className={`w-7 h-7 rounded-full ${isDisabled ? 'bg-slate-300 dark:bg-slate-700' : 'bg-slate-200/80 dark:bg-slate-700/80 group-hover:bg-emerald-600 group-hover:text-white'} flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors mb-1`}>
                           <Plus className="w-4 h-4" />
                         </div>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-300">
-                          {t('addRecipeSlot', { slot: slotNum })}
+                        <span className={`text-xs font-bold ${isDisabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-300'}`}>
+                          {isDisabled ? t('premiumOnly') : t('addRecipeSlot', { slot: slotNum })}
                         </span>
-                        <span className="text-[10px] text-slate-400">
-                          {t('recipeSlotHint')}
-                        </span>
+                        {!isDisabled && (
+                          <span className="text-[10px] text-slate-400">
+                            {t('recipeSlotHint')}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

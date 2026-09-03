@@ -23,6 +23,7 @@ interface HeaderProps {
   checkedShoppingItems: number;
   onPrint: () => void;
   onReset: () => void;
+  isPremium: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,7 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   totalShoppingItems,
   checkedShoppingItems,
   onPrint,
-  onReset
+  onReset,
+  isPremium
 }) => {
   const { t, language, setLanguage, languages, currentLanguageInfo } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -52,6 +54,14 @@ export const Header: React.FC<HeaderProps> = ({
     (sum, m) => sum + (m.recipeIds?.length || 0), 
     0
   );
+
+  const handlePrintClick = () => {
+    if (!isPremium) {
+      alert("L'impression est réservée aux utilisateurs premium.");
+      return;
+    }
+    onPrint();
+  };
 
   return (
     <header className="no-print backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/40 dark:border-white/10 sticky top-0 z-30 shadow-xs">
@@ -185,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <button
-            onClick={onPrint}
+            onClick={handlePrintClick}
             title={t('print')}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-2xs"
           >
