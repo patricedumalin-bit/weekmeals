@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import Auth from './components/Auth';
@@ -45,7 +45,7 @@ import { RecipeEditorModal } from './components/RecipeEditorModal';
 import { PrintableSheet } from './components/PrintableSheet';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 
-function AppContent({ user }: { user: any }) {
+function AppContent({ user, onSignOut }: { user: any; onSignOut?: () => void }) {
   const { translateMealLabel } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [theme, setTheme] = useState<string>(() => localStorage.getItem('theme') || 'default');
@@ -53,25 +53,45 @@ function AppContent({ user }: { user: any }) {
   useEffect(() => {
     if (!user) return;
     const fetchUserData = async () => {
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        setUserData(data);
-        if (data.theme) {
-          setTheme(data.theme);
-          localStorage.setItem('theme', data.theme);
+      if (user.uid === 'local-guest') {
+        setUserData({
+          theme: 'default',
+          subscriptionStatus: 'premium',
+          recipeCount: 0,
+          mealCount: 0
+        });
+        return;
+      }
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUserData(data);
+          if (data.theme) {
+            setTheme(data.theme);
+            localStorage.setItem('theme', data.theme);
+          }
+        } else {
+          const initialData = {
+            theme: 'default',
+            subscriptionStatus: 'free',
+            recipeCount: 0,
+            mealCount: 0
+          };
+          await setDoc(doc(db, 'users', user.uid), initialData);
+          setUserData(initialData);
+          setTheme('default');
+          localStorage.setItem('theme', 'default');
         }
-      } else {
-        const initialData = {
+      } catch (error) {
+        console.error("Error fetching user data from Firestore", error);
+        // Fallback to offline data if network/rules fail
+        setUserData({
           theme: 'default',
           subscriptionStatus: 'free',
           recipeCount: 0,
           mealCount: 0
-        };
-        await setDoc(doc(db, 'users', user.uid), initialData);
-        setUserData(initialData);
-        setTheme('default');
-        localStorage.setItem('theme', 'default');
+        });
       }
     };
     fetchUserData();
@@ -100,6 +120,10 @@ function AppContent({ user }: { user: any }) {
   const handleTogglePremium = async () => {
     if (!user) return;
     const newStatus = userData?.subscriptionStatus === 'premium' ? 'free' : 'premium';
+    if (user.uid === 'local-guest') {
+      setUserData(prev => ({ ...prev, subscriptionStatus: newStatus }));
+      return;
+    }
     await setDoc(doc(db, 'users', user.uid), {
         subscriptionStatus: newStatus
     }, { merge: true });
@@ -110,6 +134,10 @@ function AppContent({ user }: { user: any }) {
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     if (!user) return;
+    if (user.uid === 'local-guest') {
+      setUserData(prev => prev ? { ...prev, theme: newTheme } : { theme: newTheme });
+      return;
+    }
     try {
       await setDoc(doc(db, 'users', user.uid), {
           theme: newTheme
@@ -291,6 +319,10 @@ function AppContent({ user }: { user: any }) {
     saveRecipes(updated);
 
     if (!exists && userData?.subscriptionStatus !== 'premium') {
+      if (user.uid === 'local-guest') {
+        setUserData(prev => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
+        return;
+      }
       await setDoc(doc(db, 'users', user.uid), {
         recipeCount: (userData?.recipeCount || 0) + 1
       }, { merge: true });
@@ -472,6 +504,10 @@ function AppContent({ user }: { user: any }) {
     });
 
     if (userData?.subscriptionStatus !== 'premium') {
+      if (user.uid === 'local-guest') {
+        setUserData(prev => ({ ...prev, mealCount: (prev.mealCount || 0) + 1 }));
+        return;
+      }
       await setDoc(doc(db, 'users', user.uid), {
         mealCount: (userData?.mealCount || 0) + 1
       }, { merge: true });
@@ -580,6 +616,7 @@ function AppContent({ user }: { user: any }) {
         onTogglePremium={handleTogglePremium}
         currentTheme={userData?.theme || 'default'}
         onUpdateTheme={handleUpdateTheme}
+        onSignOut={onSignOut}
       />
 
       {/* Main Container */}
@@ -754,15 +791,53 @@ function AppContent({ user }: { user: any }) {
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
+  const [guestMode, setGuestMode] = useState<boolean>(() => {
+    return localStorage.getItem('guest_mode') === 'true';
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        setUser(currentUser);
+        setGuestMode(false);
+        localStorage.removeItem('guest_mode');
+      } else if (guestMode) {
+        setUser({
+          uid: 'local-guest',
+          displayName: 'Invité',
+          email: 'guest@weekmeals.app',
+          isAnonymous: true
+        });
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;
-  }, []);
+  }, [guestMode]);
+
+  const handleContinueAsGuest = () => {
+    localStorage.setItem('guest_mode', 'true');
+    setGuestMode(true);
+    setUser({
+      uid: 'local-guest',
+      displayName: 'Invité',
+      email: 'guest@weekmeals.app',
+      isAnonymous: true
+    });
+  };
+
+  const handleSignOut = async () => {
+    try {
+      localStorage.removeItem('guest_mode');
+      setGuestMode(false);
+      setUser(null);
+      await signOut(auth);
+    } catch (e) {
+      console.error("Failed to sign out", e);
+    }
+  };
 
   if (loading) {
     return (
@@ -773,12 +848,12 @@ export default function App() {
   }
 
   if (!user) {
-    return <Auth />;
+    return <Auth onContinueAsGuest={handleContinueAsGuest} />;
   }
 
   return (
     <LanguageProvider>
-      <AppContent user={user} />
+      <AppContent user={user} onSignOut={handleSignOut} />
     </LanguageProvider>
   );
 }

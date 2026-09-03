@@ -11,7 +11,8 @@ import {
   ChevronDown,
   Check,
   Crown,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { ActiveTab, WeeklyPlan, themes, Theme } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -30,6 +31,7 @@ interface HeaderProps {
   onTogglePremium: () => void;
   currentTheme: string;
   onUpdateTheme: (theme: string) => void;
+  onSignOut?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,7 +46,8 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   onTogglePremium,
   currentTheme,
-  onUpdateTheme
+  onUpdateTheme,
+  onSignOut
 }) => {
   const { t, language, setLanguage, languages, currentLanguageInfo } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -255,6 +258,16 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <RotateCcw className="w-4 h-4" />
           </button>
+
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              title={language === 'fr' ? 'Se déconnecter' : 'Sign Out'}
+              className="p-2 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 backdrop-blur-md border border-transparent transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Mobile Layout (md hidden) */}
@@ -342,6 +355,19 @@ export const Header: React.FC<HeaderProps> = ({
                   <RotateCcw className="w-4 h-4 text-slate-400" />
                   <span>{t('reset')}</span>
                 </button>
+
+                {onSignOut && (
+                  <button
+                    onClick={() => {
+                      onSignOut();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{language === 'fr' ? 'Se déconnecter' : 'Sign Out'}</span>
+                  </button>
+                )}
 
                 {isOwner && (
                   <button
