@@ -170,7 +170,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-white/40 dark:border-white/5 flex items-start justify-between gap-3 bg-white/40 dark:bg-slate-800/40">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--primary)] border border-[var(--primary)]/20">
                 {displayMealLabel}
               </span>
               <span className="text-xs font-bold text-slate-500">
@@ -195,7 +195,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
             onClick={() => setActiveTab('library')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
               activeTab === 'library'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-500 shadow-sm'
+                ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 border-transparent'
             }`}
           >
@@ -206,7 +206,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
             onClick={() => setActiveTab('custom')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
               activeTab === 'custom'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-500 shadow-sm'
+                ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 border-transparent'
             }`}
           >
@@ -227,14 +227,14 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('searchRecipesPickerPlaceholder')}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
                 />
               </div>
 
               {/* Cooking Mode Filter */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
                 <span className="text-slate-400 font-semibold flex items-center gap-1 shrink-0 mr-1">
-                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  <Flame className="w-3.5 h-3.5 text-[var(--accent)]" />
                   {t('cookingModeFilter')}:
                 </span>
                 {COOKING_MODES.map((mode) => (
@@ -243,7 +243,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                     onClick={() => setSelectedCookingMode(mode.id)}
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
                       selectedCookingMode === mode.id
-                        ? 'bg-amber-500 text-white shadow-xs'
+                        ? 'bg-[var(--accent)] text-white shadow-xs'
                         : 'bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white/90 border border-white/40 dark:border-white/5'
                     }`}
                   >
@@ -276,7 +276,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                   onClick={() => setSelectedCategory('all')}
                   className={`px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all shrink-0 ${
                     selectedCategory === 'all'
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-500/20'
+                      ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white font-bold shadow-md shadow-[var(--primary)]/20'
                       : 'backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-white/80'
                   }`}
                 >
@@ -291,7 +291,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                       onClick={() => setSelectedCategory(cat.id)}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all shrink-0 ${
                         selectedCategory === cat.id
-                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-500/20'
+                          ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white font-bold shadow-md shadow-[var(--primary)]/20'
                           : 'backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-white/80'
                       }`}
                     >
@@ -318,7 +318,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                   {onCreateNewRecipe && (
                     <button
                       onClick={onCreateNewRecipe}
-                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-500/20 hover:from-emerald-700 hover:to-teal-700"
+                      className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white shadow-md shadow-[var(--primary)]/20 hover:from-[var(--accent)] hover:to-[var(--accent)]"
                     >
                       <Plus className="w-4 h-4" />
                       {t('createNewRecipe')}
@@ -340,8 +340,8 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                         key={recipe.id}
                         className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between backdrop-blur-xl ${
                           isSelected
-                            ? 'border-emerald-500/60 bg-emerald-500/10 dark:bg-emerald-950/30 shadow-md shadow-emerald-500/10'
-                            : 'border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 hover:border-emerald-500/30 shadow-xs'
+                            ? 'border-[var(--primary)]/60 bg-[var(--primary)]/10 dark:bg-[var(--primary)]/30 shadow-md shadow-[var(--primary)]/10'
+                            : 'border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 hover:border-[var(--primary)]/30 shadow-xs'
                         }`}
                       >
                         <div>
@@ -350,11 +350,11 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {category && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold backdrop-blur-md bg-white/80 dark:bg-slate-700/80 text-slate-700 dark:text-slate-200 border border-white/40 dark:border-white/5">
-                                  <CategoryIcon name={category.icon} className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                  <CategoryIcon name={category.icon} className="w-3 h-3 text-[var(--primary)] dark:text-[var(--primary)]" />
                                   {catDisplayName}
                                 </span>
                               )}
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold backdrop-blur-md bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20">
                                 <Flame className="w-3 h-3" />
                                 {translateCookingMode(mode)}
                               </span>
@@ -401,10 +401,10 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                             onClick={() => onToggleRecipe(recipe.id)}
                             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${
                               isSelected
-                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20'
+                                ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--primary)]/20'
                                 : disableAdd
                                 ? 'backdrop-blur-md bg-white/40 dark:bg-slate-800/40 text-slate-400 cursor-not-allowed border border-white/30 dark:border-white/5'
-                                : 'backdrop-blur-md bg-emerald-500/10 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/30'
+                                : 'backdrop-blur-md bg-[var(--primary)]/10 dark:bg-[var(--primary)]/60 text-[var(--primary)] dark:text-[var(--primary)] hover:bg-[var(--primary)]/20 border border-[var(--primary)]/30'
                             }`}
                           >
                             {isSelected ? (
@@ -442,7 +442,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   placeholder={t('customMealNamePlaceholder')}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className="w-full px-3.5 py-2 text-sm rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
                 />
               </div>
 
@@ -452,7 +452,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                     Ingrédients (Jusqu'à 10) : {customIngs.length}/10
                   </span>
                   {customIngs.length >= 10 && (
-                    <span className="text-[11px] text-amber-600 font-semibold">
+                    <span className="text-[11px] text-[var(--primary)] font-semibold">
                       {t('maxCustomIngredientsReached')}
                     </span>
                   )}
@@ -484,10 +484,10 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                               handleAddCustomIng(ing.id);
                               setIngredientSearch('');
                             }}
-                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-800 dark:text-slate-200 flex items-center justify-between"
+                            className="w-full text-left px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-50 dark:hover:bg-[var(--primary)]/40 text-slate-800 dark:text-slate-200 flex items-center justify-between"
                           >
                             <span>{ing.name}</span>
-                            <span className="text-[10px] text-emerald-600 font-bold">+ Ajouter</span>
+                            <span className="text-[10px] text-[var(--primary)] font-bold">+ Ajouter</span>
                           </button>
                         ))}
                     </div>
@@ -542,14 +542,14 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
             <div className="flex justify-between items-center pt-2 gap-2">
               <button
                 onClick={() => setShowSaveAsRecipe(true)}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 text-white shadow-md hover:bg-amber-600 flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl text-xs font-bold bg-[var(--accent)] text-white shadow-md hover:bg-[var(--accent)] flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
                 {t('saveAsRecipe')}
               </button>
               <button
                 onClick={handleSaveCustomMealAction}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--primary)]/20"
               >
                 {t('saveCustomMeal')} ({customIngs.length} ingr.)
               </button>

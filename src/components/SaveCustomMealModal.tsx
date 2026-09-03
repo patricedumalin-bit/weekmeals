@@ -74,7 +74,7 @@ export const SaveCustomMealModal: React.FC<SaveCustomMealModalProps> = ({
 
         <div className="flex gap-2 mt-6">
           <button onClick={onClose} className="flex-1 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-200">Annuler</button>
-          <button onClick={() => onSave(name, categoryId, cookingMode)} className="flex-1 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700">Enregistrer</button>
+          <button onClick={() => onSave(name, categoryId, cookingMode)} className="flex-1 px-4 py-2 rounded-xl bg-[var(--primary)] text-white font-bold hover:bg-[var(--primary)]">Enregistrer</button>
         </div>
       </div>
     </div>

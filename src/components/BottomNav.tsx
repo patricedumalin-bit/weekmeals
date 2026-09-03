@@ -32,14 +32,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       label: t('tabPlannedMeals'),
       icon: UtensilsCrossed,
       badge: plannedRecipesCount > 0 ? plannedRecipesCount : null,
-      badgeColor: 'bg-emerald-500 text-white'
+      badgeColor: 'bg-[var(--accent)] text-white'
     },
     {
       id: 'shopping' as ActiveTab,
       label: t('tabShoppingList'),
       icon: ShoppingCart,
       badge: shoppingItemsCount > 0 ? `${checkedShoppingCount}/${shoppingItemsCount}` : null,
-      badgeColor: 'bg-amber-500 text-white'
+      badgeColor: 'bg-[var(--accent)] text-white'
     },
     {
       id: 'database' as ActiveTab,
@@ -61,14 +61,14 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all relative ${
                 isActive
-                  ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                  ? 'text-[var(--primary)] dark:text-[var(--accent)] font-bold'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <div className="relative">
                 <div
                   className={`p-1 rounded-full transition-transform ${
-                    isActive ? 'backdrop-blur-md bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-600 dark:text-emerald-300 scale-110 border border-emerald-500/20' : ''
+                    isActive ? 'backdrop-blur-md bg-[var(--accent)]/15 dark:bg-[var(--accent)]/25 text-[var(--primary)] dark:text-[var(--accent)] scale-110 border border-[var(--accent)]/20' : ''
                   }`}
                 >
                   <Icon className="w-5 h-5" />

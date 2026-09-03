@@ -9,9 +9,10 @@ import {
   Users,
   Globe,
   ChevronDown,
-  Check
+  Check,
+  Crown
 } from 'lucide-react';
-import { ActiveTab, WeeklyPlan } from '../types';
+import { ActiveTab, WeeklyPlan, themes, Theme } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SupportedLanguage } from '../i18n/translations';
 
@@ -24,6 +25,10 @@ interface HeaderProps {
   onPrint: () => void;
   onReset: () => void;
   isPremium: boolean;
+  user: any;
+  onTogglePremium: () => void;
+  currentTheme: string;
+  onUpdateTheme: (theme: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -34,11 +39,17 @@ export const Header: React.FC<HeaderProps> = ({
   checkedShoppingItems,
   onPrint,
   onReset,
-  isPremium
+  isPremium,
+  user,
+  onTogglePremium,
+  currentTheme,
+  onUpdateTheme
 }) => {
   const { t, language, setLanguage, languages, currentLanguageInfo } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  
+  const isOwner = user?.email === 'patrice.dumalin@gmail.com';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -64,11 +75,11 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="no-print backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border-b border-white/40 dark:border-white/10 sticky top-0 z-30 shadow-xs">
+    <header className="no-print backdrop-blur-xl bg-[var(--card-bg)] border-b border-[var(--border-color)] sticky top-0 z-30 shadow-xs transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         {/* Logo & App title */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20 shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[var(--accent)] to-[var(--accent)] flex items-center justify-center text-white shadow-md shadow-[var(--primary)]/20 shrink-0">
             <UtensilsCrossed className="w-5 h-5" />
           </div>
           <div>
@@ -76,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
               <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
                 {t('appName')}
               </h1>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--primary)]/20">
                 {t('androidReady')}
               </span>
             </div>
@@ -96,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('planner')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'planner'
-                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-emerald-600 dark:text-emerald-400 shadow-xs border border-white/60 dark:border-white/10'
+                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-[var(--primary)] dark:text-[var(--accent)] shadow-xs border border-white/60 dark:border-white/10'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -108,14 +119,14 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('meals')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all relative ${
               activeTab === 'meals'
-                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-emerald-600 dark:text-emerald-400 shadow-xs border border-white/60 dark:border-white/10'
+                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-[var(--primary)] dark:text-[var(--accent)] shadow-xs border border-white/60 dark:border-white/10'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <UtensilsCrossed className="w-4 h-4" />
             <span>{t('tabPlannedMeals')}</span>
             {totalAssignedRecipes > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--primary)]/20 text-[var(--primary)] dark:text-[var(--accent)] font-bold border border-[var(--primary)]/30">
                 {totalAssignedRecipes}
               </span>
             )}
@@ -125,14 +136,14 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('shopping')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'shopping'
-                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-emerald-600 dark:text-emerald-400 shadow-xs border border-white/60 dark:border-white/10'
+                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-[var(--primary)] dark:text-[var(--accent)] shadow-xs border border-white/60 dark:border-white/10'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <ShoppingCart className="w-4 h-4" />
             <span>{t('tabShoppingList')}</span>
             {totalShoppingItems > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold border border-amber-500/30">
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] font-bold border border-[var(--accent)]/30">
                 {checkedShoppingItems}/{totalShoppingItems}
               </span>
             )}
@@ -142,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setActiveTab('database')}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'database'
-                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-emerald-600 dark:text-emerald-400 shadow-xs border border-white/60 dark:border-white/10'
+                ? 'backdrop-blur-md bg-white/90 dark:bg-slate-900/90 text-[var(--primary)] dark:text-[var(--accent)] shadow-xs border border-white/60 dark:border-white/10'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
@@ -179,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
                     }}
                     className={`w-full px-3 py-1.5 text-xs flex items-center justify-between transition-colors ${
                       language === lang.code
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold'
+                        ? 'bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--primary)] font-bold'
                         : 'text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60'
                     }`}
                   >
@@ -187,12 +198,39 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-base">{lang.flag}</span>
                       <span>{lang.nativeName}</span>
                     </div>
-                    {language === lang.code && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                    {language === lang.code && <Check className="w-3.5 h-3.5 text-[var(--primary)] dark:text-[var(--primary)]" />}
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          <div className="flex items-center gap-2 p-1 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-white/50 dark:border-white/10">
+            {(Object.keys(themes) as Theme[]).map((theme) => (
+              <button
+                key={theme}
+                onClick={() => onUpdateTheme(theme)}
+                title={theme}
+                className={`w-5 h-5 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
+                style={{ backgroundColor: themes[theme].accent }}
+              />
+            ))}
+          </div>
+
+          {isOwner && (
+            <button
+              onClick={onTogglePremium}
+              title={isPremium ? "Passer en mode limité" : "Passer en mode premium"}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md border border-white/50 dark:border-white/10 transition-colors shadow-2xs ${
+                isPremium
+                  ? 'bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/30'
+                  : 'bg-slate-200/60 text-slate-700 dark:text-slate-200 hover:bg-slate-300/60 dark:hover:bg-slate-700/60'
+              }`}
+            >
+              <Crown className="w-4 h-4" />
+              <span className="hidden sm:inline">{isPremium ? "Premium" : "Libre"}</span>
+            </button>
+          )}
 
           <button
             onClick={handlePrintClick}

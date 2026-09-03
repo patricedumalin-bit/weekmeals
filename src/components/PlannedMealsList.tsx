@@ -80,10 +80,10 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
   return (
     <div className="space-y-6 pb-20">
       {/* Top Banner */}
-      <div className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5">
+      <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5 transition-all duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
               <ListOrdered className="w-3.5 h-3.5" />
               <span>{t('scheduleTag')}</span>
             </div>
@@ -99,11 +99,11 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleCopySchedule}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/80 border border-white/50 dark:border-white/10 text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-[var(--primary)]" />
                   <span>{t('copied')}</span>
                 </>
               ) : (
@@ -116,7 +116,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
 
             <button
               onClick={onPrint}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] hover:bg-[var(--primary)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
             >
               <Printer className="w-4 h-4" />
               <span>{t('printSchedule')}</span>
@@ -125,20 +125,20 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
         </div>
 
         {/* Stats summary strip */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-5 pt-4 border-t border-white/40 dark:border-white/5">
-          <div className="p-3 rounded-2xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/10 text-center shadow-2xs">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-5 pt-4 border-t border-[var(--border-color)]">
+          <div className="p-3 rounded-2xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-center shadow-2xs transition-all duration-300">
             <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('totalMealsStat')}</span>
-            <span className="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+            <span className="text-lg sm:text-xl font-extrabold text-[var(--primary)] dark:text-[var(--accent)] font-mono">
               {weeklyPlan.numberOfMeals}
             </span>
           </div>
-          <div className="p-3 rounded-2xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/10 text-center shadow-2xs">
+          <div className="p-3 rounded-2xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-center shadow-2xs transition-all duration-300">
             <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('dishesChosenStat')}</span>
             <span className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 font-mono">
               {totalAssignedRecipes}
             </span>
           </div>
-          <div className="p-3 rounded-2xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/10 text-center shadow-2xs">
+          <div className="p-3 rounded-2xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-center shadow-2xs transition-all duration-300">
             <span className="text-xs text-slate-500 dark:text-slate-400 block">{t('totalPortionsStat')}</span>
             <span className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 font-mono">
               {totalServingsCount}
@@ -159,12 +159,12 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
           return (
             <div
               key={meal.id || idx}
-              className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-md shadow-slate-900/5 overflow-hidden"
+              className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-md shadow-slate-900/5 overflow-hidden transition-all duration-300"
             >
               {/* Meal Title & Person Count */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/40 dark:border-white/5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-xl backdrop-blur-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 font-bold text-xs flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--accent)]/15 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 font-bold text-xs flex items-center justify-center shrink-0">
                     #{meal.mealNumber}
                   </span>
                   <div>
@@ -177,7 +177,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 backdrop-blur-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-500/20 self-start sm:self-auto shadow-2xs">
+                <div className="flex items-center gap-2 backdrop-blur-md bg-[var(--accent)]/15 text-[var(--primary)] dark:text-[var(--accent)] px-3 py-1 rounded-xl text-xs font-bold border border-[var(--accent)]/20 self-start sm:self-auto shadow-2xs">
                   <Users className="w-3.5 h-3.5" />
                   <span>{t('peopleCount', { count: meal.servings })}</span>
                 </div>
@@ -186,11 +186,11 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
               {/* Recipes under this meal */}
               <div className="pt-3">
                 {assigned.length === 0 ? (
-                  <div className="py-6 text-center backdrop-blur-md bg-white/40 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-300/70 dark:border-slate-700/70">
+                  <div className="py-6 text-center backdrop-blur-md bg-[var(--cell-bg)]/50 rounded-xl border border-dashed border-[var(--border-color)]">
                     <p className="text-xs text-slate-500 dark:text-slate-400">{t('noRecipesChosenYet')}</p>
                     <button
                       onClick={onGoToPlanner}
-                      className="mt-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      className="mt-2 text-xs font-bold text-[var(--primary)] dark:text-[var(--accent)] hover:underline"
                     >
                       {t('assignRecipesInPlanner')}
                     </button>
@@ -207,13 +207,13 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
                         <div
                           key={recipe.id}
                           onClick={() => onPreviewRecipe(recipe, meal.servings)}
-                          className="p-3 rounded-xl border border-white/50 dark:border-white/10 backdrop-blur-md bg-white/60 dark:bg-slate-800/50 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 cursor-pointer transition-all flex flex-col justify-between group shadow-2xs"
+                          className="p-3 rounded-xl border border-[var(--border-color)] backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] hover:border-[var(--accent)]/50 dark:hover:border-[var(--accent)]/50 cursor-pointer transition-all flex flex-col justify-between group shadow-2xs"
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1 mb-1.5">
                               {category && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold backdrop-blur-md bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-white/50 dark:border-white/10">
-                                  <CategoryIcon name={category.icon} className="w-2.5 h-2.5 text-emerald-600" />
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-700 dark:text-slate-300 border border-[var(--border-color)]">
+                                  <CategoryIcon name={category.icon} className="w-2.5 h-2.5 text-[var(--primary)]" />
                                   {catDisplayName}
                                 </span>
                               )}
@@ -222,7 +222,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
                               </span>
                             </div>
 
-                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-[var(--primary)] dark:group-hover:text-[var(--accent)] transition-colors">
                               {localized.title}
                             </h4>
 
@@ -238,7 +238,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
                               <Clock className="w-3 h-3 text-slate-400" />
                               {totalTime} mins
                             </span>
-                            <span className="inline-flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-bold group-hover:underline">
+                            <span className="inline-flex items-center gap-0.5 text-[var(--primary)] dark:text-[var(--accent)] font-bold group-hover:underline">
                               <span>{t('cook')}</span>
                               <Eye className="w-3 h-3" />
                             </span>
@@ -264,7 +264,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
         </div>
         <button
           onClick={onGoToShopping}
-          className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all shrink-0"
+          className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[var(--accent)] hover:bg-[var(--primary)] text-white shadow-md shadow-[var(--accent)]/20 flex items-center gap-2 transition-all shrink-0"
         >
           <span>{t('openShoppingList')}</span>
           <ArrowRight className="w-4 h-4" />

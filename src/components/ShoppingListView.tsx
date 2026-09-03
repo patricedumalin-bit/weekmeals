@@ -150,10 +150,10 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   return (
     <div className="space-y-6 pb-20">
       {/* Top Banner / Shopping Dashboard */}
-      <div className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5">
+      <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5 transition-all duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 mb-1.5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
               <ShoppingCart className="w-3.5 h-3.5" />
               <span>{t('shoppingTag')}</span>
             </div>
@@ -169,7 +169,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowAddCustomModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/25 transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/20 border border-[var(--accent)]/25 transition-colors shadow-2xs"
             >
               <Plus className="w-4 h-4" />
               <span>{t('addCustomItem')}</span>
@@ -177,11 +177,11 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
             <button
               onClick={handleCopyList}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-white/60 dark:bg-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/80 border border-white/50 dark:border-white/10 text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
             >
               {copied ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-600" />
+                  <Check className="w-4 h-4 text-[var(--primary)]" />
                   <span>{t('copied')}</span>
                 </>
               ) : (
@@ -194,7 +194,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
             <button
               onClick={onPrint}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
             >
               <Printer className="w-4 h-4" />
               <span>{t('printList')}</span>
@@ -207,7 +207,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
           <div className="flex items-center justify-between text-xs font-semibold mb-2">
             <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <span>{t('shoppingProgress')}</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+              <span className="text-[var(--primary)] dark:text-[var(--accent)] font-bold">
                 {t('itemsGathered', { checked: checkedItemsCount, total: totalItemsCount })}
               </span>
             </span>
@@ -221,7 +221,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                   {t('uncheckAll')}
                 </button>
               )}
-              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold font-mono">
+              <span className="text-[var(--primary)] dark:text-[var(--accent)] font-extrabold font-mono">
                 {progressPercentage}%
               </span>
             </div>
@@ -229,7 +229,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
           <div className="w-full h-2.5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 overflow-hidden p-0.5 border border-white/40 dark:border-white/5">
             <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300 rounded-full shadow-xs"
+              className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] transition-all duration-300 rounded-full shadow-xs"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -244,7 +244,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder={t('searchShoppingPlaceholder')}
-              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-emerald-500"
+              className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-[var(--accent)] transition-all"
             />
           </div>
 
@@ -252,8 +252,8 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             onClick={() => setFilterHideChecked(!filterHideChecked)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md transition-all self-start sm:self-auto ${
               filterHideChecked
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-white/80'
+                ? 'bg-[var(--primary)] text-white shadow-xs'
+                : 'bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)]'
             }`}
           >
             <ListFilter className="w-3.5 h-3.5" />
@@ -264,7 +264,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
       {/* Categorized Lists */}
       {groupedByCategory.length === 0 ? (
-        <div className="text-center py-16 px-4 backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 rounded-3xl border border-white/50 dark:border-white/10 shadow-lg shadow-slate-900/5">
+        <div className="text-center py-16 px-4 backdrop-blur-xl bg-[var(--card-bg)] rounded-3xl border border-[var(--border-color)] shadow-lg shadow-slate-900/5 transition-all duration-300">
           <ShoppingCart className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
           <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
             {t('shoppingListEmpty')}
@@ -293,19 +293,19 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             return (
               <div
                 key={group.category.id}
-                className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-2xl overflow-hidden shadow-md shadow-slate-900/5"
+                className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-md shadow-slate-900/5 transition-all duration-300"
               >
                 {/* Category Header */}
-                <div className="px-4 py-3 backdrop-blur-md bg-white/50 dark:bg-slate-800/50 border-b border-white/40 dark:border-white/5 flex items-center justify-between">
+                <div className="px-4 py-3 backdrop-blur-md bg-[var(--cell-bg)] border-b border-[var(--border-color)] flex items-center justify-between transition-all duration-300">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg backdrop-blur-md bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/10 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                    <div className="w-7 h-7 rounded-lg backdrop-blur-md bg-[var(--cell-bg-hover)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] dark:text-[var(--accent)] shadow-2xs transition-all">
                       <CategoryIcon name={group.category.icon} className="w-4 h-4" />
                     </div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {catDisplayName}
                     </h3>
                   </div>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full backdrop-blur-md bg-slate-200/60 dark:bg-slate-700/60 text-slate-700 dark:text-slate-300 border border-white/40 dark:border-white/5">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-700 dark:text-slate-300 border border-[var(--border-color)]">
                     {group.checkedCount}/{group.totalCount}
                   </span>
                 </div>
@@ -326,8 +326,8 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                         key={itemKey}
                         className={`p-3 sm:px-4 transition-colors ${
                           item.checked
-                            ? 'bg-slate-100/30 dark:bg-slate-900/40 text-slate-400'
-                            : 'hover:bg-white/40 dark:hover:bg-slate-800/30'
+                            ? 'bg-[var(--cell-bg)]/20 text-slate-400 opacity-60'
+                            : 'hover:bg-[var(--cell-bg-hover)]/40'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -337,7 +337,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                               type="checkbox"
                               checked={item.checked}
                               onChange={() => handleItemCheck(itemKey, item.checked)}
-                              className="w-5 h-5 rounded-md text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-600 bg-white/80 dark:bg-slate-800/80 cursor-pointer shrink-0"
+                              className="w-5 h-5 rounded-md text-[var(--primary)] focus:ring-[var(--primary)] border-[var(--border-color)] bg-[var(--cell-bg-hover)] cursor-pointer shrink-0"
                             />
                             <span
                               className={`text-sm font-medium transition-all truncate ${
@@ -355,8 +355,8 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                             <span
                               className={`text-xs font-bold px-2.5 py-1 rounded-lg border font-mono backdrop-blur-md ${
                                 item.checked
-                                  ? 'bg-slate-100/60 dark:bg-slate-800/60 text-slate-400 border-slate-200/60 dark:border-slate-700/60'
-                                  : 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20'
+                                  ? 'bg-[var(--cell-bg)]/40 text-slate-400 border-[var(--border-color)]'
+                                  : 'bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--accent)]/20'
                               }`}
                             >
                               {formatQuantity(item.totalQuantity)} {unitDisplayName}
@@ -374,7 +374,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                               <button
                                 onClick={() => toggleExpandSource(itemKey)}
                                 title="Show why this ingredient is needed"
-                                className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 backdrop-blur-md"
+                                className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-[var(--cell-bg-hover)] backdrop-blur-md"
                               >
                                 {isExpanded ? (
                                   <ChevronUp className="w-3.5 h-3.5" />
@@ -388,7 +388,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
                         {/* Expandable Recipe Provenance Breakdown */}
                         {isExpanded && !isCustom && (
-                          <div className="mt-2.5 ml-8 p-2.5 rounded-xl backdrop-blur-md bg-white/50 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-xs space-y-1">
+                          <div className="mt-2.5 ml-8 p-2.5 rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-xs space-y-1 transition-all duration-300">
                             <span className="font-bold text-slate-600 dark:text-slate-300 block mb-1">
                               {t('requestedByDishes', { count: item.sources.length })}
                             </span>
@@ -405,7 +405,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                                   <span>
                                     • <strong className="text-slate-800 dark:text-slate-200">{recipeTitleDisplay}</strong> ({mealDisplay}, {src.servings} pers.)
                                   </span>
-                                  <span className="font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                                  <span className="font-mono text-[var(--primary)] dark:text-[var(--accent)] font-semibold">
                                     {formatQuantity(src.scaledQuantity)} {translateUnit(src.unit)}
                                   </span>
                                 </div>
@@ -513,7 +513,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
                 >
                   {t('addToList')}
                 </button>

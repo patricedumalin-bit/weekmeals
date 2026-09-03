@@ -1,3 +1,19 @@
+export type Theme = 'pro' | 'nature' | 'minimalist' | 'creative';
+
+export interface ThemeColors {
+  primary: string;
+  accent: string;
+  bg: string;
+  hover: string;
+}
+
+export const themes: Record<Theme, ThemeColors> = {
+  pro: { primary: '#1E293B', accent: '#2563EB', bg: '#F8F9FA', hover: '#93C5FD' },
+  nature: { primary: '#1C3A27', accent: '#C85A32', bg: '#FBF8F3', hover: '#A3B18A' },
+  minimalist: { primary: '#18181B', accent: '#D4AF37', bg: '#FFFFFF', hover: '#A1A1AA' },
+  creative: { primary: '#2E1065', accent: '#7C3AED', bg: '#F5F3FF', hover: '#F97316' },
+};
+
 export type UnitType = 
   | 'g' 
   | 'kg' 

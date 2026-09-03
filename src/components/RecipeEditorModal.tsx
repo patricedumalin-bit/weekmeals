@@ -176,7 +176,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-white/40 dark:border-white/5 flex items-center justify-between gap-3 bg-white/40 dark:bg-slate-800/40">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl backdrop-blur-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 flex items-center justify-center shadow-2xs">
+            <div className="w-9 h-9 rounded-xl backdrop-blur-md bg-[var(--primary)]/15 text-[var(--primary)] dark:text-[var(--primary)] border border-[var(--primary)]/20 flex items-center justify-center shadow-2xs">
               <ChefHat className="w-5 h-5" />
             </div>
             <div>
@@ -220,7 +220,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                   setErrorMessage(null);
                 }}
                 placeholder={t('recipeTitlePlaceholder')}
-                className="w-full px-3.5 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className="w-full px-3.5 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
               />
             </div>
 
@@ -335,7 +335,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-emerald-600" />
+                  <Layers className="w-4 h-4 text-[var(--primary)]" />
                   {t('recipeIngredientsHeader', { count: recipeIngredients.length })}
                 </h3>
                 <p className="text-xs text-slate-500">
@@ -345,7 +345,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddIngredientRow}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/20"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--primary)] hover:bg-[var(--primary)]/20 border border-[var(--primary)]/20"
               >
                 <Plus className="w-3.5 h-3.5" />
                 {t('addIngredientBtn')}
@@ -414,7 +414,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <ChefHat className="w-4 h-4 text-emerald-600" />
+                  <ChefHat className="w-4 h-4 text-[var(--primary)]" />
                   {t('cookingInstructionsHeader')}
                 </h3>
                 <p className="text-xs text-slate-500">{t('cookingInstructionsSub')}</p>
@@ -422,7 +422,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
               <button
                 type="button"
                 onClick={handleAddInstructionStep}
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/20"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--primary)] hover:bg-[var(--primary)]/20 border border-[var(--primary)]/20"
               >
                 <Plus className="w-3.5 h-3.5" />
                 {t('addStepBtn')}
@@ -432,7 +432,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
             <div className="space-y-2">
               {instructions.map((step, idx) => (
                 <div key={idx} className="flex items-start gap-2">
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-1 shadow-2xs">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-1 shadow-2xs">
                     {idx + 1}
                   </span>
                   <textarea
@@ -468,7 +468,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
           <button
             type="button"
             onClick={handleSubmit}
-            className="px-5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all"
+            className="px-5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--primary)]/20 flex items-center gap-2 transition-all"
           >
             <Save className="w-4 h-4" />
             {t('saveRecipeBtn')}

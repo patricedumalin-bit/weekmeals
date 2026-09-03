@@ -236,12 +236,12 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   return (
     <div className="space-y-6 pb-20">
       {/* Top Banner / Week Controls */}
-      <div className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5">
+      <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5 transition-all duration-300">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           {/* Left: Number of Meals & Default Servings */}
           <div className="space-y-4 flex-1">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 mb-1.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{t('plannerConfigTag')}</span>
               </div>
@@ -256,7 +256,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             {/* Controls Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               {/* Number of Meals Stepper */}
-              <div className="p-3 rounded-2xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/10 shadow-2xs">
+              <div className="p-3 rounded-2xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] shadow-2xs transition-all duration-300">
                 <span className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
                   {t('numMealsInPlan')}
                 </span>
@@ -265,17 +265,17 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                     <button
                       disabled={weeklyPlan.numberOfMeals <= 1}
                       onClick={() => handleSetMealCount(weeklyPlan.numberOfMeals - 1)}
-                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 shadow-2xs"
+                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--cell-bg-hover)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] disabled:opacity-30 shadow-2xs hover:scale-105 transition-all"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 min-w-8 text-center font-mono">
+                    <span className="text-lg font-extrabold text-[var(--primary)] dark:text-[var(--accent)] min-w-8 text-center font-mono">
                       {weeklyPlan.numberOfMeals}
                     </span>
                     <button
                       disabled={weeklyPlan.numberOfMeals >= 21}
                       onClick={() => handleSetMealCount(weeklyPlan.numberOfMeals + 1)}
-                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 shadow-2xs"
+                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--cell-bg-hover)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] disabled:opacity-30 shadow-2xs hover:scale-105 transition-all"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -288,7 +288,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
               </div>
 
               {/* Default Servings Stepper */}
-              <div className="p-3 rounded-2xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/10 shadow-2xs">
+              <div className="p-3 rounded-2xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] shadow-2xs transition-all duration-300">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     {t('defaultPersonsLabel')}
@@ -296,7 +296,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   <button
                     onClick={handleApplyDefaultServingsToAll}
                     title="Apply this number to all meals in the list"
-                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                    className="text-[11px] font-semibold text-[var(--primary)] dark:text-[var(--accent)] hover:underline"
                   >
                     {t('applyToAll')}
                   </button>
@@ -306,7 +306,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                     <button
                       disabled={weeklyPlan.defaultServings <= 1}
                       onClick={() => handleSetDefaultServings(weeklyPlan.defaultServings - 1)}
-                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 shadow-2xs"
+                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--cell-bg-hover)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] disabled:opacity-30 shadow-2xs hover:scale-105 transition-all"
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -316,7 +316,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                     <button
                       disabled={weeklyPlan.defaultServings >= 20}
                       onClick={() => handleSetDefaultServings(weeklyPlan.defaultServings + 1)}
-                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-white/80 dark:bg-slate-700/80 border border-white/50 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-slate-100 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 shadow-2xs"
+                      className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--cell-bg-hover)] border border-[var(--border-color)] flex items-center justify-center text-[var(--primary)] disabled:opacity-30 shadow-2xs hover:scale-105 transition-all"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -337,8 +337,8 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   onClick={() => handleSetMealCount(preset.count)}
                   className={`px-2.5 py-1 rounded-xl text-xs font-semibold backdrop-blur-md transition-all ${
                     weeklyPlan.numberOfMeals === preset.count
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'bg-white/50 dark:bg-slate-800/50 border border-white/40 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800/80'
+                      ? 'bg-[var(--primary)] text-white shadow-xs'
+                      : 'bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)]'
                   }`}
                 >
                   {preset.label}
@@ -348,13 +348,13 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           </div>
 
           {/* Right Action Box */}
-          <div className="backdrop-blur-md bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/20 dark:border-emerald-500/20 rounded-2xl p-4 lg:w-72 flex flex-col justify-between gap-3 shrink-0 shadow-2xs">
+          <div className="backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/30 border border-[var(--accent)]/20 dark:border-[var(--accent)]/20 rounded-2xl p-4 lg:w-72 flex flex-col justify-between gap-3 shrink-0 shadow-2xs">
             <div>
-              <div className="flex items-center justify-between text-xs font-semibold text-emerald-900 dark:text-emerald-200 mb-1">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--primary)] dark:text-[var(--accent)] mb-1">
                 <span>{t('plannerStatus')}</span>
                 <span className="font-bold">{t('recipesPlannedStatus', { count: totalAssignedRecipes })}</span>
               </div>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400/90 leading-relaxed">
+              <p className="text-xs text-[var(--primary)] dark:text-[var(--accent)]/90 leading-relaxed">
                 {t('groceryCalcNote')}
               </p>
             </div>
@@ -362,15 +362,15 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             <div className="space-y-2">
               <button
                 onClick={handleAutoSuggestMeals}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-white/80 dark:bg-slate-800/80 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-white dark:hover:bg-slate-800 shadow-2xs transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg-hover)] text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/30 hover:bg-[var(--cell-bg)] shadow-2xs transition-all"
               >
-                <Shuffle className="w-3.5 h-3.5 text-emerald-600" />
+                <Shuffle className="w-3.5 h-3.5 text-[var(--primary)]" />
                 <span>{t('autoFillEmptySlots')}</span>
               </button>
 
               <button
                 onClick={onGoToShopping}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 transition-all"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--primary)] hover:from-[var(--accent)] hover:to-[var(--primary)] text-white shadow-md shadow-[var(--primary)]/20 transition-all"
               >
                 <span>{t('viewShoppingList')}</span>
                 <ArrowRight className="w-4 h-4" />
@@ -384,7 +384,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Utensils className="w-4 h-4 text-emerald-600" />
+            <Utensils className="w-4 h-4 text-[var(--primary)]" />
             <span>{t('plannedMealSlotsTitle', { count: weeklyPlan.meals.length })}</span>
           </h3>
           <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -405,12 +405,12 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             return (
               <div
                 key={meal.id || mealIdx}
-                className="backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/50 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-md shadow-slate-900/5 hover:border-emerald-500/30 transition-all"
+                className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-4 sm:p-5 shadow-md shadow-slate-900/5 hover:border-[var(--accent)]/30 transition-all duration-300"
               >
                 {/* Meal Header: Title, Servings, Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/40 dark:border-white/5">
                   <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-xl backdrop-blur-md bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 text-xs font-bold flex items-center justify-center shrink-0">
+                    <span className="w-8 h-8 rounded-xl backdrop-blur-md bg-[var(--accent)]/15 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 text-xs font-bold flex items-center justify-center shrink-0">
                       #{meal.mealNumber}
                     </span>
                     <div className="flex-1">
@@ -418,15 +418,15 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                         type="text"
                         value={displayLabel}
                         onChange={e => handleUpdateMealLabel(mealIdx, e.target.value)}
-                        className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-emerald-500 focus:outline-hidden py-0.5"
+                        className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-700 focus:border-[var(--accent)] focus:outline-hidden py-0.5"
                       />
                     </div>
                   </div>
 
                   {/* Servings for this specific meal (Customizable per meal!) */}
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 backdrop-blur-md bg-white/60 dark:bg-slate-800/60 px-2.5 py-1 rounded-xl border border-white/50 dark:border-white/10 shadow-2xs">
-                      <Users className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <div className="flex items-center gap-2 backdrop-blur-md bg-[var(--cell-bg)] px-2.5 py-1 rounded-xl border border-[var(--border-color)] shadow-2xs">
+                      <Users className="w-3.5 h-3.5 text-[var(--primary)] dark:text-[var(--accent)]" />
                       <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                         {t('persons')}
                       </span>
@@ -434,7 +434,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                         <button
                           disabled={meal.servings <= 1}
                           onClick={() => handleUpdateMealServings(mealIdx, meal.servings - 1)}
-                          className="w-5 h-5 rounded-md backdrop-blur-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 text-xs font-bold shadow-2xs"
+                          className="w-5 h-5 rounded-md backdrop-blur-md bg-[var(--cell-bg-hover)] hover:scale-105 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 text-xs font-bold shadow-2xs transition-all"
                         >
                           <Minus className="w-3 h-3" />
                         </button>
@@ -444,7 +444,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                         <button
                           disabled={meal.servings >= 30}
                           onClick={() => handleUpdateMealServings(mealIdx, meal.servings + 1)}
-                          className="w-5 h-5 rounded-md backdrop-blur-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 text-xs font-bold shadow-2xs"
+                          className="w-5 h-5 rounded-md backdrop-blur-md bg-[var(--cell-bg-hover)] hover:scale-105 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 text-xs font-bold shadow-2xs transition-all"
                         >
                           <Plus className="w-3 h-3" />
                         </button>
@@ -465,10 +465,10 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
                 {/* Custom Meals */}
                 {meal.customMeals && meal.customMeals.map((customMeal) => (
-                  <div key={customMeal.id} className="mt-3 p-3.5 rounded-xl border border-amber-500/30 backdrop-blur-md bg-amber-500/10 dark:bg-amber-950/30 space-y-2">
+                  <div key={customMeal.id} className="mt-3 p-3.5 rounded-xl border border-[var(--accent)]/30 backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/30 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <Sparkles className="w-4 h-4 text-[var(--primary)] dark:text-[var(--accent)]" />
                         <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                           {customMeal.name || 'Repas sur mesure (Ingrédients libres)'}
                         </h4>
@@ -476,7 +476,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => onOpenRecipePicker(mealIdx, 0)}
-                          className="px-2 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white shadow-xs hover:bg-amber-600"
+                          className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--accent)] text-white shadow-xs hover:bg-[var(--accent)]"
                         >
                           Modifier
                         </button>
@@ -492,7 +492,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                       {customMeal.ingredients.map((ci, cIdx) => {
                         const ingObj = ingredients.find(i => i.id === ci.ingredientId);
                         return (
-                          <span key={cIdx} className="px-2 py-0.5 rounded-md text-[11px] bg-white/80 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-white/40 dark:border-white/5 font-medium">
+                          <span key={cIdx} className="px-2 py-0.5 rounded-md text-[11px] bg-[var(--cell-bg-hover)] text-slate-800 dark:text-slate-200 border border-[var(--border-color)] font-medium transition-all duration-300">
                             {ci.quantity} {ci.unit} {ingObj?.name || 'ingrédient'}
                           </span>
                         );
@@ -511,13 +511,13 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                     return (
                       <div
                         key={recipe.id}
-                        className="p-3 rounded-xl border border-emerald-500/20 backdrop-blur-md bg-emerald-500/5 dark:bg-emerald-950/20 flex flex-col justify-between gap-2 relative group shadow-2xs"
+                        className="p-3 rounded-xl border border-[var(--accent)]/20 backdrop-blur-md bg-[var(--accent)]/5 dark:bg-[var(--accent)]/20 flex flex-col justify-between gap-2 relative group shadow-2xs"
                       >
                         <div>
                           <div className="flex items-center justify-between gap-1 mb-1">
                             {category && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold backdrop-blur-md bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-white/50 dark:border-white/10">
-                                <CategoryIcon name={category.icon} className="w-2.5 h-2.5 text-emerald-600" />
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-700 dark:text-slate-300 border border-[var(--border-color)] transition-all duration-300">
+                                <CategoryIcon name={category.icon} className="w-2.5 h-2.5 text-[var(--primary)]" />
                                 {catDisplayName}
                               </span>
                             )}
@@ -558,10 +558,10 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                           })()}
                         </div>
 
-                        <div className="pt-2 border-t border-emerald-500/15 flex items-center justify-between">
+                        <div className="pt-2 border-t border-[var(--accent)]/15 flex items-center justify-between">
                           <button
                             onClick={() => onPreviewRecipe(recipe, meal.servings, mealIdx, rIdx)}
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--primary)] dark:text-[var(--accent)] hover:underline"
                           >
                             <Eye className="w-3 h-3" />
                             {t('viewScaled')}
@@ -587,13 +587,13 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                         className={`p-4 rounded-xl border-2 border-dashed ${
                           isDisabled 
                             ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
-                            : 'border-slate-300/70 dark:border-slate-700/70 hover:border-emerald-500 dark:hover:border-emerald-400 backdrop-blur-md bg-white/40 dark:bg-slate-800/30 hover:bg-emerald-500/10 dark:hover:bg-emerald-950/20'
+                            : 'border-[var(--border-color)] hover:border-[var(--accent)] dark:hover:border-[var(--accent)] backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20'
                         } flex flex-col items-center justify-center text-center transition-all group min-h-[100px]`}
                       >
-                        <div className={`w-7 h-7 rounded-full ${isDisabled ? 'bg-slate-300 dark:bg-slate-700' : 'bg-slate-200/80 dark:bg-slate-700/80 group-hover:bg-emerald-600 group-hover:text-white'} flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors mb-1`}>
+                        <div className={`w-7 h-7 rounded-full ${isDisabled ? 'bg-slate-300 dark:bg-slate-700' : 'bg-slate-200/80 dark:bg-slate-700/80 group-hover:bg-[var(--primary)] group-hover:text-white'} flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors mb-1`}>
                           <Plus className="w-4 h-4" />
                         </div>
-                        <span className={`text-xs font-bold ${isDisabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300 group-hover:text-emerald-700 dark:group-hover:text-emerald-300'}`}>
+                        <span className={`text-xs font-bold ${isDisabled ? 'text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300 group-hover:text-[var(--primary)] dark:group-hover:text-[var(--accent)]'}`}>
                           {isDisabled ? t('premiumOnly') : t('addRecipeSlot', { slot: slotNum })}
                         </span>
                         {!isDisabled && (

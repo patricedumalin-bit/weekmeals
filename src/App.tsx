@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import Auth from './components/Auth';
 import { 
@@ -48,19 +48,44 @@ import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 function AppContent({ user }: { user: any }) {
   const { translateMealLabel } = useLanguage();
   const [userData, setUserData] = useState<any>(null);
+  const [theme, setTheme] = useState<string>(() => localStorage.getItem('theme') || 'default');
 
   useEffect(() => {
     if (!user) return;
     const fetchUserData = async () => {
       const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
-        setUserData(userDoc.data());
+        const data = userDoc.data();
+        setUserData(data);
+        if (data.theme) {
+          setTheme(data.theme);
+          localStorage.setItem('theme', data.theme);
+        }
+      } else {
+        const initialData = {
+          theme: 'default',
+          subscriptionStatus: 'free',
+          recipeCount: 0,
+          mealCount: 0
+        };
+        await setDoc(doc(db, 'users', user.uid), initialData);
+        setUserData(initialData);
+        setTheme('default');
+        localStorage.setItem('theme', 'default');
       }
     };
     fetchUserData();
   }, [user]);
 
   const isPremium = userData?.subscriptionStatus === 'premium';
+  
+  const themeBg = {
+    pro: 'bg-[#F8F9FA]',
+    nature: 'bg-[#FBF8F3]',
+    minimalist: 'bg-[#FFFFFF]',
+    creative: 'bg-[#F5F3FF]',
+    default: 'bg-[#F8F9FA]'
+  };
   
   const canAddRecipe = () => {
     if (isPremium) return true;
@@ -70,6 +95,29 @@ function AppContent({ user }: { user: any }) {
   const canAddMeal = () => {
     if (userData?.subscriptionStatus === 'premium') return true;
     return (userData?.mealCount || 0) < 3;
+  };
+
+  const handleTogglePremium = async () => {
+    if (!user) return;
+    const newStatus = userData?.subscriptionStatus === 'premium' ? 'free' : 'premium';
+    await setDoc(doc(db, 'users', user.uid), {
+        subscriptionStatus: newStatus
+    }, { merge: true });
+    setUserData(prev => ({ ...prev, subscriptionStatus: newStatus }));
+  };
+
+  const handleUpdateTheme = async (newTheme: string) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+          theme: newTheme
+      }, { merge: true });
+      setUserData(prev => prev ? { ...prev, theme: newTheme } : { theme: newTheme });
+    } catch (e) {
+      console.error("Failed to update theme", e);
+    }
   };
 
   // Main Data States
@@ -118,6 +166,77 @@ function AppContent({ user }: { user: any }) {
     setCustomItems(loaded.customItems);
     setIsLoaded(true);
   }, []);
+
+  // Sync dark mode class from system settings
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleThemeChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const html = document.documentElement;
+      const body = document.body;
+      if (e.matches) {
+        html.classList.add('dark');
+        if (body) body.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+        if (body) body.classList.remove('dark');
+      }
+    };
+    
+    handleThemeChange(mediaQuery);
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleThemeChange);
+      return () => mediaQuery.removeEventListener('change', handleThemeChange);
+    }
+  }, [theme]);
+
+  // Synchronize document theme class
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    
+    // Manage class names on html
+    const htmlClasses = Array.from(html.classList).filter(c => c.startsWith('theme-'));
+    htmlClasses.forEach(c => html.classList.remove(c));
+    html.classList.add(`theme-${theme}`);
+
+    // Manage class names on body
+    if (body) {
+      const bodyClasses = Array.from(body.classList).filter(c => c.startsWith('theme-'));
+      bodyClasses.forEach(c => body.classList.remove(c));
+      body.classList.add(`theme-${theme}`);
+    }
+
+    // Direct color configurations to bypass any stylesheet priority issue
+    const isDark = html.classList.contains('dark') || (body && body.classList.contains('dark'));
+    const themeColors = isDark ? {
+      default: { bg: '#0F172A', primary: '#F1F5F9', accent: '#3B82F6' },
+      pro: { bg: '#111827', primary: '#F3F4F6', accent: '#60A5FA' },
+      nature: { bg: '#141E17', primary: '#E8F5E9', accent: '#FF8A65' },
+      minimalist: { bg: '#18181B', primary: '#FAF5FF', accent: '#F59E0B' },
+      creative: { bg: '#1E1B4B', primary: '#EEF2FF', accent: '#A78BFA' }
+    } : {
+      default: { bg: '#E2E8F0', primary: '#1E293B', accent: '#2563EB' },
+      pro: { bg: '#CBD5E1', primary: '#1E293B', accent: '#2563EB' },
+      nature: { bg: '#E5DCC6', primary: '#1C3A27', accent: '#C85A32' },
+      minimalist: { bg: '#E4E4E7', primary: '#18181B', accent: '#D4AF37' },
+      creative: { bg: '#DDD6FE', primary: '#2E1065', accent: '#7C3AED' }
+    };
+
+    const colors = themeColors[theme as keyof typeof themeColors] || themeColors.default;
+
+    // Apply inline styling on top of CSS variables
+    html.style.setProperty('--bg', colors.bg);
+    html.style.setProperty('--primary', colors.primary);
+    html.style.setProperty('--accent', colors.accent);
+    html.style.backgroundColor = colors.bg;
+
+    if (body) {
+      body.style.setProperty('--bg', colors.bg);
+      body.style.setProperty('--primary', colors.primary);
+      body.style.setProperty('--accent', colors.accent);
+      body.style.backgroundColor = colors.bg;
+    }
+  }, [theme]);
 
   // Save changes
   const handleUpdateWeeklyPlan = (newPlan: WeeklyPlan) => {
@@ -172,9 +291,9 @@ function AppContent({ user }: { user: any }) {
     saveRecipes(updated);
 
     if (!exists && userData?.subscriptionStatus !== 'premium') {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, 'users', user.uid), {
         recipeCount: (userData?.recipeCount || 0) + 1
-      });
+      }, { merge: true });
       setUserData(prev => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
     }
   };
@@ -353,9 +472,9 @@ function AppContent({ user }: { user: any }) {
     });
 
     if (userData?.subscriptionStatus !== 'premium') {
-      await updateDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, 'users', user.uid), {
         mealCount: (userData?.mealCount || 0) + 1
-      });
+      }, { merge: true });
       setUserData(prev => ({ ...prev, mealCount: (prev.mealCount || 0) + 1 }));
     }
   };
@@ -435,13 +554,16 @@ function AppContent({ user }: { user: any }) {
   );
 
   return (
-    <div className="min-h-screen bg-slate-100/80 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 relative overflow-x-hidden">
+    <div 
+      className={`min-h-screen theme-${theme} text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[var(--accent)]/30 relative overflow-x-hidden`}
+      style={{ backgroundColor: 'var(--bg)' }}
+    >
       {/* Frosted Glass Background Lighting Orbs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 no-print">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-400/20 dark:bg-emerald-500/15 blur-3xl" />
-        <div className="absolute top-1/4 -right-32 w-96 h-96 rounded-full bg-teal-400/20 dark:bg-teal-500/15 blur-3xl" />
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[var(--primary)]/20 dark:bg-[var(--primary)]/15 blur-3xl" />
+        <div className="absolute top-1/4 -right-32 w-96 h-96 rounded-full bg-[var(--accent)]/20 dark:bg-[var(--accent)]/15 blur-3xl" />
         <div className="absolute top-2/3 left-1/3 w-80 h-80 rounded-full bg-amber-400/15 dark:bg-amber-500/10 blur-3xl" />
-        <div className="absolute -bottom-32 right-1/4 w-96 h-96 rounded-full bg-emerald-500/20 dark:bg-emerald-600/15 blur-3xl" />
+        <div className="absolute -bottom-32 right-1/4 w-96 h-96 rounded-full bg-[var(--primary)]/20 dark:bg-[var(--primary)]/15 blur-3xl" />
       </div>
 
       {/* Top App Header */}
@@ -454,6 +576,10 @@ function AppContent({ user }: { user: any }) {
         onPrint={handlePrint}
         onReset={handleResetDatabase}
         isPremium={userData?.subscriptionStatus === 'premium'}
+        user={user}
+        onTogglePremium={handleTogglePremium}
+        currentTheme={userData?.theme || 'default'}
+        onUpdateTheme={handleUpdateTheme}
       />
 
       {/* Main Container */}

@@ -67,7 +67,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1.5">
               {category && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--primary)]/10 text-[var(--primary)] dark:text-[var(--primary)] border border-[var(--primary)]/20">
                   <CategoryIcon name={category.icon} className="w-3.5 h-3.5" />
                   {categoryDisplayName}
                 </span>
@@ -94,14 +94,14 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         </div>
 
         {/* Recipe Meta Banner & Servings Scaler */}
-        <div className="px-5 py-3 backdrop-blur-md bg-emerald-500/10 border-b border-emerald-500/20 flex items-center justify-between flex-wrap gap-3">
+        <div className="px-5 py-3 backdrop-blur-md bg-[var(--primary)]/10 border-b border-[var(--primary)]/20 flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
             <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Clock className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
               {t('prepTime', { mins: recipe.prepTimeMinutes })}
             </span>
             <span className="flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-amber-500" />
+              <Flame className="w-4 h-4 text-[var(--accent)]" />
               {t('cookTime', { mins: recipe.cookTimeMinutes })}
             </span>
             <span className="flex items-center gap-1.5">
@@ -112,7 +112,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
           {/* Interactive Servings Slider / Controls */}
           <div className="flex items-center gap-2 backdrop-blur-md bg-white/70 dark:bg-slate-800/70 px-3 py-1 rounded-xl shadow-2xs border border-white/50 dark:border-white/10">
-            <Users className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Users className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
               {t('peopleCount', { count: currentServings })}
             </span>
@@ -141,19 +141,19 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-600" />
+                <Layers className="w-4 h-4 text-[var(--primary)]" />
                 {t('ingredientsHeader', { count: recipe.ingredients.length })}
               </h3>
               {scaleFactor !== 1 && (
-                <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                <span className="text-xs font-medium text-[var(--primary)] dark:text-[var(--primary)] bg-[var(--primary)]/10 px-2 py-0.5 rounded-md border border-[var(--primary)]/20">
                   {t('scaledNote', { base: recipe.servings, current: currentServings })}
                 </span>
               )}
             </div>
 
             {mealIndex !== undefined && recipeIndex !== undefined && onToggleExcludeIngredient && (
-              <div className="mb-3 p-3 rounded-xl bg-amber-500/10 dark:bg-amber-950/20 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="mb-3 p-3 rounded-xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 border border-[var(--accent)]/20 text-xs text-[var(--primary)] dark:text-[var(--accent)] flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-[var(--primary)] dark:text-[var(--accent)] shrink-0 mt-0.5" />
                 <p>{t('plannerExclusionNote')}</p>
               </div>
             )}
@@ -176,13 +176,13 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-2 h-2 rounded-full shrink-0 shadow-2xs ${isExcluded ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                      <div className={`w-2 h-2 rounded-full shrink-0 shadow-2xs ${isExcluded ? 'bg-rose-500' : 'bg-[var(--primary)]'}`} />
                       <span className={`text-sm font-medium truncate ${isExcluded ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
                         {ingredientDisplayName}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${isExcluded ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30 line-through' : 'bg-white/80 dark:bg-slate-900/80 text-emerald-700 dark:text-emerald-300 border-white/50 dark:border-white/10'}`}>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${isExcluded ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30 line-through' : 'bg-white/80 dark:bg-slate-900/80 text-[var(--primary)] dark:text-[var(--primary)] border-white/50 dark:border-white/10'}`}>
                         {formatQuantity(scaledQty)} {unitDisplayName}
                       </span>
                       {mealIndex !== undefined && recipeIndex !== undefined && onToggleExcludeIngredient && (
@@ -191,7 +191,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                           title={isExcluded ? t('restoreIngredient') : t('excludeIngredient')}
                           className={`px-2 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 ${
                             isExcluded
-                              ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30'
+                              ? 'bg-[var(--primary)]/20 text-[var(--primary)] dark:text-[var(--primary)] hover:bg-[var(--primary)]/30 border border-[var(--primary)]/30'
                               : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 border border-rose-500/20'
                           }`}
                         >
@@ -208,7 +208,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           {/* Cooking Instructions */}
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-2 mb-3">
-              <ChefHat className="w-4 h-4 text-emerald-600" />
+              <ChefHat className="w-4 h-4 text-[var(--primary)]" />
               {t('prepStepsHeader', { count: localized.instructions.length })}
             </h3>
             <div className="space-y-3">
@@ -217,7 +217,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   key={idx}
                   className="flex items-start gap-3 p-3 rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/40 border border-white/50 dark:border-white/10"
                 >
-                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
                     {idx + 1}
                   </span>
                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -259,7 +259,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 onSelectForMeal(recipe.id);
                 onClose();
               }}
-              className="px-5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all"
+              className="px-5 py-2 rounded-xl text-sm font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--primary)]/20 flex items-center gap-2 transition-all"
             >
               <CheckCircle2 className="w-4 h-4" />
               {t('chooseForThisMeal')}

@@ -58,6 +58,7 @@ export const translations = {
     slotIndicator: 'Slot {slot}/3',
     addRecipeSlot: '+ Recipe Slot {slot}',
     recipeSlotHint: 'Starter, Main, Dessert, etc.',
+    premiumOnly: '💎 Premium Only',
 
     // Planned Meals List
     scheduleTag: 'Meal Schedule',
@@ -323,6 +324,7 @@ export const translations = {
     slotIndicator: 'Slot {slot}/3',
     addRecipeSlot: '+ Rezept-Slot {slot}',
     recipeSlotHint: 'Vorspeise, Hauptgericht, Dessert usw.',
+    premiumOnly: '💎 Nur Premium',
 
     // Planned Meals List
     scheduleTag: 'Mahlzeitenplan',
@@ -566,6 +568,7 @@ export const translations = {
     slotIndicator: 'Emplacement {slot}/3',
     addRecipeSlot: '+ Emplacement recette {slot}',
     recipeSlotHint: 'Entrée, Plat, Dessert, etc.',
+    premiumOnly: '💎 Premium Uniquement',
 
     // Planned Meals List
     scheduleTag: 'Planning des Repas',
@@ -831,6 +834,7 @@ export const translations = {
     slotIndicator: 'Espacio {slot}/3',
     addRecipeSlot: '+ Espacio de receta {slot}',
     recipeSlotHint: 'Entrada, Plato fuerte, Postre, etc.',
+    premiumOnly: '💎 Solo Premium',
 
     // Planned Meals List
     scheduleTag: 'Calendario de Comidas',
@@ -1074,6 +1078,7 @@ export const translations = {
     slotIndicator: 'Espaço {slot}/3',
     addRecipeSlot: '+ Espaço de receita {slot}',
     recipeSlotHint: 'Entrada, Prato principal, Sobremesa, etc.',
+    premiumOnly: '💎 Apenas Premium',
 
     // Planned Meals List
     scheduleTag: 'Calendário de Refeições',
