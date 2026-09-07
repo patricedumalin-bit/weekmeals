@@ -7,14 +7,18 @@ import {
   ShoppingCart, 
   Database,
   Users,
-  Globe,
   ChevronDown,
   Check,
   Crown,
   Settings,
-  LogOut
+  LogOut,
+  User as UserIcon,
+  Cloud,
+  RefreshCw,
+  CloudCheck,
+  CloudOff
 } from 'lucide-react';
-import { ActiveTab, WeeklyPlan, themes, Theme } from '../types';
+import { ActiveTab, WeeklyPlan, themes, Theme, SyncStatus } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SupportedLanguage } from '../i18n/translations';
 
@@ -32,6 +36,8 @@ interface HeaderProps {
   currentTheme: string;
   onUpdateTheme: (theme: string) => void;
   onSignOut?: () => void;
+  onOpenProfile: () => void;
+  syncStatus: SyncStatus;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -47,7 +53,9 @@ export const Header: React.FC<HeaderProps> = ({
   onTogglePremium,
   currentTheme,
   onUpdateTheme,
-  onSignOut
+  onSignOut,
+  onOpenProfile,
+  syncStatus
 }) => {
   const { t, language, setLanguage, languages, currentLanguageInfo } = useLanguage();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -56,6 +64,9 @@ export const Header: React.FC<HeaderProps> = ({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   
   const isOwner = user?.email === 'patrice.dumalin@gmail.com';
+  const isGuest = user?.uid === 'local-guest';
+  const displayName = user?.displayName || (isGuest ? (language === 'fr' ? 'Invité' : 'Guest') : (language === 'fr' ? 'Mon Profil' : 'Profile'));
+  const initial = (user?.displayName ? user.displayName[0] : (user?.email ? user.email[0] : 'U')).toUpperCase();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -101,10 +112,10 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 sm:gap-2 truncate">
-              <span>{t('mealsPlannedCount', { count: weeklyPlan.numberOfMeals })}</span>
+              <span>{t('mealsPlannedCount', { count: weeklyPlan?.numberOfMeals ?? 7 })}</span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {t('defaultPersons', { count: weeklyPlan.defaultServings })}
+                <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400" /> {t('defaultPersons', { count: weeklyPlan?.defaultServings ?? 4 })}
               </span>
             </p>
           </div>
@@ -215,6 +226,34 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
+          {/* User Profile & Cloud Sync Button */}
+          <button
+            onClick={onOpenProfile}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all shadow-2xs"
+            title={language === 'fr' ? 'Mon Profil & Synchronisation Cloud' : 'My Profile & Cloud Sync'}
+          >
+            <div className="w-5 h-5 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 shadow-2xs">
+              {initial}
+            </div>
+            <span className="hidden lg:inline max-w-[90px] truncate">
+              {displayName}
+            </span>
+            <span className="relative flex h-2 w-2">
+              {syncStatus === 'syncing' && (
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              )}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                syncStatus === 'syncing' 
+                  ? 'bg-blue-500' 
+                  : syncStatus === 'error' 
+                  ? 'bg-red-500' 
+                  : syncStatus === 'offline' 
+                  ? 'bg-amber-500' 
+                  : 'bg-emerald-500'
+              }`}></span>
+            </span>
+          </button>
+
           <div className="flex items-center gap-2 p-1 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-white/50 dark:border-white/10">
             {(Object.keys(themes) as Theme[]).map((theme) => (
               <button
@@ -272,9 +311,29 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Mobile Layout (md hidden) */}
         <div className="flex md:hidden items-center gap-1.5" ref={mobileMenuRef}>
+          {/* Mobile Profile quick button */}
+          <button
+            onClick={onOpenProfile}
+            className="p-1.5 px-2 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-2xs flex items-center gap-1.5"
+            title={language === 'fr' ? 'Mon Profil & Synchronisation Cloud' : 'My Profile & Cloud Sync'}
+          >
+            <div className="w-5 h-5 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
+              {initial}
+            </div>
+            <span className={`w-2 h-2 rounded-full ${
+              syncStatus === 'syncing' 
+                ? 'bg-blue-500 animate-ping' 
+                : syncStatus === 'error' 
+                ? 'bg-red-500' 
+                : syncStatus === 'offline' 
+                ? 'bg-amber-500' 
+                : 'bg-emerald-500'
+            }`} />
+          </button>
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`p-2.5 rounded-xl border transition-colors shadow-2xs flex items-center justify-center relative ${
+            className={`p-2 rounded-xl border transition-colors shadow-2xs flex items-center justify-center relative ${
               mobileMenuOpen
                 ? 'bg-[var(--accent)]/25 text-[var(--primary)] dark:text-[var(--accent)] border-[var(--accent)]/30'
                 : 'bg-white/60 dark:bg-slate-800/60 border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200'
@@ -286,6 +345,32 @@ export const Header: React.FC<HeaderProps> = ({
 
           {mobileMenuOpen && (
             <div className="absolute right-3 top-15 w-72 backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 border border-white/50 dark:border-white/10 rounded-2xl shadow-xl p-4 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-4">
+              {/* Profile card shortcut */}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenProfile();
+                }}
+                className="w-full p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-left flex items-center gap-3 hover:bg-emerald-500/15 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                  {initial}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                      {displayName}
+                    </span>
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${
+                      syncStatus === 'syncing' ? 'bg-blue-500 animate-ping' : syncStatus === 'error' ? 'bg-red-500' : syncStatus === 'offline' ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`} />
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
+                    {language === 'fr' ? 'Gérer mon profil & synchronisation' : 'Manage profile & cloud sync'}
+                  </span>
+                </div>
+              </button>
+
               {/* Themes section */}
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">

@@ -14,7 +14,9 @@ import {
   Shuffle,
   ChefHat,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Heart,
+  Refrigerator
 } from 'lucide-react';
 import { WeeklyPlan, MealSlot, Recipe, RecipeCategory, Ingredient, IngredientCategory, CookingModeType, CustomMealIngredient } from '../types';
 import { CategoryIcon } from './CategoryIcon';
@@ -31,23 +33,31 @@ interface WeeklyPlannerProps {
   onPreviewRecipe: (recipe: Recipe, servings?: number, mealIndex?: number, recipeIndex?: number) => void;
   onGoToShopping: () => void;
   isPremium: boolean;
+  onOpenAutoPlan?: () => void;
+  onOpenNutrition?: () => void;
+  onOpenPantry?: () => void;
 }
 
 export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   weeklyPlan,
-  recipes,
-  recipeCategories,
-  ingredients,
-  ingredientCategories,
+  recipes = [],
+  recipeCategories = [],
+  ingredients = [],
+  ingredientCategories = [],
   onUpdatePlan,
   onOpenRecipePicker,
   onPreviewRecipe,
   onGoToShopping,
-  isPremium
+  isPremium,
+  onOpenAutoPlan,
+  onOpenNutrition,
+  onOpenPantry
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
-  const recipeMap = new Map<string, Recipe>(recipes.map(r => [r.id, r]));
-  const catMap = new Map<string, RecipeCategory>(recipeCategories.map(c => [c.id, c]));
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
+  const catMap = new Map<string, RecipeCategory>(safeRecipeCategories.map(c => [c.id, c]));
 
   const MEAL_PRESETS = [
     { label: t('presetMeals', { count: 5 }), count: 5 },
@@ -360,6 +370,41 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             </div>
 
             <div className="space-y-2">
+              {onOpenAutoPlan && (
+                <button
+                  type="button"
+                  onClick={onOpenAutoPlan}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition-all"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Composer ma semaine en 1 clic</span>
+                </button>
+              )}
+
+              <div className="grid grid-cols-2 gap-1.5">
+                {onOpenNutrition && (
+                  <button
+                    type="button"
+                    onClick={onOpenNutrition}
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-rose-600 dark:text-rose-400 border border-[var(--border-color)] hover:bg-[var(--cell-bg)] transition-all"
+                  >
+                    <Heart className="w-3.5 h-3.5" />
+                    <span>Nutrition</span>
+                  </button>
+                )}
+
+                {onOpenPantry && (
+                  <button
+                    type="button"
+                    onClick={onOpenPantry}
+                    className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-emerald-600 dark:text-emerald-400 border border-[var(--border-color)] hover:bg-[var(--cell-bg)] transition-all"
+                  >
+                    <Refrigerator className="w-3.5 h-3.5" />
+                    <span>Mon Frigo</span>
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={handleAutoSuggestMeals}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg-hover)] text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/30 hover:bg-[var(--cell-bg)] shadow-2xs transition-all"

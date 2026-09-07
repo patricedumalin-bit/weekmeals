@@ -11,7 +11,8 @@ import {
   INITIAL_INGREDIENTS, 
   INITIAL_RECIPE_CATEGORIES, 
   INITIAL_RECIPES, 
-  INITIAL_WEEKLY_PLAN 
+  INITIAL_WEEKLY_PLAN,
+  INITIAL_PANTRY
 } from '../data/initialData';
 
 const STORAGE_KEYS = {
@@ -22,6 +23,7 @@ const STORAGE_KEYS = {
   WEEKLY_PLAN: 'meal_app_weekly_plan_v2',
   SHOPPING_CHECKED: 'meal_app_shopping_checked_v2',
   CUSTOM_SHOPPING: 'meal_app_custom_shopping_v2',
+  PANTRY: 'meal_app_pantry_v1',
 };
 
 export function loadStoredData() {
@@ -33,6 +35,7 @@ export function loadStoredData() {
     const rawWeeklyPlan = localStorage.getItem(STORAGE_KEYS.WEEKLY_PLAN);
     const rawChecked = localStorage.getItem(STORAGE_KEYS.SHOPPING_CHECKED);
     const rawCustom = localStorage.getItem(STORAGE_KEYS.CUSTOM_SHOPPING);
+    const rawPantry = localStorage.getItem(STORAGE_KEYS.PANTRY);
 
     let recipes: Recipe[] = INITIAL_RECIPES;
     if (rawRecipes) {
@@ -80,6 +83,7 @@ export function loadStoredData() {
     const weeklyPlan: WeeklyPlan = rawWeeklyPlan ? JSON.parse(rawWeeklyPlan) : INITIAL_WEEKLY_PLAN;
     const checkedMap: Record<string, boolean> = rawChecked ? JSON.parse(rawChecked) : {};
     const customItems: CustomShoppingItem[] = rawCustom ? JSON.parse(rawCustom) : [];
+    const pantryMap: Record<string, boolean> = rawPantry ? JSON.parse(rawPantry) : INITIAL_PANTRY;
 
     return {
       recipes,
@@ -88,7 +92,8 @@ export function loadStoredData() {
       ingredientCategories,
       weeklyPlan,
       checkedMap,
-      customItems
+      customItems,
+      pantryMap
     };
   } catch (error) {
     console.error('Error loading data from localStorage:', error);
@@ -99,9 +104,14 @@ export function loadStoredData() {
       ingredientCategories: INITIAL_INGREDIENT_CATEGORIES,
       weeklyPlan: INITIAL_WEEKLY_PLAN,
       checkedMap: {},
-      customItems: []
+      customItems: [],
+      pantryMap: INITIAL_PANTRY
     };
   }
+}
+
+export function savePantryMap(pantryMap: Record<string, boolean>) {
+  localStorage.setItem(STORAGE_KEYS.PANTRY, JSON.stringify(pantryMap));
 }
 
 export function saveRecipes(recipes: Recipe[]) {
@@ -140,6 +150,28 @@ export function resetToDefaults() {
   localStorage.removeItem(STORAGE_KEYS.WEEKLY_PLAN);
   localStorage.removeItem(STORAGE_KEYS.SHOPPING_CHECKED);
   localStorage.removeItem(STORAGE_KEYS.CUSTOM_SHOPPING);
+  localStorage.removeItem(STORAGE_KEYS.PANTRY);
+}
+
+export function generateFullGenericDatabase() {
+  saveRecipes(INITIAL_RECIPES);
+  saveRecipeCategories(INITIAL_RECIPE_CATEGORIES);
+  saveIngredients(INITIAL_INGREDIENTS);
+  saveIngredientCategories(INITIAL_INGREDIENT_CATEGORIES);
+  saveWeeklyPlan(INITIAL_WEEKLY_PLAN);
+  savePantryMap(INITIAL_PANTRY);
+  saveCheckedMap({});
+  saveCustomShoppingItems([]);
+  return {
+    recipes: INITIAL_RECIPES,
+    recipeCategories: INITIAL_RECIPE_CATEGORIES,
+    ingredients: INITIAL_INGREDIENTS,
+    ingredientCategories: INITIAL_INGREDIENT_CATEGORIES,
+    weeklyPlan: INITIAL_WEEKLY_PLAN,
+    pantryMap: INITIAL_PANTRY,
+    checkedMap: {},
+    customItems: []
+  };
 }
 
 export function clearDatabase() {

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
-import { formatQuantity } from '../utils/calculator';
+import { formatQuantity, estimateRecipeNutrition, getDietaryBadges } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface RecipeDetailModalProps {
@@ -28,32 +28,41 @@ interface RecipeDetailModalProps {
   onToggleExcludeIngredient?: (mealIndex: number, recipeIndex: number, ingredientId: string) => void;
   onClose: () => void;
   onSelectForMeal?: (recipeId: string) => void;
+  onStartCookingMode?: (recipe: Recipe, servings: number) => void;
 }
 
 export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   recipe,
-  recipeCategories,
-  ingredients,
-  ingredientCategories,
+  recipeCategories = [],
+  ingredients = [],
+  ingredientCategories = [],
   initialServings,
   mealIndex,
   recipeIndex,
   excludedIngredientIds = [],
   onToggleExcludeIngredient,
   onClose,
-  onSelectForMeal
+  onSelectForMeal,
+  onStartCookingMode
 }) => {
   const { t, translateUnit, translateRecipeCategory, translateDifficulty, translateRecipe, translateIngredient } = useLanguage();
   if (!recipe) return null;
+
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
 
   const [currentServings, setCurrentServings] = useState<number>(
     initialServings || recipe.servings || 4
   );
 
   const localized = translateRecipe(recipe);
-  const category = recipeCategories.find(c => c.id === recipe.categoryId);
-  const ingredientMap = new Map<string, Ingredient>(ingredients.map(i => [i.id, i]));
-  const catMap = new Map<string, IngredientCategory>(ingredientCategories.map(c => [c.id, c]));
+  const category = safeRecipeCategories.find(c => c.id === recipe.categoryId);
+  const ingredientMap = new Map<string, Ingredient>(safeIngredients.map(i => [i.id, i]));
+  const catMap = new Map<string, IngredientCategory>(safeIngredientCategories.map(c => [c.id, c]));
+
+  const nutrition = estimateRecipeNutrition(recipe, safeIngredients);
+  const badges = getDietaryBadges(recipe, nutrition);
 
   const scaleFactor = currentServings / (recipe.servings || 4);
   const categoryDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
@@ -75,6 +84,11 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/40 dark:border-white/5 text-slate-600 dark:text-slate-300 capitalize">
                 {difficultyDisplayName}
               </span>
+              {badges.map(b => (
+                <span key={b.id} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${b.color}`}>
+                  <span>{b.label}</span>
+                </span>
+              ))}
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
               {localized.title}
@@ -132,6 +146,18 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <Plus className="w-3 h-3" />
               </button>
             </div>
+          </div>
+
+          {/* Nutrition strip */}
+          <div className="w-full pt-2 mt-1 border-t border-[var(--primary)]/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
+            <span className="font-semibold text-amber-600 dark:text-amber-400">🔥 {nutrition.calories} kcal / pers.</span>
+            <span className="text-[11px] text-slate-500 flex items-center gap-2 font-mono">
+              <span>{nutrition.protein}g prot.</span>
+              <span>•</span>
+              <span>{nutrition.carbs}g gluc.</span>
+              <span>•</span>
+              <span>{nutrition.fat}g lip.</span>
+            </span>
           </div>
         </div>
 
@@ -245,13 +271,29 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         </div>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-white/40 dark:border-white/5 bg-white/40 dark:bg-slate-900/50 flex items-center justify-between gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors"
-          >
-            {t('close')}
-          </button>
+        <div className="p-4 border-t border-white/40 dark:border-white/5 bg-white/40 dark:bg-slate-900/50 flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors"
+            >
+              {t('close')}
+            </button>
+
+            {onStartCookingMode && (
+              <button
+                type="button"
+                onClick={() => {
+                  onStartCookingMode(recipe, currentServings);
+                  onClose();
+                }}
+                className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center gap-2 transition-all shadow-md shadow-amber-500/20"
+              >
+                <ChefHat className="w-4 h-4" />
+                <span>Mode Cuisine (Pas à pas)</span>
+              </button>
+            )}
+          </div>
 
           {onSelectForMeal && (
             <button

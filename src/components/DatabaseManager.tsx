@@ -17,7 +17,10 @@ import {
   Clock,
   Eye,
   Copy,
-  Tag
+  Tag,
+  Globe,
+  User,
+  Cloud
 } from 'lucide-react';
 import { 
   Recipe, 
@@ -25,11 +28,13 @@ import {
   Ingredient, 
   IngredientCategory, 
   UnitType, 
-  WeeklyPlan 
+  WeeklyPlan,
+  DatabaseViewSource
 } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { exportDatabaseJson } from '../utils/storage';
 import { useLanguage } from '../i18n/LanguageContext';
+import { DatabaseSwitcher } from './DatabaseSwitcher';
 
 interface DatabaseManagerProps {
   recipes: Recipe[];
@@ -37,6 +42,11 @@ interface DatabaseManagerProps {
   ingredients: Ingredient[];
   ingredientCategories: IngredientCategory[];
   weeklyPlan: WeeklyPlan;
+  databaseSource?: DatabaseViewSource;
+  onChangeDatabaseSource?: (source: DatabaseViewSource) => void;
+  onCopyGenericToPersonal?: (recipe: Recipe) => void;
+  onSeedGenericCloud?: () => void;
+  isSeedingGeneric?: boolean;
   onSaveRecipe: (recipe: Recipe) => void;
   onDeleteRecipe: (recipeId: string) => void;
   onSaveRecipeCategory: (cat: RecipeCategory) => void;
@@ -48,8 +58,10 @@ interface DatabaseManagerProps {
   onImportDatabase: (data: any) => void;
   onResetDatabase: () => void;
   onClearDatabase: () => void;
+  onGenerateGenericDatabase?: () => void;
   onOpenRecipeEditor: (recipeToEdit?: Recipe | null) => void;
   onPreviewRecipe: (recipe: Recipe) => void;
+  onOpenRecipeImport?: () => void;
 }
 
 type SubTab = 'recipes' | 'ingredients' | 'recipeCats' | 'ingredientCats' | 'backup';
@@ -59,11 +71,16 @@ const UNIT_OPTIONS: UnitType[] = [
 ];
 
 export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
-  recipes,
-  recipeCategories,
-  ingredients,
-  ingredientCategories,
+  recipes = [],
+  recipeCategories = [],
+  ingredients = [],
+  ingredientCategories = [],
   weeklyPlan,
+  databaseSource = 'all',
+  onChangeDatabaseSource,
+  onCopyGenericToPersonal,
+  onSeedGenericCloud,
+  isSeedingGeneric = false,
   onSaveRecipe,
   onDeleteRecipe,
   onSaveRecipeCategory,
@@ -75,14 +92,28 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   onImportDatabase,
   onResetDatabase,
   onClearDatabase,
+  onGenerateGenericDatabase,
   onOpenRecipeEditor,
-  onPreviewRecipe
+  onPreviewRecipe,
+  onOpenRecipeImport
 }) => {
   const { t, translateUnit, translateRecipeCategory, translateIngredientCategory, translateRecipe, translateIngredient } = useLanguage();
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
+
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('recipes');
+  const [localDbSource, setLocalDbSource] = useState<DatabaseViewSource>(databaseSource);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilterCat, setSelectedFilterCat] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
+
+  const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
+  const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
+
+  const personalRecipesCount = safeRecipes.filter(r => r.isCustom).length;
+  const genericRecipesCount = safeRecipes.filter(r => !r.isCustom).length;
 
   const COUNTRIES = [
     { id: 'all', label: 'All Cuisines', flag: '🌍' },
@@ -214,13 +245,26 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
           <div className="flex items-center gap-2 flex-wrap">
             {activeSubTab === 'recipes' && (
-              <button
-                onClick={() => onOpenRecipeEditor(null)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('newRecipe')}</span>
-              </button>
+              <>
+                {onOpenRecipeImport && (
+                  <button
+                    type="button"
+                    onClick={onOpenRecipeImport}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-xs"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Importer</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => onOpenRecipeEditor(null)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('newRecipe')}</span>
+                </button>
+              </>
             )}
 
             {activeSubTab === 'ingredients' && (
@@ -326,6 +370,15 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       {/* Sub-view 1: Recipes Browser */}
       {activeSubTab === 'recipes' && (
         <div className="space-y-4">
+          {/* Dual Database Switcher */}
+          <DatabaseSwitcher
+            currentSource={activeSource}
+            onChangeSource={handleSourceChange}
+            personalCount={personalRecipesCount}
+            genericCount={genericRecipesCount}
+            totalCount={recipes.length}
+          />
+
           {/* Search and Category/Country Filters */}
           <div className="space-y-2.5">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -391,6 +444,14 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {recipes
               .filter(r => {
+                const matchesSource =
+                  activeSource === 'all'
+                    ? true
+                    : activeSource === 'personal'
+                    ? Boolean(r.isCustom)
+                    : !r.isCustom;
+                if (!matchesSource) return false;
+
                 const localized = translateRecipe(r);
                 const matchesCat = selectedFilterCat === 'all' || r.categoryId === selectedFilterCat;
                 const matchesCountry = selectedCountry === 'all' || r.tags.some(t => t.toLowerCase() === selectedCountry.toLowerCase() || (selectedCountry === 'England' && t.toLowerCase() === 'british'));
@@ -410,19 +471,38 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 return (
                   <div
                     key={recipe.id}
-                    className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl p-4 flex flex-col justify-between shadow-md shadow-slate-900/5 hover:border-[var(--accent)]/50 dark:hover:border-[var(--accent)]/50 transition-all duration-300"
+                    className={`backdrop-blur-xl bg-[var(--card-bg)] border rounded-2xl p-4 flex flex-col justify-between shadow-md shadow-slate-900/5 transition-all duration-300 ${
+                      recipe.isCustom
+                        ? 'border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500'
+                        : 'border-[var(--border-color)] hover:border-[var(--accent)]/50'
+                    }`}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        {cat && (
+                        {cat ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-700 dark:text-slate-300 border border-[var(--border-color)]">
                             <CategoryIcon name={cat.icon} className="w-3 h-3 text-[var(--primary)]" />
                             {translateRecipeCategory(cat.id, cat.name)}
                           </span>
-                        )}
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                          {recipe.ingredients.length} ings
-                        </span>
+                        ) : <span />}
+
+                        {/* Database Source Badge */}
+                        <div className="flex items-center gap-1.5">
+                          {recipe.isCustom ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                              <User className="w-2.5 h-2.5" />
+                              <span>{t('dbPersonalBadge')}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                              <Globe className="w-2.5 h-2.5" />
+                              <span>{t('dbGenericBadge')}</span>
+                            </span>
+                          )}
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                            {recipe.ingredients.length} ings
+                          </span>
+                        </div>
                       </div>
 
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">
@@ -433,7 +513,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                       </p>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-white/40 dark:border-white/5 flex items-center justify-between">
+                    <div className="pt-3 mt-3 border-t border-white/40 dark:border-white/5 flex items-center justify-between gap-2">
                       <button
                         onClick={() => onPreviewRecipe(recipe)}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[var(--primary)]"
@@ -442,7 +522,21 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                         <span>{t('preview')}</span>
                       </button>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
+                        {/* If Generic Recipe: offer Copy to Personal DB */}
+                        {!recipe.isCustom && onCopyGenericToPersonal && (
+                          <button
+                            type="button"
+                            onClick={() => onCopyGenericToPersonal(recipe)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all shadow-2xs"
+                            title={t('copyToPersonal')}
+                          >
+                            <Copy className="w-3 h-3" />
+                            <span>{t('copyToPersonal')}</span>
+                          </button>
+                        )}
+
+                        {/* Edit button */}
                         <button
                           onClick={() => onOpenRecipeEditor(recipe)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--primary)] hover:bg-[var(--accent)]/10"
@@ -450,17 +544,21 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(t('confirmDeleteRecipe', { title: localized.title }))) {
-                              onDeleteRecipe(recipe.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
-                          title="Delete Recipe"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+
+                        {/* Delete button (only for custom recipes) */}
+                        {recipe.isCustom && (
+                          <button
+                            onClick={() => {
+                              if (confirm(t('confirmDeleteRecipe', { title: localized.title }))) {
+                                onDeleteRecipe(recipe.id);
+                              }
+                            }}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
+                            title="Delete Recipe"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -698,6 +796,96 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 className="hidden"
               />
             </label>
+          </div>
+
+          {/* Dual Database Cloud Status Card */}
+          <div className="md:col-span-2 backdrop-blur-xl bg-gradient-to-r from-blue-50/50 to-emerald-50/50 dark:from-blue-950/20 dark:to-emerald-950/20 border border-blue-200/60 dark:border-blue-800/40 rounded-2xl p-5 shadow-md shadow-slate-900/5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <Cloud className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>Architecture Double Base de Données Cloud</span>
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Synchronisation séparée entre votre profil utilisateur personnel et le catalogue générique de l'application.
+                  </p>
+                </div>
+              </div>
+
+              {onSeedGenericCloud && (
+                <button
+                  type="button"
+                  disabled={isSeedingGeneric}
+                  onClick={onSeedGenericCloud}
+                  className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white shadow-md shadow-blue-600/20 transition-all shrink-0"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span>{isSeedingGeneric ? 'Synchronisation Cloud...' : 'Mettre à jour le catalogue générique Cloud'}</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {/* Personal Cloud Box */}
+              <div className="p-3.5 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-emerald-500/30 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <p className="font-bold text-slate-900 dark:text-slate-100">{t('dbSourcePersonal')}</p>
+                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                    {personalRecipesCount} recette(s) personnalisée(s) stockée(s) dans votre espace Firestore privé.
+                  </p>
+                </div>
+              </div>
+
+              {/* Generic Cloud Box */}
+              <div className="p-3.5 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-blue-500/30 flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <p className="font-bold text-slate-900 dark:text-slate-100">{t('dbSourceGeneric')}</p>
+                  <p className="text-slate-500 dark:text-slate-400 mt-0.5">
+                    {genericRecipesCount} recette(s) dans le catalogue général cloud partagé (/app_catalog/generic).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Ready-to-use Generic Database Deployment */}
+          <div className="md:col-span-2 bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-blue-500/10 border border-emerald-500/30 rounded-2xl p-5 shadow-md shadow-emerald-900/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  Générer la base générique complète (Prête à l'emploi)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-xl">
+                Charge instantanément les 250+ recettes européennes, l'ensemble des 50+ ingrédients catégorisés, un planning hebdomadaire de 7 repas équilibrés et les basiques du placard. L'application devient immédiatement 100% exploitable.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (onGenerateGenericDatabase) {
+                  onGenerateGenericDatabase();
+                } else {
+                  onResetDatabase();
+                }
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all shrink-0 flex items-center gap-2"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Générer la base générique</span>
+            </button>
           </div>
 
           <div className="md:col-span-2 bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/20 rounded-2xl p-5 shadow-md shadow-slate-900/5 flex flex-col sm:flex-row items-center justify-between gap-4">

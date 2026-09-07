@@ -1,19 +1,103 @@
 {
-  "users": {
-    "userId": {
-      "recipeCount": "number",
-      "mealCount": "number",
-      "subscriptionStatus": "string"
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with personalized cloud-synced data collections including custom recipes, weekly plans, and shopping list states.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "User's displayed profile name."
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["default", "pro", "nature", "minimalist", "creative"],
+          "description": "Preferred interface theme."
+        },
+        "subscriptionStatus": {
+          "type": "string",
+          "enum": ["free", "premium"],
+          "description": "Free or premium membership level."
+        },
+        "recipeCount": {
+          "type": "number",
+          "description": "Number of custom recipes created by the user."
+        },
+        "mealCount": {
+          "type": "number",
+          "description": "Number of custom meals created."
+        },
+        "weeklyPlan": {
+          "type": "object",
+          "description": "Synchronized active weekly meal plan."
+        },
+        "checkedMap": {
+          "type": "object",
+          "description": "Map of checked shopping list items."
+        },
+        "customItems": {
+          "type": "array",
+          "description": "Personalized custom shopping list items."
+        },
+        "customRecipes": {
+          "type": "array",
+          "description": "Personalized recipe collection created by the user."
+        },
+        "lastSyncedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last successful cloud synchronization."
+        }
+      },
+      "required": ["userId", "subscriptionStatus"]
+    },
+    "Recipe": {
+      "title": "Recipe",
+      "description": "Custom recipe entity stored in cloud database.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string", "maxLength": 150 },
+        "categoryId": { "type": "string" },
+        "servings": { "type": "number" }
+      },
+      "required": ["id", "userId", "title"]
+    },
+    "AppCatalog": {
+      "title": "AppCatalog",
+      "description": "Public shared generic database of official recipes, ingredients, and categories.",
+      "type": "object",
+      "properties": {
+        "version": { "type": "string" },
+        "recipes": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["version"]
     }
   },
-  "recipes": {
-    "recipeId": {
-      "userId": "string"
-    }
-  },
-  "meals": {
-    "mealId": {
-      "userId": "string"
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Root user profile document containing personalized data, collections, and cloud sync states."
+    },
+    "/recipes/{recipeId}": {
+      "schema": "Recipe",
+      "description": "Individual cloud recipes created by users."
+    },
+    "/app_catalog/{catalogId}": {
+      "schema": "AppCatalog",
+      "description": "Generic public cloud catalog storing shared app recipes and default ingredients."
     }
   }
 }

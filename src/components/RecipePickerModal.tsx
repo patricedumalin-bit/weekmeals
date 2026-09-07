@@ -12,14 +12,18 @@ import {
   Eye,
   Trash2,
   SlidersHorizontal,
-  Flame
+  Flame,
+  Globe,
+  User,
+  Copy
 } from 'lucide-react';
-import { Recipe, RecipeCategory, Ingredient, IngredientCategory, CustomMealIngredient, UnitType, CookingModeType, CustomMeal } from '../types';
+import { Recipe, RecipeCategory, Ingredient, IngredientCategory, CustomMealIngredient, UnitType, CookingModeType, CustomMeal, DatabaseViewSource } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { useLanguage } from '../i18n/LanguageContext';
 import { inferCookingMode } from '../utils/calculator';
 import { SaveCustomMealModal } from './SaveCustomMealModal';
 import { Save } from 'lucide-react';
+import { DatabaseSwitcher } from './DatabaseSwitcher';
 
 interface RecipePickerModalProps {
   isOpen: boolean;
@@ -31,6 +35,9 @@ interface RecipePickerModalProps {
   recipeCategories: RecipeCategory[];
   ingredients: Ingredient[];
   ingredientCategories: IngredientCategory[];
+  databaseSource?: DatabaseViewSource;
+  onChangeDatabaseSource?: (source: DatabaseViewSource) => void;
+  onCopyGenericToPersonal?: (recipe: Recipe) => void;
   onClose: () => void;
   onToggleRecipe: (recipeId: string) => void;
   onSaveCustomMeals: (mealIndex: number, customMeals: CustomMeal[]) => void;
@@ -48,12 +55,15 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   isOpen,
   mealLabel,
   mealIndex,
-  currentRecipeIds,
-  currentCustomMeals,
-  recipes,
-  recipeCategories,
-  ingredients,
-  ingredientCategories,
+  currentRecipeIds = [],
+  currentCustomMeals = [],
+  recipes = [],
+  recipeCategories = [],
+  ingredients = [],
+  ingredientCategories = [],
+  databaseSource = 'all',
+  onChangeDatabaseSource,
+  onCopyGenericToPersonal,
   onClose,
   onToggleRecipe,
   onSaveCustomMeals,
@@ -65,11 +75,23 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   const { t, translateRecipeCategory, translateMealLabel, translateRecipe, translateCookingMode, translateUnit } = useLanguage();
   if (!isOpen) return null;
 
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
+
   const [activeTab, setActiveTab] = useState<'library' | 'custom'>(
-    currentCustomMeals.length > 0 ? 'custom' : 'library'
+    (currentCustomMeals || []).length > 0 ? 'custom' : 'library'
   );
 
-  // Library filters
+  // Library filters & database source
+  const [localDbSource, setLocalDbSource] = useState<DatabaseViewSource>(databaseSource);
+  const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
+  const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
+
+  const personalRecipesCount = safeRecipes.filter(r => r.isCustom).length;
+  const genericRecipesCount = safeRecipes.filter(r => !r.isCustom).length;
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCookingMode, setSelectedCookingMode] = useState<string>('all');
@@ -106,6 +128,14 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   ];
 
   const filteredRecipes = recipes.filter((recipe) => {
+    const matchesSource =
+      activeSource === 'all'
+        ? true
+        : activeSource === 'personal'
+        ? Boolean(recipe.isCustom)
+        : !recipe.isCustom;
+    if (!matchesSource) return false;
+
     const localized = translateRecipe(recipe);
     const mode = inferCookingMode(recipe);
     const matchesCategory = selectedCategory === 'all' || recipe.categoryId === selectedCategory;
@@ -219,6 +249,15 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
           <>
             {/* Search & Filters */}
             <div className="p-3 sm:p-4 border-b border-white/40 dark:border-white/5 space-y-2.5 bg-white/50 dark:bg-slate-900/50">
+              {/* Dual Database Switcher */}
+              <DatabaseSwitcher
+                currentSource={activeSource}
+                onChangeSource={handleSourceChange}
+                personalCount={personalRecipesCount}
+                genericCount={genericRecipesCount}
+                totalCount={recipes.length}
+              />
+
               {/* Search bar */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -359,10 +398,24 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                                 {translateCookingMode(mode)}
                               </span>
                             </div>
-                            <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" />
-                              {recipe.prepTimeMinutes + recipe.cookTimeMinutes}m
-                            </span>
+
+                            <div className="flex items-center gap-1.5">
+                              {recipe.isCustom ? (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                                  <User className="w-2.5 h-2.5" />
+                                  <span>{t('dbPersonalBadge')}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
+                                  <Globe className="w-2.5 h-2.5" />
+                                  <span>{t('dbGenericBadge')}</span>
+                                </span>
+                              )}
+                              <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                {recipe.prepTimeMinutes + recipe.cookTimeMinutes}m
+                              </span>
+                            </div>
                           </div>
 
                           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">
@@ -381,13 +434,27 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
 
                         {/* Action buttons */}
                         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/40 dark:border-white/5">
-                          <button
-                            onClick={() => onDeleteRecipe(recipe.id)}
-                            className="p-2 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
-                            title={t('confirmDeleteRecipe', { title: recipe.title })}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {recipe.isCustom && (
+                            <button
+                              onClick={() => onDeleteRecipe(recipe.id)}
+                              className="p-2 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
+                              title={t('confirmDeleteRecipe', { title: recipe.title })}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {!recipe.isCustom && onCopyGenericToPersonal && (
+                            <button
+                              type="button"
+                              onClick={() => onCopyGenericToPersonal(recipe)}
+                              className="p-2 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                              title={t('copyToPersonal')}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => onPreviewRecipe(recipe)}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition-colors"

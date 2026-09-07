@@ -31,10 +31,10 @@ interface PlannedMealsListProps {
 
 export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
   weeklyPlan,
-  recipes,
-  recipeCategories,
-  ingredients,
-  ingredientCategories,
+  recipes = [],
+  recipeCategories = [],
+  ingredients = [],
+  ingredientCategories = [],
   onPreviewRecipe,
   onGoToPlanner,
   onGoToShopping,
@@ -42,8 +42,12 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
   const [copied, setCopied] = useState(false);
-  const recipeMap = new Map<string, Recipe>(recipes.map(r => [r.id, r]));
-  const catMap = new Map<string, RecipeCategory>(recipeCategories.map(c => [c.id, c]));
+  if (!weeklyPlan) return null;
+
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
+  const catMap = new Map<string, RecipeCategory>(safeRecipeCategories.map(c => [c.id, c]));
 
   const totalServingsCount = weeklyPlan.meals.reduce((sum, m) => sum + (m.servings || 4), 0);
   const totalAssignedRecipes = weeklyPlan.meals.reduce((sum, m) => sum + (m.recipeIds?.length || 0), 0);

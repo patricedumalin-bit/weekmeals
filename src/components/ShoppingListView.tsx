@@ -13,7 +13,8 @@ import {
   Sparkles, 
   Trash2,
   ListFilter,
-  CheckCircle2
+  CheckCircle2,
+  Refrigerator
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { 
@@ -36,11 +37,13 @@ interface ShoppingListViewProps {
   ingredientCategories: IngredientCategory[];
   checkedMap: Record<string, boolean>;
   customItems: CustomShoppingItem[];
+  pantryMap?: Record<string, boolean>;
   onToggleItem: (key: string) => void;
   onAddCustomItem: (item: CustomShoppingItem) => void;
   onRemoveCustomItem: (id: string) => void;
   onResetChecked: () => void;
   onPrint: () => void;
+  onOpenPantry?: () => void;
 }
 
 const UNIT_OPTIONS: UnitType[] = [
@@ -49,23 +52,27 @@ const UNIT_OPTIONS: UnitType[] = [
 
 export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   weeklyPlan,
-  recipes,
-  ingredients,
-  ingredientCategories,
-  checkedMap,
-  customItems,
+  recipes = [],
+  ingredients = [],
+  ingredientCategories = [],
+  checkedMap = {},
+  customItems = [],
+  pantryMap = {},
   onToggleItem,
   onAddCustomItem,
   onRemoveCustomItem,
   onResetChecked,
-  onPrint
+  onPrint,
+  onOpenPantry
 }) => {
   const { t, translateUnit, translateIngredientCategory, translateMealLabel, translateIngredient, translateRecipe } = useLanguage();
+  if (!weeklyPlan) return null;
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [filterHideChecked, setFilterHideChecked] = useState(false);
+  const [filterHidePantry, setFilterHidePantry] = useState(false);
 
   // Custom Item Form State
   const [customName, setCustomName] = useState('');
@@ -74,13 +81,15 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   const [customUnit, setCustomUnit] = useState<UnitType>('unit');
 
   // Compute calculated shopping list
-  const { groupedByCategory, totalItemsCount, checkedItemsCount } = calculateShoppingList(
+  const { groupedByCategory, totalItemsCount, checkedItemsCount, pantryItemsCount } = calculateShoppingList(
     weeklyPlan,
     recipes,
     ingredients,
     ingredientCategories,
     checkedMap,
-    customItems
+    customItems,
+    pantryMap,
+    filterHidePantry
   );
 
   const progressPercentage = totalItemsCount > 0
@@ -248,6 +257,35 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             />
           </div>
 
+          {onOpenPantry && (
+            <button
+              onClick={onOpenPantry}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all self-start sm:self-auto"
+            >
+              <Refrigerator className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Frigo & Placard</span>
+              {pantryItemsCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-600 text-white font-bold">
+                  {pantryItemsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {pantryItemsCount > 0 && (
+            <button
+              onClick={() => setFilterHidePantry(!filterHidePantry)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md transition-all self-start sm:self-auto ${
+                filterHidePantry
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)]'
+              }`}
+            >
+              <Refrigerator className="w-3.5 h-3.5" />
+              <span>{filterHidePantry ? 'Stock masqué' : `Masquer en stock (${pantryItemsCount})`}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setFilterHideChecked(!filterHideChecked)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md transition-all self-start sm:self-auto ${
@@ -348,6 +386,11 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                             >
                               {ingredientDisplayName}
                             </span>
+                            {item.inPantry && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shrink-0">
+                                En stock
+                              </span>
+                            )}
                           </label>
 
                           {/* Summed Quantity Badge & Provenance toggle */}

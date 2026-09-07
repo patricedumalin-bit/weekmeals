@@ -81,6 +81,7 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
   tags: string[];
   isCustom?: boolean;
+  isGenericCloud?: boolean;
   cookingMode?: CookingModeType;
 }
 
@@ -129,6 +130,7 @@ export interface AggregatedShoppingItem {
   totalQuantity: number;
   unit: UnitType;
   checked: boolean;
+  inPantry?: boolean;
   sources: ShoppingSource[];
 }
 
@@ -141,4 +143,68 @@ export interface CustomShoppingItem {
   checked: boolean;
 }
 
+export interface UserProfileData {
+  uid: string;
+  displayName?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+  theme?: string;
+  subscriptionStatus?: 'free' | 'premium';
+  recipeCount?: number;
+  mealCount?: number;
+  lastSyncedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
+
 export type ActiveTab = 'planner' | 'meals' | 'shopping' | 'database';
+
+export type DatabaseViewSource = 'all' | 'personal' | 'generic';
+
+export interface GenericCatalogInfo {
+  version: string;
+  recipesCount: number;
+  lastUpdated: string;
+  source: 'cloud' | 'local_fallback';
+}
+
+export interface NutritionInfo {
+  calories: number; // kcal per serving
+  protein: number;  // g
+  carbs: number;    // g
+  fat: number;      // g
+}
+
+export interface DietaryBadge {
+  id: string;
+  label: string;
+  color: string;
+  icon?: string;
+}
+
+export interface AutoPlanOptions {
+  mealCount: number;
+  maxPrepTime?: number | null; // minutes (e.g. 20, 35, or null)
+  preferredCookingMode?: CookingModeType | 'all';
+  dietaryStyle?: 'all' | 'protein' | 'balanced' | 'vegetarian' | 'quick';
+  noDuplicates?: boolean;
+}
+
+export interface PantryItem {
+  ingredientId: string;
+  inStock: boolean;
+  quantity?: number;
+  unit?: UnitType;
+  updatedAt?: string;
+}
+
+export interface RecipeMatchResult {
+  recipe: Recipe;
+  totalIngredients: number;
+  availableCount: number;
+  missingIngredients: Ingredient[];
+  matchPercentage: number;
+}
+

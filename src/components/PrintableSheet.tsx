@@ -4,7 +4,7 @@ import { calculateShoppingList, formatQuantity } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface PrintableSheetProps {
-  weeklyPlan: WeeklyPlan;
+  weeklyPlan?: WeeklyPlan | null;
   recipes: Recipe[];
   recipeCategories: RecipeCategory[];
   ingredients: Ingredient[];
@@ -21,6 +21,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   customItems
 }) => {
   const { t, language, translateUnit, translateIngredientCategory, translateMealLabel, translateIngredient, translateRecipe } = useLanguage();
+  if (!weeklyPlan) return null;
+
   const recipeMap = new Map<string, Recipe>(recipes.map(r => [r.id, r]));
 
   const { groupedByCategory, totalItemsCount } = calculateShoppingList(

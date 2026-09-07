@@ -4,10 +4,14 @@ import {
   Ingredient, 
   IngredientCategory, 
   AggregatedShoppingItem, 
-  ShoppingSource,
-  UnitType,
-  CustomShoppingItem,
-  CookingModeType
+  ShoppingSource, 
+  UnitType, 
+  CustomShoppingItem, 
+  CookingModeType,
+  NutritionInfo,
+  DietaryBadge,
+  AutoPlanOptions,
+  RecipeMatchResult
 } from '../types';
 
 export function inferCookingMode(recipe: Recipe): CookingModeType {
@@ -26,12 +30,10 @@ export function inferCookingMode(recipe: Recipe): CookingModeType {
 
 export function formatQuantity(num: number): string {
   if (num === 0) return '0';
-  // Check if it's close to an integer
   const rounded = Math.round(num * 100) / 100;
   if (Math.abs(rounded - Math.round(rounded)) < 0.001) {
     return Math.round(rounded).toString();
   }
-  // Check common fractions
   const intPart = Math.floor(rounded);
   const frac = rounded - intPart;
   if (Math.abs(frac - 0.5) < 0.05) return intPart > 0 ? `${intPart} ½` : '½';
@@ -45,11 +47,13 @@ export function formatQuantity(num: number): string {
 
 export function calculateShoppingList(
   plan: WeeklyPlan,
-  recipes: Recipe[],
-  ingredients: Ingredient[],
-  categories: IngredientCategory[],
+  recipes: Recipe[] = [],
+  ingredients: Ingredient[] = [],
+  categories: IngredientCategory[] = [],
   checkedMap: Record<string, boolean> = {},
-  customItems: CustomShoppingItem[] = []
+  customItems: CustomShoppingItem[] = [],
+  pantryMap: Record<string, boolean> = {},
+  hideInPantry: boolean = false
 ): {
   groupedByCategory: {
     category: IngredientCategory;
@@ -59,18 +63,21 @@ export function calculateShoppingList(
   }[];
   totalItemsCount: number;
   checkedItemsCount: number;
+  pantryItemsCount: number;
 } {
-  const recipeMap = new Map<string, Recipe>(recipes.map(r => [r.id, r]));
-  const ingredientMap = new Map<string, Ingredient>(ingredients.map(i => [i.id, i]));
-  const categoryMap = new Map<string, IngredientCategory>(categories.map(c => [c.id, c]));
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
 
-  // Map of ingredientId + unit -> AggregatedShoppingItem
+  const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
+  const ingredientMap = new Map<string, Ingredient>(safeIngredients.map(i => [i.id, i]));
+  const categoryMap = new Map<string, IngredientCategory>(safeCategories.map(c => [c.id, c]));
+
   const aggregatedMap = new Map<string, AggregatedShoppingItem>();
 
   for (const meal of plan.meals) {
     const mealServings = meal.servings || plan.defaultServings || 4;
 
-    // Process custom meal ingredients if any
     if (meal.customMeals && meal.customMeals.length > 0) {
       for (const customMeal of meal.customMeals) {
         for (const customIng of customMeal.ingredients) {
@@ -114,12 +121,13 @@ export function calculateShoppingList(
               totalQuantity: scaledQty,
               unit: customIng.unit,
               checked: !!checkedMap[key],
+              inPantry: !!pantryMap[ingredient.id],
               sources: [source]
             });
           }
+        }
       }
     }
-  }
 
     if (!meal.recipeIds || meal.recipeIds.length === 0) continue;
     const excludedMap = meal.excludedIngredients || {};
@@ -180,6 +188,7 @@ export function calculateShoppingList(
             totalQuantity: scaledQty,
             unit: recipeIng.unit,
             checked: !!checkedMap[key],
+            inPantry: !!pantryMap[ingredient.id],
             sources: [source]
           });
         }
@@ -187,15 +196,15 @@ export function calculateShoppingList(
     }
   }
 
-  // Include custom items
   for (const custom of customItems) {
     const category = categoryMap.get(custom.categoryId) || {
-      id: 'cat-other',
-      name: 'Other',
-      icon: 'ShoppingBag',
-      color: 'gray',
-      order: 99
+      id: custom.categoryId,
+      name: 'Custom Items',
+      icon: 'Tag',
+      color: 'indigo',
+      order: 90
     };
+
     const key = `custom_${custom.id}`;
     aggregatedMap.set(key, {
       ingredientId: custom.id,
@@ -207,6 +216,7 @@ export function calculateShoppingList(
       totalQuantity: custom.quantity,
       unit: custom.unit,
       checked: custom.checked || !!checkedMap[key],
+      inPantry: false,
       sources: [{
         mealNumber: 0,
         mealLabel: 'Manual Item',
@@ -220,9 +230,13 @@ export function calculateShoppingList(
     });
   }
 
-  const allItems = Array.from(aggregatedMap.values());
+  let allItems = Array.from(aggregatedMap.values());
+  const pantryItemsCount = allItems.filter(i => i.inPantry).length;
 
-  // Group by category
+  if (hideInPantry) {
+    allItems = allItems.filter(i => !i.inPantry);
+  }
+
   const grouped = new Map<string, AggregatedShoppingItem[]>();
   for (const item of allItems) {
     const list = grouped.get(item.categoryId) || [];
@@ -230,10 +244,8 @@ export function calculateShoppingList(
     grouped.set(item.categoryId, list);
   }
 
-  // Sort categories by predefined order
   const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
 
-  // Add any extra categories if present
   for (const catId of grouped.keys()) {
     if (!sortedCategories.some(c => c.id === catId)) {
       const extraCat = categoryMap.get(catId) || {
@@ -254,7 +266,6 @@ export function calculateShoppingList(
   for (const cat of sortedCategories) {
     const items = grouped.get(cat.id);
     if (items && items.length > 0) {
-      // Sort items alphabetically
       items.sort((a, b) => a.ingredientName.localeCompare(b.ingredientName));
       const checkedInCat = items.filter(i => i.checked).length;
       totalItems += items.length;
@@ -272,6 +283,240 @@ export function calculateShoppingList(
   return {
     groupedByCategory: result,
     totalItemsCount: totalItems,
-    checkedItemsCount: checkedItems
+    checkedItemsCount: checkedItems,
+    pantryItemsCount
   };
+}
+
+// -------------------------------------------------------------
+// NUTRITION ESTIMATION
+// -------------------------------------------------------------
+export function estimateRecipeNutrition(recipe: Recipe, ingredients: Ingredient[]): NutritionInfo {
+  const ingredientMap = new Map<string, Ingredient>(ingredients.map(i => [i.id, i]));
+  const servings = recipe.servings || 4;
+
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+
+  for (const item of recipe.ingredients) {
+    const ing = ingredientMap.get(item.ingredientId);
+    const name = (ing?.name || '').toLowerCase();
+    const qty = item.quantity || 1;
+    const unit = item.unit;
+
+    let weightGrams = 0;
+    if (unit === 'g' || unit === 'ml') weightGrams = qty;
+    else if (unit === 'kg' || unit === 'l') weightGrams = qty * 1000;
+    else if (unit === 'cl') weightGrams = qty * 10;
+    else if (unit === 'tbsp') weightGrams = qty * 15;
+    else if (unit === 'tsp') weightGrams = qty * 5;
+    else if (unit === 'unit') weightGrams = qty * 70;
+    else if (unit === 'clove') weightGrams = qty * 5;
+    else if (unit === 'slice') weightGrams = qty * 30;
+    else if (unit === 'can') weightGrams = qty * 400;
+    else if (unit === 'pack') weightGrams = qty * 250;
+    else weightGrams = qty * 50;
+
+    let c100 = 80;
+    let p100 = 3;
+    let cb100 = 10;
+    let f100 = 2;
+
+    if (name.includes('poulet') || name.includes('chicken') || name.includes('dinde') || name.includes('veau')) {
+      c100 = 165; p100 = 31; cb100 = 0; f100 = 3.6;
+    } else if (name.includes('saumon') || name.includes('salmon') || name.includes('thon') || name.includes('fish') || name.includes('poisson') || name.includes('crevette') || name.includes('shrimp')) {
+      c100 = 180; p100 = 22; cb100 = 0; f100 = 10;
+    } else if (name.includes('boeuf') || name.includes('beef') || name.includes('steak') || name.includes('haché') || name.includes('viande') || name.includes('porc') || name.includes('lardons')) {
+      c100 = 250; p100 = 26; cb100 = 0; f100 = 16;
+    } else if (name.includes('oeuf') || name.includes('egg')) {
+      c100 = 145; p100 = 13; cb100 = 1; f100 = 10;
+    } else if (name.includes('pâtes') || name.includes('pasta') || name.includes('riz') || name.includes('rice') || name.includes('quinoa') || name.includes('nouilles') || name.includes('semoule')) {
+      c100 = 350; p100 = 12; cb100 = 72; f100 = 1.5;
+    } else if (name.includes('fromage') || name.includes('cheese') || name.includes('parmesan') || name.includes('mozzarella') || name.includes('gruyère') || name.includes('cheddar') || name.includes('feta')) {
+      c100 = 360; p100 = 24; cb100 = 2; f100 = 28;
+    } else if (name.includes('huile') || name.includes('oil') || name.includes('beurre') || name.includes('butter')) {
+      c100 = 880; p100 = 0; cb100 = 0; f100 = 99;
+    } else if (name.includes('crème') || name.includes('cream') || name.includes('lait') || name.includes('milk')) {
+      c100 = 190; p100 = 3; cb100 = 4; f100 = 18;
+    } else if (name.includes('lentille') || name.includes('lentil') || name.includes('pois') || name.includes('haricot') || name.includes('bean') || name.includes('chickpea')) {
+      c100 = 120; p100 = 9; cb100 = 20; f100 = 1;
+    } else if (name.includes('avocat') || name.includes('avocado')) {
+      c100 = 160; p100 = 2; cb100 = 9; f100 = 15;
+    } else if (name.includes('pomme de terre') || name.includes('potato') || name.includes('patate')) {
+      c100 = 85; p100 = 2; cb100 = 19; f100 = 0.1;
+    } else if (name.includes('pain') || name.includes('bread') || name.includes('farine') || name.includes('flour')) {
+      c100 = 270; p100 = 9; cb100 = 50; f100 = 2.5;
+    } else if (name.includes('sucre') || name.includes('sugar') || name.includes('miel') || name.includes('honey')) {
+      c100 = 390; p100 = 0; cb100 = 99; f100 = 0;
+    } else if (name.includes('salade') || name.includes('tomate') || name.includes('courgette') || name.includes('épinard') || name.includes('oignon') || name.includes('ail') || name.includes('carotte') || name.includes('poivron') || name.includes('champignon') || name.includes('brocoli')) {
+      c100 = 28; p100 = 1.8; cb100 = 5; f100 = 0.3;
+    }
+
+    const ratio = weightGrams / 100;
+    totalCalories += c100 * ratio;
+    totalProtein += p100 * ratio;
+    totalCarbs += cb100 * ratio;
+    totalFat += f100 * ratio;
+  }
+
+  if (totalCalories < 50) {
+    totalCalories = 480 * servings;
+    totalProtein = 22 * servings;
+    totalCarbs = 50 * servings;
+    totalFat = 18 * servings;
+  }
+
+  return {
+    calories: Math.max(100, Math.round(totalCalories / servings)),
+    protein: Math.max(2, Math.round((totalProtein / servings) * 10) / 10),
+    carbs: Math.max(5, Math.round((totalCarbs / servings) * 10) / 10),
+    fat: Math.max(2, Math.round((totalFat / servings) * 10) / 10)
+  };
+}
+
+export function getDietaryBadges(recipe: Recipe, nutrition: NutritionInfo): DietaryBadge[] {
+  const badges: DietaryBadge[] = [];
+
+  if (nutrition.protein >= 25) {
+    badges.push({
+      id: 'protein',
+      label: 'Riche en protéines',
+      color: 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30',
+      icon: 'Flame'
+    });
+  }
+
+  if (nutrition.calories <= 450) {
+    badges.push({
+      id: 'light',
+      label: 'Léger & Sain',
+      color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+      icon: 'Sparkles'
+    });
+  }
+
+  const prepCookTotal = (recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0);
+  if (prepCookTotal <= 25 && prepCookTotal > 0) {
+    badges.push({
+      id: 'express',
+      label: 'Express ≤25m',
+      color: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      icon: 'Zap'
+    });
+  }
+
+  const tags = (recipe.tags || []).map(t => t.toLowerCase());
+  const isVeg = tags.includes('végétarien') || tags.includes('vegetarian') || tags.includes('veggie');
+  if (isVeg) {
+    badges.push({
+      id: 'veggie',
+      label: 'Végétarien',
+      color: 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30',
+      icon: 'Leaf'
+    });
+  }
+
+  return badges;
+}
+
+// -------------------------------------------------------------
+// ANTI-GASPILLAGE / PANTRY MATCHING
+// -------------------------------------------------------------
+export function matchRecipesWithPantry(
+  recipes: Recipe[] = [],
+  pantryMap: Record<string, boolean> = {},
+  ingredients: Ingredient[] = []
+): RecipeMatchResult[] {
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const ingMap = new Map<string, Ingredient>(safeIngredients.map(i => [i.id, i]));
+  const results: RecipeMatchResult[] = [];
+
+  for (const recipe of safeRecipes) {
+    if (!recipe.ingredients || recipe.ingredients.length === 0) continue;
+
+    let availableCount = 0;
+    const missing: Ingredient[] = [];
+
+    for (const ri of recipe.ingredients) {
+      if (pantryMap[ri.ingredientId]) {
+        availableCount++;
+      } else {
+        const ing = ingMap.get(ri.ingredientId);
+        if (ing) missing.push(ing);
+      }
+    }
+
+    const total = recipe.ingredients.length;
+    const matchPercentage = total > 0 ? Math.round((availableCount / total) * 100) : 0;
+
+    results.push({
+      recipe,
+      totalIngredients: total,
+      availableCount,
+      missingIngredients: missing,
+      matchPercentage
+    });
+  }
+
+  results.sort((a, b) => {
+    if (b.matchPercentage !== a.matchPercentage) {
+      return b.matchPercentage - a.matchPercentage;
+    }
+    return a.missingIngredients.length - b.missingIngredients.length;
+  });
+
+  return results;
+}
+
+// -------------------------------------------------------------
+// AUTO-PLAN SMART GENERATOR
+// -------------------------------------------------------------
+export function generateSmartWeeklyPlan(
+  recipes: Recipe[] = [],
+  options: AutoPlanOptions
+): Recipe[] {
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  let pool = [...safeRecipes];
+
+  if (options.maxPrepTime) {
+    pool = pool.filter(r => (r.prepTimeMinutes || 0) <= options.maxPrepTime!);
+  }
+
+  if (options.preferredCookingMode && options.preferredCookingMode !== 'all') {
+    const modeMatches = pool.filter(r => inferCookingMode(r) === options.preferredCookingMode);
+    if (modeMatches.length >= Math.min(3, options.mealCount)) {
+      pool = modeMatches;
+    }
+  }
+
+  if (options.dietaryStyle === 'vegetarian') {
+    const veg = pool.filter(r => (r.tags || []).some(t => t.toLowerCase().includes('végé') || t.toLowerCase().includes('veggie')));
+    if (veg.length > 0) pool = veg;
+  } else if (options.dietaryStyle === 'quick') {
+    pool.sort((a, b) => (a.prepTimeMinutes + a.cookTimeMinutes) - (b.prepTimeMinutes + b.cookTimeMinutes));
+  }
+
+  if (pool.length === 0) {
+    pool = [...safeRecipes];
+  }
+
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  const selected: Recipe[] = [];
+
+  for (let i = 0; i < options.mealCount; i++) {
+    if (shuffled.length > 0) {
+      const pick = shuffled.shift()!;
+      selected.push(pick);
+      if (!options.noDuplicates) {
+        shuffled.push(pick);
+      }
+    } else if (safeRecipes.length > 0) {
+      selected.push(safeRecipes[Math.floor(Math.random() * safeRecipes.length)]);
+    }
+  }
+
+  return selected;
 }
