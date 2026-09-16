@@ -7,6 +7,7 @@ import { RECIPES_UK } from './recipesUK';
 import { RECIPES_GERMANY } from './recipesGermany';
 import { RECIPES_SPAIN } from './recipesSpain';
 import { RECIPES_PORTUGAL } from './recipesPortugal';
+import { CLOUD_RECIPES } from './cloudRecipesMock';
 
 export { INITIAL_INGREDIENT_CATEGORIES, INITIAL_RECIPE_CATEGORIES, INITIAL_INGREDIENTS };
 
@@ -17,6 +18,7 @@ export const INITIAL_RECIPES: Recipe[] = [
   ...RECIPES_GERMANY,
   ...RECIPES_SPAIN,
   ...RECIPES_PORTUGAL,
+  ...CLOUD_RECIPES,
 ];
 
 export const INITIAL_PANTRY: Record<string, boolean> = {

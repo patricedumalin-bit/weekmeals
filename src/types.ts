@@ -1,4 +1,4 @@
-export type Theme = 'pro' | 'nature' | 'minimalist' | 'creative';
+export type Theme = 'pro' | 'nature' | 'minimalist' | 'creative' | 'girly';
 
 export interface ThemeColors {
   primary: string;
@@ -12,6 +12,7 @@ export const themes: Record<Theme, ThemeColors> = {
   nature: { primary: '#1C3A27', accent: '#C85A32', bg: '#FBF8F3', hover: '#A3B18A' },
   minimalist: { primary: '#18181B', accent: '#D4AF37', bg: '#FFFFFF', hover: '#A1A1AA' },
   creative: { primary: '#2E1065', accent: '#7C3AED', bg: '#F5F3FF', hover: '#F97316' },
+  girly: { primary: '#4D1D47', accent: '#EC4899', bg: '#FFF1F2', hover: '#FBCFE8' },
 };
 
 export type UnitType = 

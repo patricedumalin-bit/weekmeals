@@ -15,6 +15,7 @@ import {
   Plus
 } from 'lucide-react';
 import { Recipe, Ingredient, IngredientCategory, RecipeCategory, RecipeIngredient, UnitType } from '../types';
+import { normalizeExternalIngredient } from '../utils/datasetCorrelator';
 
 interface RecipeImportModalProps {
   isOpen: boolean;
@@ -33,12 +34,15 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   ingredientCategories,
   onSaveImportedRecipe
 }) => {
-  const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo'>('text');
+  const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   
   // Inputs
   const [pastedText, setPastedText] = useState('');
   const [recipeUrl, setRecipeUrl] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [mealDbQuery, setMealDbQuery] = useState('');
+  const [mealDbResults, setMealDbResults] = useState<any[]>([]);
+  const [isSearchingMealDb, setIsSearchingMealDb] = useState(false);
 
   // Parsing & Loading State
   const [isParsing, setIsParsing] = useState(false);
@@ -268,6 +272,129 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     }
   };
 
+  const searchMealDb = async (query: string) => {
+    if (!query.trim()) return;
+    setIsSearchingMealDb(true);
+    setParseError(null);
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      setMealDbResults(data.meals || []);
+      if (!data.meals) {
+        setParseError("Aucune recette trouvée sur TheMealDB pour cette recherche.");
+      }
+    } catch (err: any) {
+      setParseError("Erreur réseau lors de la recherche sur TheMealDB.");
+    } finally {
+      setIsSearchingMealDb(false);
+    }
+  };
+
+  const fetchRandomMealDb = async () => {
+    setIsSearchingMealDb(true);
+    setParseError(null);
+    try {
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/random.php`);
+      const data = await res.json();
+      if (data.meals && data.meals[0]) {
+        handleSelectMealDbRecipe(data.meals[0]);
+      } else {
+        setParseError("Impossible de récupérer une recette aléatoire.");
+      }
+    } catch (err: any) {
+      setParseError("Erreur réseau lors de la récupération de la recette aléatoire.");
+    } finally {
+      setIsSearchingMealDb(false);
+    }
+  };
+
+  const handleSelectMealDbRecipe = (meal: any) => {
+    try {
+      const title = meal.strMeal;
+
+      const instructions: string[] = meal.strInstructions
+        ? meal.strInstructions
+            .split(/\r?\n/)
+            .map((s: string) => s.trim())
+            .filter((s: string) => s.length > 0 && !s.match(/^\d+\.?$/))
+        : [];
+
+      const extractedIngredients: RecipeIngredient[] = [];
+
+      for (let i = 1; i <= 20; i++) {
+        const ingName = meal[`strIngredient${i}`]?.trim();
+        const measure = meal[`strMeasure${i}`]?.trim();
+
+        if (ingName) {
+          let qty = 1;
+          let unit: UnitType = 'unit';
+
+          if (measure) {
+            const qtyMatch = measure.match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)?\s*(.*)$/);
+            if (qtyMatch) {
+              if (qtyMatch[1]) {
+                if (qtyMatch[1].includes('/')) {
+                  const [num, den] = qtyMatch[1].split('/');
+                  qty = parseFloat(num) / parseFloat(den);
+                } else {
+                  qty = parseFloat(qtyMatch[1].replace(',', '.'));
+                }
+              }
+              const rawUnit = qtyMatch[2].toLowerCase();
+              if (rawUnit.includes('g') && !rawUnit.includes('gousse') && !rawUnit.includes('clove')) unit = rawUnit.includes('kg') ? 'kg' : 'g';
+              else if (rawUnit.includes('ml')) unit = 'ml';
+              else if (rawUnit.includes('cl')) unit = 'cl';
+              else if (rawUnit.includes('l') && rawUnit.length === 1) unit = 'l';
+              else if (rawUnit.includes('tbsp') || rawUnit.includes('tablespoon') || rawUnit.includes('soup')) unit = 'tbsp';
+              else if (rawUnit.includes('tsp') || rawUnit.includes('teaspoon') || rawUnit.includes('caf')) unit = 'tsp';
+              else if (rawUnit.includes('clove') || rawUnit.includes('gousse')) unit = 'clove';
+              else if (rawUnit.includes('pinch') || rawUnit.includes('pinc')) unit = 'pinch';
+              else if (rawUnit.includes('slice') || rawUnit.includes('tranch')) unit = 'slice';
+              else if (rawUnit.includes('can') || rawUnit.includes('boite') || rawUnit.includes('boîte')) unit = 'can';
+              else if (rawUnit.includes('pack') || rawUnit.includes('paquet')) unit = 'pack';
+            }
+          }
+
+          const { ingredientId } = normalizeExternalIngredient(ingName);
+
+          extractedIngredients.push({
+            ingredientId,
+            quantity: qty || 1,
+            unit,
+            notes: (ingredientId.startsWith('imported-') || ingredientId.includes('ing-')) && !ingredients.find(i => i.id === ingredientId)
+              ? `${ingName} (${measure || ''})`
+              : (measure ? `(${measure})` : undefined)
+          });
+        }
+      }
+
+      let categoryId = recipeCategories[0]?.id || 'cat-meat';
+      if (meal.strCategory) {
+        const catLower = meal.strCategory.toLowerCase();
+        const matchedCat = recipeCategories.find(c => c.name.toLowerCase().includes(catLower) || catLower.includes(c.name.toLowerCase()));
+        if (matchedCat) categoryId = matchedCat.id;
+      }
+
+      setParsedRecipe({
+        title,
+        servings: 4,
+        prepTimeMinutes: 15,
+        cookTimeMinutes: 25,
+        categoryId,
+        difficulty: 'medium',
+        description: `Importé de TheMealDB. Catégorie : ${meal.strCategory || 'Inconnue'}. Région : ${meal.strArea || 'Inconnue'}`,
+        ingredients: extractedIngredients.length > 0 ? extractedIngredients : [
+          { ingredientId: ingredients[0]?.id || 'ing-1', quantity: 1, unit: 'unit', notes: 'Vérifier la recette' }
+        ],
+        instructions: instructions.length > 0 ? instructions : ['Suivre les étapes d\'instructions de TheMealDB.'],
+        tags: ['TheMealDB', meal.strCategory, meal.strArea].filter(Boolean),
+        isCustom: true
+      });
+    } catch (err: any) {
+      setParseError("Erreur lors de la conversion de la recette de TheMealDB");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
       <div className="backdrop-blur-2xl bg-white/95 dark:bg-slate-900/95 border border-white/50 dark:border-white/10 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
@@ -330,6 +457,17 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
             >
               <Camera className="w-4 h-4" />
               <span>Photo / Document</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('themealdb')}
+              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
+                activeTab === 'themealdb'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>TheMealDB</span>
             </button>
           </div>
         )}
@@ -408,17 +546,94 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                 </div>
               )}
 
-              <div className="pt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleParse}
-                  disabled={isParsing}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{isParsing ? 'Analyse en cours...' : 'Extraire la Recette'}</span>
-                </button>
-              </div>
+              {activeTab === 'themealdb' && (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Recherchez parmi des milliers de recettes du dataset ouvert de TheMealDB (en anglais, ex: "chicken", "salmon", "cake"), ou découvrez une recette au hasard.
+                  </p>
+
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Sparkles className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={mealDbQuery}
+                        onChange={(e) => setMealDbQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && searchMealDb(mealDbQuery)}
+                        placeholder="Ex: Chicken, Beef, Lasagne, Chocolate..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => searchMealDb(mealDbQuery)}
+                      disabled={isSearchingMealDb}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold"
+                    >
+                      {isSearchingMealDb ? 'Recherche...' : 'Chercher'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={fetchRandomMealDb}
+                      disabled={isSearchingMealDb}
+                      title="Recette aléatoire"
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs font-bold flex items-center gap-1.5"
+                    >
+                      <span>🎲 Aléatoire</span>
+                    </button>
+                  </div>
+
+                  {mealDbResults.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
+                        Résultats de recherche ({mealDbResults.length}) :
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+                        {mealDbResults.map((meal) => (
+                          <button
+                            key={meal.idMeal}
+                            type="button"
+                            onClick={() => handleSelectMealDbRecipe(meal)}
+                            className="p-3 text-left bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 transition-all flex items-center gap-3 group"
+                          >
+                            {meal.strMealThumb && (
+                              <img
+                                src={meal.strMealThumb}
+                                alt={meal.strMeal}
+                                className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                              />
+                            )}
+                            <div className="overflow-hidden">
+                              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                {meal.strMeal}
+                              </h4>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {meal.strCategory} • {meal.strArea}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab !== 'themealdb' && (
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleParse}
+                    disabled={isParsing}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span>{isParsing ? 'Analyse en cours...' : 'Extraire la Recette'}</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             /* Parsed Recipe Preview */
