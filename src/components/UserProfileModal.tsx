@@ -369,15 +369,25 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           {/* Gemini API Key Configuration */}
           <div>
-            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-amber-500" />
-              <span>{language === 'fr' ? "Intelligence Artificielle Google Gemini" : "Google Gemini AI Settings"}</span>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2 flex items-center justify-between gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-amber-500" />
+                <span>{language === 'fr' ? "Intelligence Artificielle Google Gemini" : "Google Gemini AI Settings"}</span>
+              </div>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 normal-case"
+              >
+                <span>{language === 'fr' ? "Obtenir ma clé gratuite ↗" : "Get Free Key ↗"}</span>
+              </a>
             </h4>
             <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                 {language === 'fr'
-                  ? "Entrez votre clé d'API Google AI Studio pour activer la reconnaissance automatique des ingrédients par photo et par lien Web."
-                  : "Provide your Google AI Studio API Key to empower smart image OCR and real web parsing features."}
+                  ? "Activez l'importation par lien ou par photo gratuitement. Cliquez sur le lien ci-dessus pour générer votre clé en 2 clics avec votre compte Google, puis collez-la ci-dessous."
+                  : "Empower smart image OCR and real web parsing features. Click the link above to generate a free key instantly with your Google account, then paste it below."}
               </p>
               <input
                 type="password"
