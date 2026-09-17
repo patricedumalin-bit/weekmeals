@@ -236,7 +236,19 @@ ${webText}`;
           })
         });
 
-        if (!response.ok) throw new Error("Erreur de communication avec l'API Gemini. Vérifiez votre clé.");
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData?.error?.message || "";
+          const errCode = errData?.error?.status || "";
+
+          if (errCode === "RESOURCE_EXHAUSTED") {
+            throw new Error("Quota épuisé : Votre clé Gemini gratuite a dépassé sa limite de requêtes par minute. Attendez quelques secondes et réessayez !");
+          } else if (errCode === "API_KEY_INVALID" || response.status === 400) {
+            throw new Error("Clé d'API invalide : L'adresse ou les caractères de votre clé Gemini sont incorrects. Vérifiez votre copier-coller dans votre Profil.");
+          } else {
+            throw new Error(`Erreur Gemini (${response.status} ${errCode}) : ${errMsg || "Vérifiez votre clé ou le solde de votre compte."}`);
+          }
+        }
         const geminiData = await response.json();
         const jsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!jsonText) throw new Error("L'IA n'a pas réussi à structurer la recette.");
@@ -306,7 +318,19 @@ Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown de code, SANS text
           })
         });
 
-        if (!response.ok) throw new Error("Erreur de communication avec l'API Gemini. Vérifiez votre clé.");
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData?.error?.message || "";
+          const errCode = errData?.error?.status || "";
+
+          if (errCode === "RESOURCE_EXHAUSTED") {
+            throw new Error("Quota épuisé : Votre clé Gemini gratuite a dépassé sa limite de requêtes par minute. Attendez quelques secondes et réessayez !");
+          } else if (errCode === "API_KEY_INVALID" || response.status === 400) {
+            throw new Error("Clé d'API invalide : L'adresse ou les caractères de votre clé Gemini sont incorrects. Vérifiez votre copier-coller dans votre Profil.");
+          } else {
+            throw new Error(`Erreur Gemini (${response.status} ${errCode}) : ${errMsg || "Vérifiez votre clé ou le solde de votre compte."}`);
+          }
+        }
         const geminiData = await response.json();
         const jsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!jsonText) throw new Error("L'IA n'a pas pu déchiffrer l'image.");
