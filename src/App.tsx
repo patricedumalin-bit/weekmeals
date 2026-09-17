@@ -770,6 +770,11 @@ function AppContent({
     savePantryMap(updated);
   };
 
+  const handleBatchSetPantry = (updates: Record<string, boolean>) => {
+    setPantryMap(updates);
+    savePantryMap(updates);
+  };
+
   const handleClearPantry = () => {
     setPantryMap({});
     savePantryMap({});
