@@ -255,15 +255,25 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           <div className="flex items-center gap-2 p-1 bg-white/50 dark:bg-slate-800/50 rounded-xl border border-white/50 dark:border-white/10">
-            {(Object.keys(themes) as Theme[]).map((theme) => (
-              <button
-                key={theme}
-                onClick={() => onUpdateTheme(theme)}
-                title={theme}
-                className={`w-5 h-5 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
-                style={{ backgroundColor: themes[theme].accent }}
-              />
-            ))}
+            {(Object.keys(themes) as Theme[]).map((theme) => {
+              const themeNames: Record<string, string> = {
+                default: 'Océan',
+                pro: 'Gourmet',
+                nature: 'Nature',
+                minimalist: 'Zen',
+                creative: 'Creative',
+                girly: 'Sakura'
+              };
+              return (
+                <button
+                  key={theme}
+                  onClick={() => onUpdateTheme(theme)}
+                  title={themeNames[theme] || theme}
+                  className={`w-5 h-5 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
+                  style={{ backgroundColor: themes[theme].accent }}
+                />
+              );
+            })}
           </div>
 
           {isOwner && (
@@ -377,15 +387,25 @@ export const Header: React.FC<HeaderProps> = ({
                   {language === 'fr' ? 'Thème / Skin' : 'Theme / Skin'}
                 </div>
                 <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-white/20">
-                  {(Object.keys(themes) as Theme[]).map((theme) => (
-                    <button
-                      key={theme}
-                      onClick={() => onUpdateTheme(theme)}
-                      title={theme}
-                      className={`w-7 h-7 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
-                      style={{ backgroundColor: themes[theme].accent }}
-                    />
-                  ))}
+                  {(Object.keys(themes) as Theme[]).map((theme) => {
+                    const themeNames: Record<string, string> = {
+                      default: 'Océan',
+                      pro: 'Gourmet',
+                      nature: 'Nature',
+                      minimalist: 'Zen',
+                      creative: 'Creative',
+                      girly: 'Sakura'
+                    };
+                    return (
+                      <button
+                        key={theme}
+                        onClick={() => onUpdateTheme(theme)}
+                        title={themeNames[theme] || theme}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
+                        style={{ backgroundColor: themes[theme].accent }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
