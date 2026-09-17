@@ -386,7 +386,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
                     style={{ backgroundColor: themes[themeKey].accent }}
                   />
-                  <span className="capitalize text-[11px]">{themeKey}</span>
+                  <span className="capitalize text-[11px]">
+                    {themeKey === 'default' ? 'Océan' :
+                     themeKey === 'pro' ? 'Gourmet' :
+                     themeKey === 'minimalist' ? 'Zen' :
+                     themeKey === 'girly' ? 'Sakura' :
+                     themeKey}
+                  </span>
                 </button>
               ))}
             </div>

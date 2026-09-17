@@ -1,4 +1,4 @@
-export type Theme = 'pro' | 'nature' | 'minimalist' | 'creative' | 'girly';
+export type Theme = 'default' | 'pro' | 'nature' | 'minimalist' | 'creative' | 'girly';
 
 export interface ThemeColors {
   primary: string;
@@ -8,11 +8,12 @@ export interface ThemeColors {
 }
 
 export const themes: Record<Theme, ThemeColors> = {
-  pro: { primary: '#1E293B', accent: '#2563EB', bg: '#F8F9FA', hover: '#93C5FD' },
+  default: { primary: '#0C4A6E', accent: '#0284C7', bg: '#F0F9FF', hover: '#BAE6FD' },
+  pro: { primary: '#451A03', accent: '#B45309', bg: '#FFFBF0', hover: '#FDE68A' },
   nature: { primary: '#1C3A27', accent: '#C85A32', bg: '#FBF8F3', hover: '#A3B18A' },
-  minimalist: { primary: '#18181B', accent: '#D4AF37', bg: '#FFFFFF', hover: '#A1A1AA' },
+  minimalist: { primary: '#18181B', accent: '#D4AF37', bg: '#FFFFFF', hover: '#F4F4F5' },
   creative: { primary: '#2E1065', accent: '#7C3AED', bg: '#F5F3FF', hover: '#F97316' },
-  girly: { primary: '#4D1D47', accent: '#EC4899', bg: '#FFF1F2', hover: '#FBCFE8' },
+  girly: { primary: '#831843', accent: '#DB2777', bg: '#FFF5F7', hover: '#FCE7F3' },
 };
 
 export type UnitType = 
