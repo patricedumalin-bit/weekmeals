@@ -1,0 +1,235 @@
+import { Recipe } from '../types';
+
+export const RECIPES_PORTUGAL: Recipe[] = [
+  {
+    id: 'rec-bacalhau-a-bras',
+    title: 'Bacalhau à Brás Tradicional (Shredded Cod with Straw Potatoes & Eggs)',
+    categoryId: 'rcat-seafood',
+    servings: 4,
+    prepTimeMinutes: 15,
+    cookTimeMinutes: 20,
+    difficulty: 'easy',
+    description: 'Portugal’s national treasure: shredded tender cod sautéed with sweet onions, crispy matchstick potatoes, gently scrambled eggs, parsley, and Galega black olives.',
+    instructions: [
+      'In a wide skillet, heat 3 tbsp extra virgin olive oil over medium-low heat. Add thinly sliced onions and minced garlic; cook slowly for 10 minutes until soft, sweet, and translucent (do not brown).',
+      'Add shredded/flaked cod and 1 dried bay leaf. Sauté with the onions for 5 minutes until heated through and fragrant.',
+      'Add crispy matchstick/shoestring potatoes to the pan, tossing gently to combine with the cod and onions.',
+      'Beat 5 eggs in a bowl with a pinch of salt and cracked black pepper.',
+      'Pour beaten eggs over the mixture in the skillet, lowering heat to minimal. Stir constantly and gently with a spatula for 2-3 minutes until eggs are creamy, soft-set, and velvety (do not overcook).',
+      'Garnish generously with chopped fresh flat-leaf parsley and traditional black olives. Serve immediately with a crisp salad.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-salt-cod', quantity: 450, unit: 'g' },
+      { ingredientId: 'ing-straw-potatoes', quantity: 200, unit: 'g' },
+      { ingredientId: 'ing-egg', quantity: 5, unit: 'unit' },
+      { ingredientId: 'ing-onion', quantity: 2, unit: 'unit' },
+      { ingredientId: 'ing-garlic', quantity: 3, unit: 'clove' },
+      { ingredientId: 'ing-olive-oil', quantity: 3, unit: 'tbsp' },
+      { ingredientId: 'ing-black-olives', quantity: 60, unit: 'g' },
+      { ingredientId: 'ing-parsley', quantity: 0.5, unit: 'bunch' },
+      { ingredientId: 'ing-bay-leaf', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-salt', quantity: 0.5, unit: 'tsp' },
+      { ingredientId: 'ing-black-pepper', quantity: 0.5, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Seafood', 'National Dish', 'Iconic', 'Quick']
+  },
+
+  {
+    id: 'rec-frango-piri-piri',
+    title: 'Frango Piri-Piri da Guia (Portuguese Spiced Roast Chicken)',
+    categoryId: 'rcat-poultry',
+    servings: 4,
+    prepTimeMinutes: 15,
+    cookTimeMinutes: 40,
+    difficulty: 'easy',
+    description: 'Crispy roast chicken marinated in spicy piri-piri peppers, garlic, lemon juice, bay leaves, sweet paprika, and olive oil with roasted potatoes.',
+    instructions: [
+      'For the piri-piri marinade: Whisk together piri-piri sauce, minced garlic, juice of 1 lemon, 3 tbsp olive oil, sweet paprika, 1 crushed bay leaf, salt, and black pepper.',
+      'Slash chicken thighs lightly with a knife and rub the marinade thoroughly into the meat. Let sit for 15 mins (or overnight).',
+      'Preheat oven to 200°C (400°F). Cut potatoes into quarters and toss with 1 tbsp olive oil and salt in a roasting pan.',
+      'Place marinated chicken pieces skin-side up over the potatoes.',
+      'Roast for 35-40 minutes, basting once with pan juices, until skin is deeply charred, crispy, and meat is tender and juicy.',
+      'Serve sizzling hot with lemon wedges and a green salad.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-chicken-thigh', quantity: 800, unit: 'g' },
+      { ingredientId: 'ing-potato', quantity: 700, unit: 'g' },
+      { ingredientId: 'ing-piri-piri-sauce', quantity: 2, unit: 'tsp' },
+      { ingredientId: 'ing-garlic', quantity: 4, unit: 'clove' },
+      { ingredientId: 'ing-lemon', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-olive-oil', quantity: 4, unit: 'tbsp' },
+      { ingredientId: 'ing-paprika', quantity: 1.5, unit: 'tsp' },
+      { ingredientId: 'ing-bay-leaf', quantity: 2, unit: 'unit' },
+      { ingredientId: 'ing-salt', quantity: 1, unit: 'tsp' },
+      { ingredientId: 'ing-black-pepper', quantity: 0.5, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Spiced', 'Roast', 'High Protein', 'Chicken']
+  },
+
+  {
+    id: 'rec-caldo-verde',
+    title: 'Caldo Verde Tradicional com Chouriço (Portuguese Kale & Sausage Soup)',
+    categoryId: 'rcat-starters',
+    servings: 4,
+    prepTimeMinutes: 15,
+    cookTimeMinutes: 25,
+    difficulty: 'easy',
+    description: 'The beloved Portuguese national soup: velvety potato and onion broth loaded with finely shredded collard kale and topped with pan-seared chouriço.',
+    instructions: [
+      'Peel and dice potatoes and onion. Place into a soup pot with 2 whole garlic cloves and 900ml water/broth with 1 tsp salt.',
+      'Boil for 20 minutes until potatoes are completely tender.',
+      'Blend the potato-onion soup until completely silky and smooth using an immersion blender.',
+      'Wash collard greens / kale and slice into paper-thin ribbons (caldo verde cut). Stir greens into the simmering velvety potato base and cook gently for 5 minutes.',
+      'In a small skillet, fry sliced Portuguese chouriço until crisp and fragrant (3 mins).',
+      'Ladle soup into bowls, float 3-4 slices of warm chouriço in each bowl, drizzle with robust extra virgin olive oil, and serve with Portuguese bread rolls.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-potato', quantity: 600, unit: 'g' },
+      { ingredientId: 'ing-collard-greens', quantity: 200, unit: 'g' },
+      { ingredientId: 'ing-chourico', quantity: 120, unit: 'g' },
+      { ingredientId: 'ing-onion', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-garlic', quantity: 2, unit: 'clove' },
+      { ingredientId: 'ing-olive-oil', quantity: 3, unit: 'tbsp' },
+      { ingredientId: 'ing-vegetable-broth', quantity: 900, unit: 'ml' },
+      { ingredientId: 'ing-portuguese-rolls', quantity: 4, unit: 'unit' },
+      { ingredientId: 'ing-salt', quantity: 1, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Soup', 'Comfort Food', 'National Dish', 'Classic']
+  },
+
+  {
+    id: 'rec-arroz-de-marisco',
+    title: 'Arroz de Marisco Português (Portuguese Seafood Rice Stew)',
+    categoryId: 'rcat-seafood',
+    servings: 4,
+    prepTimeMinutes: 15,
+    cookTimeMinutes: 25,
+    difficulty: 'medium',
+    description: 'Succulent shrimp and fresh clams simmered in a fragrant, brothy Carolino rice stew infused with sweet bell peppers, ripe tomatoes, garlic, and fresh coriander.',
+    instructions: [
+      'In a wide heavy pot, heat 3 tbsp olive oil. Sauté finely diced onion, red bell pepper, and minced garlic for 5 mins.',
+      'Add crushed tomatoes, sweet paprika, 1 bay leaf, and a drop of piri-piri sauce. Simmer for 3 mins.',
+      'Add Portuguese Carolino / round rice and stir to coat in the rich sofrito (1 min).',
+      'Pour in hot vegetable/fish broth. Bring to a boil, then simmer over medium heat for 12 minutes.',
+      'Add peeled shrimp and fresh clams. Cover and cook for 6-8 minutes until clams open and shrimp are pink and tender (rice should be juicy and brothy, not dry).',
+      'Discard any unopened clams. Stir in a generous handful of fresh chopped cilantro (coentros) and serve immediately in deep bowls with lemon wedges.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-carolino-rice', quantity: 300, unit: 'g' },
+      { ingredientId: 'ing-shrimp', quantity: 350, unit: 'g' },
+      { ingredientId: 'ing-clams', quantity: 400, unit: 'g' },
+      { ingredientId: 'ing-bell-pepper-red', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-crushed-tomatoes', quantity: 300, unit: 'g' },
+      { ingredientId: 'ing-onion', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-garlic', quantity: 3, unit: 'clove' },
+      { ingredientId: 'ing-vegetable-broth', quantity: 900, unit: 'ml' },
+      { ingredientId: 'ing-olive-oil', quantity: 3, unit: 'tbsp' },
+      { ingredientId: 'ing-cilantro', quantity: 0.5, unit: 'bunch' },
+      { ingredientId: 'ing-paprika', quantity: 1, unit: 'tsp' },
+      { ingredientId: 'ing-bay-leaf', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-piri-piri-sauce', quantity: 0.5, unit: 'tsp' },
+      { ingredientId: 'ing-salt', quantity: 1, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Seafood', 'Rice Stew', 'Coastal Classic', 'Gluten-Free']
+  },
+
+  {
+    id: 'rec-carne-porco-alentejana',
+    title: 'Carne de Porco à Alentejana (Alentejo Pork with Clams & Fried Potatoes)',
+    categoryId: 'rcat-poultry',
+    servings: 4,
+    prepTimeMinutes: 20,
+    cookTimeMinutes: 25,
+    difficulty: 'medium',
+    description: 'Iconic Alentejo specialty: tender marinated pork cubes pan-seared with fresh clams, crispy cubed fried potatoes, pickled juices, garlic, and fresh cilantro.',
+    instructions: [
+      'Cut pork into bite-sized cubes. Marinate with sweet paprika, minced garlic, 1 bay leaf, 1 tbsp red wine vinegar, salt, and pepper for 20 mins.',
+      'Cut potatoes into small cubes. Fry in sunflower oil or roast at 210°C until crispy and golden (18 mins).',
+      'In a wide skillet, heat 2 tbsp olive oil over high heat. Sear marinated pork cubes until nicely browned and cooked through (8 mins).',
+      'Add fresh clams and 2 tbsp white wine or water. Cover with a lid and cook for 4-5 mins until the clams steam open and release their delicious juices.',
+      'Toss in the crispy cubed potatoes and let them absorb the rich pan sauce for 1 minute.',
+      'Garnish generously with lots of fresh chopped cilantro and lemon wedges.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-pork-tenderloin', quantity: 500, unit: 'g' },
+      { ingredientId: 'ing-clams', quantity: 400, unit: 'g' },
+      { ingredientId: 'ing-potato', quantity: 600, unit: 'g' },
+      { ingredientId: 'ing-garlic', quantity: 4, unit: 'clove' },
+      { ingredientId: 'ing-paprika', quantity: 1.5, unit: 'tsp' },
+      { ingredientId: 'ing-olive-oil', quantity: 3, unit: 'tbsp' },
+      { ingredientId: 'ing-sunflower-oil', quantity: 2, unit: 'tbsp' },
+      { ingredientId: 'ing-red-wine-vinegar', quantity: 1, unit: 'tbsp' },
+      { ingredientId: 'ing-cilantro', quantity: 0.5, unit: 'bunch' },
+      { ingredientId: 'ing-lemon', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-bay-leaf', quantity: 1, unit: 'unit' },
+      { ingredientId: 'ing-salt', quantity: 1, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Alentejo', 'Pork & Clams', 'Regional Classic']
+  },
+
+  {
+    id: 'rec-bacalhau-com-natas',
+    title: 'Bacalhau com Natas no Forno (Baked Cod Casserole in Cream)',
+    categoryId: 'rcat-seafood',
+    servings: 4,
+    prepTimeMinutes: 20,
+    cookTimeMinutes: 35,
+    difficulty: 'medium',
+    description: 'Ultimate Portuguese comfort food: flaked salted cod layered with soft sautéed potatoes and sweet onions in rich béchamel cream, baked with golden cheese.',
+    instructions: [
+      'Preheat oven to 190°C (375°F).',
+      'Dice potatoes small and shallow-fry or parboil until just tender (10 mins).',
+      'In a pan, sauté sliced onions and garlic in 2 tbsp olive oil until soft and golden (8 mins). Stir in flaked cod and cook 4 mins.',
+      'For the béchamel: Melt 30g butter in a pot, whisk in 30g flour for 1 min, then whisk in 350ml milk and 150ml heavy cream until thick and smooth. Season with nutmeg, salt, and pepper.',
+      'In a baking casserole dish, combine the sautéed cod, onions, potatoes, and béchamel cream sauce.',
+      'Top with grated mozzarella / Gruyère cheese and bake for 25 minutes until bubbly and golden brown crust forms.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-salt-cod', quantity: 450, unit: 'g' },
+      { ingredientId: 'ing-potato', quantity: 600, unit: 'g' },
+      { ingredientId: 'ing-onion', quantity: 2, unit: 'unit' },
+      { ingredientId: 'ing-garlic', quantity: 3, unit: 'clove' },
+      { ingredientId: 'ing-butter', quantity: 30, unit: 'g' },
+      { ingredientId: 'ing-flour', quantity: 30, unit: 'g' },
+      { ingredientId: 'ing-milk', quantity: 350, unit: 'ml' },
+      { ingredientId: 'ing-heavy-cream', quantity: 150, unit: 'ml' },
+      { ingredientId: 'ing-mozzarella', quantity: 120, unit: 'g' },
+      { ingredientId: 'ing-olive-oil', quantity: 2, unit: 'tbsp' },
+      { ingredientId: 'ing-nutmeg', quantity: 1, unit: 'pinch' },
+      { ingredientId: 'ing-salt', quantity: 1, unit: 'tsp' },
+      { ingredientId: 'ing-black-pepper', quantity: 0.5, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Casserole', 'Seafood', 'Comfort Food', 'Family Classic']
+  },
+
+  {
+    id: 'rec-pasteis-de-nata',
+    title: 'Pastéis de Nata Tradicionais (Portuguese Custard Tarts)',
+    categoryId: 'rcat-desserts',
+    servings: 4,
+    prepTimeMinutes: 20,
+    cookTimeMinutes: 15,
+    difficulty: 'easy',
+    description: 'Crispy, ultra-flaky puff pastry cups filled with luscious, caramelized egg yolk custard infused with lemon peel and ground cinnamon.',
+    instructions: [
+      'Preheat oven to maximum heat (240°C / 465°F). Grease a 12-hole muffin tin.',
+      'Roll out puff pastry sheet tightly into a log, cut into 12 disks, and press each disk into a muffin cup with your thumbs, working the pastry up the sides.',
+      'In a saucepan, whisk 180ml whole milk with 20g flour until smooth. Add 100g sugar, a strip of fresh lemon peel, and 1 tsp vanilla extract.',
+      'Cook over medium heat, whisking constantly until thickened into a custard (3-4 mins). Remove lemon peel and let cool 5 mins.',
+      'Whisk in 3 egg yolks until glossy and golden.',
+      'Pour custard into pastry cups (fill 3/4 full). Bake for 12-15 minutes until pastry is blistered-crisp and custard has caramelized dark spots on top.',
+      'Dust with ground cinnamon and serve warm.'
+    ],
+    ingredients: [
+      { ingredientId: 'ing-puff-pastry', quantity: 1, unit: 'pack' },
+      { ingredientId: 'ing-egg', quantity: 3, unit: 'unit' },
+      { ingredientId: 'ing-milk', quantity: 180, unit: 'ml' },
+      { ingredientId: 'ing-sugar', quantity: 100, unit: 'g' },
+      { ingredientId: 'ing-flour', quantity: 20, unit: 'g' },
+      { ingredientId: 'ing-lemon', quantity: 0.5, unit: 'unit' },
+      { ingredientId: 'ing-cinnamon', quantity: 1, unit: 'tsp' },
+      { ingredientId: 'ing-vanilla-extract', quantity: 1, unit: 'tsp' },
+    ],
+    tags: ['Portuguese', 'Portugal', 'Pastry', 'Dessert', 'Iconic', 'Sweet']
+  }
+];
