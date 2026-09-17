@@ -383,7 +383,7 @@ export const Header: React.FC<HeaderProps> = ({
                       onClick={() => onUpdateTheme(theme)}
                       title={theme}
                       className={`w-7 h-7 rounded-full border-2 transition-all ${currentTheme === theme ? 'border-slate-900 dark:border-white scale-110' : 'border-transparent hover:scale-105'}`}
-                      style={{ backgroundColor: themes[theme].accent }}
+                      style={{ backgroundColor: themes[theme as Theme]?.accent || '#2563EB' }}
                     />
                   ))}
                 </div>

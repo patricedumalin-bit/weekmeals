@@ -1,69 +1,104 @@
-import { Ingredient } from '../types';
+import { Ingredient, Recipe } from '../types';
 
-export const INITIAL_INGREDIENTS: Ingredient[] = [
-  // --- Produce / Fruits & Légumes ---
-  { id: 'ing-carotte', name: 'Carotte', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-navet', name: 'Navet', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-betterave', name: 'Betterave', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-celeri-rave', name: 'Céleri-rave', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-epinard', name: 'Épinard', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-chou-vert', name: 'Chou vert', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-artichaut', name: 'Artichaut', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-brocoli', name: 'Brocoli', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-chou-fleur', name: 'Chou-fleur', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-tomate', name: 'Tomate', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-poivron', name: 'Poivron', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-aubergine', name: 'Aubergine', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-courgette', name: 'Courgette', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-concombre', name: 'Concombre', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-potiron', name: 'Potiron', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-butternut', name: 'Courge butternut', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-asperge', name: 'Asperge', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-poireau', name: 'Poireau', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-champignon-paris', name: 'Champignon de Paris', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-shiitake', name: 'Shiitaké', categoryId: 'cat-produce', defaultUnit: 'unit' },
+// Local list of pre-translated core ingredients names for fallback display
+const CORE_NAMES: Record<string, string> = {
+  'ing-carrot': 'Carotte',
+  'ing-navet': 'Navet',
+  'ing-betterave': 'Betterave',
+  'ing-celeri-rave': 'Céleri-rave',
+  'ing-epinard': 'Épinard',
+  'ing-chou-vert': 'Chou vert',
+  'ing-artichaut': 'Artichaut',
+  'ing-brocoli': 'Brocoli',
+  'ing-chou-fleur': 'Chou-fleur',
+  'ing-tomato': 'Tomate',
+  'ing-poivron': 'Poivron',
+  'ing-aubergine': 'Aubergine',
+  'ing-zucchini': 'Courgette',
+  'ing-concombre': 'Concombre',
+  'ing-potiron': 'Potiron',
+  'ing-butternut': 'Courge butternut',
+  'ing-asperge': 'Asperge',
+  'ing-leek': 'Poireau',
+  'ing-onion': 'Oignon',
+  'ing-shiitake': 'Shiitaké',
+  'ing-pomme': 'Pomme',
+  'ing-poire': 'Poire',
+  'ing-peche': 'Pêche',
+  'ing-abricot': 'Abricot',
+  'ing-prune': 'Prune',
+  'ing-cerise': 'Cerise',
+  'ing-avocat': 'Avocat',
+  'ing-citron': 'Citron',
+  'ing-orange': 'Orange',
+  'ing-fraise': 'Fraise',
+  'ing-banane': 'Banane',
+  'ing-melon': 'Melon',
+  'ing-pasteque': 'Pastèque',
+  'ing-potato': 'Pomme de terre',
+  'ing-riz': 'Riz',
+  'ing-pates': 'Pâtes',
+  'ing-pain': 'Pain',
+  'ing-poulet': 'Poulet',
+  'ing-boeuf': 'Bœuf',
+  'ing-porc': 'Porc',
+  'ing-agneau': 'Agneau',
+  'ing-saumon': 'Saumon',
+  'ing-cabillaud': 'Cabillaud',
+  'ing-crevette': 'Crevette',
+  'ing-lait': 'Lait',
+  'ing-yaourt': 'Yaourt',
+  'ing-fromage': 'Fromage',
+  'ing-beurre': 'Beurre',
+  'ing-creme': 'Crème',
+  'ing-huile-olive': 'Huile d\'olive',
+  'ing-sel': 'Sel',
+  'ing-poivre': 'Poivre',
+  'ing-garlic': 'Ail'
+};
 
-  { id: 'ing-pomme', name: 'Pomme', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-poire', name: 'Poire', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-peche', name: 'Pêche', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-abricot', name: 'Abricot', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-prune', name: 'Prune', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-cerise', name: 'Cerise', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-avocat', name: 'Avocat', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-citron', name: 'Citron', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-orange', name: 'Orange', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-fraise', name: 'Fraise', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-banane', name: 'Banane', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-melon', name: 'Melon', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-pasteque', name: 'Pastèque', categoryId: 'cat-produce', defaultUnit: 'unit' },
+/**
+ * Dynamically builds a list of unique ingredients from a collection of recipes.
+ */
+export function buildDynamicIngredientsList(allRecipes: Recipe[]): Ingredient[] {
+  const ingredientMap = new Map<string, Ingredient>();
 
-  // --- Grains / Céréales ---
-  { id: 'ing-riz', name: 'Riz', categoryId: 'cat-grains', defaultUnit: 'unit' },
-  { id: 'ing-pates', name: 'Pâtes', categoryId: 'cat-grains', defaultUnit: 'unit' },
-  { id: 'ing-pain', name: 'Pain', categoryId: 'cat-grains', defaultUnit: 'unit' },
+  for (const recipe of allRecipes) {
+    if (!recipe || !recipe.ingredients || !Array.isArray(recipe.ingredients)) continue;
 
-  // --- Meat / Viandes ---
-  { id: 'ing-poulet', name: 'Poulet', categoryId: 'cat-meat', defaultUnit: 'unit' },
-  { id: 'ing-boeuf', name: 'Bœuf', categoryId: 'cat-meat', defaultUnit: 'unit' },
-  { id: 'ing-porc', name: 'Porc', categoryId: 'cat-meat', defaultUnit: 'unit' },
-  { id: 'ing-agneau', name: 'Agneau', categoryId: 'cat-meat', defaultUnit: 'unit' },
+    for (const recipeIng of recipe.ingredients) {
+      if (!recipeIng) continue;
+      const id = recipeIng.ingredientId;
+      if (!id || ingredientMap.has(id)) continue;
 
-  // --- Seafood / Poissons ---
-  { id: 'ing-saumon', name: 'Saumon', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-cabillaud', name: 'Cabillaud', categoryId: 'cat-produce', defaultUnit: 'unit' },
-  { id: 'ing-crevette', name: 'Crevette', categoryId: 'cat-produce', defaultUnit: 'unit' },
+      let displayName = CORE_NAMES[id];
+      if (!displayName) {
+        const cleanSlug = id.replace('ing-', '').replace(/-/g, ' ');
+        displayName = cleanSlug.charAt(0).toUpperCase() + cleanSlug.slice(1);
+      }
 
-  // --- Dairy / Produits laitiers ---
-  { id: 'ing-lait', name: 'Lait', categoryId: 'cat-dairy', defaultUnit: 'unit' },
-  { id: 'ing-yaourt', name: 'Yaourt', categoryId: 'cat-dairy', defaultUnit: 'unit' },
-  { id: 'ing-fromage', name: 'Fromage', categoryId: 'cat-dairy', defaultUnit: 'unit' },
-  { id: 'ing-beurre', name: 'Beurre', categoryId: 'cat-dairy', defaultUnit: 'unit' },
-  { id: 'ing-creme', name: 'Crème', categoryId: 'cat-dairy', defaultUnit: 'unit' },
+      let categoryId = 'cat-pantry';
+      const idL = id.toLowerCase();
+      if (idL.includes('chicken') || idL.includes('poulet') || idL.includes('beef') || idL.includes('boeuf') || idL.includes('meat') || idL.includes('porc') || idL.includes('lamb') || idL.includes('agneau')) {
+        categoryId = 'cat-meat';
+      } else if (idL.includes('milk') || idL.includes('lait') || idL.includes('cheese') || idL.includes('fromage') || idL.includes('butter') || idL.includes('beurre') || idL.includes('cream') || idL.includes('creme') || idL.includes('dairy') || idL.includes('egg') || idL.includes('yaourt')) {
+        categoryId = 'cat-dairy';
+      } else if (idL.includes('oil') || idL.includes('huile')) {
+        categoryId = 'cat-oils';
+      } else if (idL.includes('pasta') || idL.includes('pates') || idL.includes('rice') || idL.includes('riz') || idL.includes('bread') || idL.includes('pain') || idL.includes('grains')) {
+        categoryId = 'cat-grains';
+      } else if (idL.includes('tomato') || idL.includes('onion') || idL.includes('potato') || idL.includes('garlic') || idL.includes('carrot') || idL.includes('zucchini') || idL.includes('leek') || idL.includes('produce') || idL.includes('legume') || idL.includes('fruit') || idL.includes('saumon') || idL.includes('cabillaud') || idL.includes('crevette')) {
+        categoryId = 'cat-produce';
+      }
 
-  // --- Oils / Matières grasses ---
-  { id: 'ing-huile-olive', name: 'Huile d\'olive', categoryId: 'cat-oils', defaultUnit: 'unit' },
+      ingredientMap.set(id, {
+        id,
+        name: displayName,
+        categoryId,
+        defaultUnit: recipeIng.unit || 'unit'
+      });
+    }
+  }
 
-  // --- Pantry / Épices ---
-  { id: 'ing-sel', name: 'Sel', categoryId: 'cat-pantry', defaultUnit: 'unit' },
-  { id: 'ing-poivre', name: 'Poivre', categoryId: 'cat-pantry', defaultUnit: 'unit' },
-];
+  return Array.from(ingredientMap.values());
+}

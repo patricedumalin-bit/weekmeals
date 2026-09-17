@@ -33,6 +33,7 @@ import {
 } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { exportDatabaseJson } from '../utils/storage';
+import { inferCookingMode } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 import { DatabaseSwitcher } from './DatabaseSwitcher';
 
@@ -97,7 +98,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   onPreviewRecipe,
   onOpenRecipeImport
 }) => {
-  const { t, translateUnit, translateRecipeCategory, translateIngredientCategory, translateRecipe, translateIngredient } = useLanguage();
+  const { language, t, translateUnit, translateRecipeCategory, translateIngredientCategory, translateRecipe, translateIngredient, translateCookingMode, translateDifficulty } = useLanguage();
   const safeRecipes = Array.isArray(recipes) ? recipes : [];
   const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
   const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
@@ -108,6 +109,8 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilterCat, setSelectedFilterCat] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
+  const [selectedCookingMode, setSelectedCookingMode] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
 
   const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
   const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
@@ -379,64 +382,75 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             totalCount={recipes.length}
           />
 
-          {/* Search and Category/Country Filters */}
-          <div className="space-y-2.5">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="relative flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder={t('searchRecipePlaceholder')}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-[var(--accent)] transition-all"
-                />
-              </div>
-
-              {/* Country filter chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar text-xs">
-                {COUNTRIES.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedCountry(c.id)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shrink-0 ${
-                      selectedCountry === c.id
-                        ? 'bg-[var(--primary)] text-white shadow-sm'
-                        : 'bg-[var(--cell-bg)] text-slate-600 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)]'
-                    }`}
-                  >
-                    <span>{c.flag}</span>
-                    <span>{c.label}</span>
-                  </button>
-                ))}
-              </div>
+          {/* Search and Advanced Filters */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder={t('searchRecipePlaceholder')}
+                className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-[var(--accent)] transition-all"
+              />
             </div>
 
-            {/* Category Filter row */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-              <button
-                onClick={() => setSelectedFilterCat('all')}
-                className={`px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all ${
-                  selectedFilterCat === 'all'
-                    ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white font-bold shadow-xs'
-                    : 'backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-600 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)]'
-                }`}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* Category Dropdown */}
+              <select
+                value={selectedFilterCat}
+                onChange={(e) => setSelectedFilterCat(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
               >
-                {t('allCategoriesFilter', { count: recipes.length })}
-              </button>
-              {recipeCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedFilterCat(cat.id)}
-                  className={`px-3 py-1.5 rounded-xl font-medium whitespace-nowrap transition-all ${
-                    selectedFilterCat === cat.id
-                      ? 'bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] text-white font-bold shadow-xs'
-                      : 'backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-600 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)]'
-                  }`}
-                >
-                  {translateRecipeCategory(cat.id, cat.name)}
-                </button>
-              ))}
+                <option value="all">{t('allCategoriesFilter', { count: recipes.length })}</option>
+                {recipeCategories.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {translateRecipeCategory(cat.id, cat.name)}
+                  </option>
+                ))}
+              </select>
+
+              {/* Country Dropdown */}
+              <select
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
+              >
+                {COUNTRIES.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.flag} {c.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Cooking Mode Dropdown */}
+              <select
+                value={selectedCookingMode}
+                onChange={(e) => setSelectedCookingMode(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
+              >
+                <option value="all">{language === 'fr' ? 'Tous les modes de cuisson' : 'All cooking modes'}</option>
+                <option value="four">{translateCookingMode('four')}</option>
+                <option value="poele">{translateCookingMode('poele')}</option>
+                <option value="cookeo">{translateCookingMode('cookeo')}</option>
+                <option value="robot">{translateCookingMode('robot')}</option>
+                <option value="cocotte">{translateCookingMode('cocotte')}</option>
+                <option value="vapeur">{translateCookingMode('vapeur')}</option>
+                <option value="grill">{translateCookingMode('grill')}</option>
+                <option value="sans-cuisson">{translateCookingMode('sans-cuisson')}</option>
+              </select>
+
+              {/* Difficulty Dropdown */}
+              <select
+                value={selectedDifficulty}
+                onChange={(e) => setSelectedDifficulty(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
+              >
+                <option value="all">{language === 'fr' ? 'Toutes les difficultés' : 'All difficulties'}</option>
+                <option value="easy">{translateDifficulty('easy')}</option>
+                <option value="medium">{translateDifficulty('medium')}</option>
+                <option value="hard">{translateDifficulty('hard')}</option>
+              </select>
             </div>
           </div>
 
@@ -452,18 +466,25 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                     : !r.isCustom;
                 if (!matchesSource) return false;
 
-                const localized = translateRecipe(r);
                 const matchesCat = selectedFilterCat === 'all' || r.categoryId === selectedFilterCat;
-                const matchesCountry = selectedCountry === 'all' || r.tags.some(t => t.toLowerCase() === selectedCountry.toLowerCase() || (selectedCountry === 'England' && t.toLowerCase() === 'british'));
+                const matchesCountry = selectedCountry === 'all' || (r.tags || []).some(t => t.toLowerCase() === selectedCountry.toLowerCase() || (selectedCountry === 'England' && t.toLowerCase() === 'british'));
+
+                const rCookingMode = r.cookingMode || inferCookingMode(r);
+                const matchesCookingMode = selectedCookingMode === 'all' || rCookingMode === selectedCookingMode;
+
+                const matchesDifficulty = selectedDifficulty === 'all' || r.difficulty === selectedDifficulty;
+
+                const localized = translateRecipe(r);
                 const query = searchQuery.toLowerCase();
                 const matchesSearch =
                   r.title.toLowerCase().includes(query) ||
-                  localized.title.toLowerCase().includes(query) ||
-                  r.description.toLowerCase().includes(query) ||
-                  localized.description.toLowerCase().includes(query) ||
-                  r.tags.some(t => t.toLowerCase().includes(query)) ||
-                  localized.tags.some(t => t.toLowerCase().includes(query));
-                return matchesCat && matchesCountry && matchesSearch;
+                  (localized.title || '').toLowerCase().includes(query) ||
+                  (r.description || '').toLowerCase().includes(query) ||
+                  (localized.description || '').toLowerCase().includes(query) ||
+                  (r.tags || []).some(t => t.toLowerCase().includes(query)) ||
+                  (localized.tags || []).some(t => t.toLowerCase().includes(query));
+
+                return matchesCat && matchesCountry && matchesCookingMode && matchesDifficulty && matchesSearch;
               })
               .map(recipe => {
                 const localized = translateRecipe(recipe);

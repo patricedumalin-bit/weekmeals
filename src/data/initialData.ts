@@ -1,6 +1,6 @@
 import { Recipe, WeeklyPlan } from '../types';
 import { INITIAL_INGREDIENT_CATEGORIES, INITIAL_RECIPE_CATEGORIES } from './categoriesData';
-import { INITIAL_INGREDIENTS } from './ingredientsData';
+import { buildDynamicIngredientsList } from './ingredientsData';
 import { RECIPES_FRANCE } from './recipesFrance';
 import { RECIPES_ITALY } from './recipesItaly';
 import { RECIPES_UK } from './recipesUK';
@@ -9,7 +9,7 @@ import { RECIPES_SPAIN } from './recipesSpain';
 import { RECIPES_PORTUGAL } from './recipesPortugal';
 import { CLOUD_RECIPES } from './cloudRecipesMock';
 
-export { INITIAL_INGREDIENT_CATEGORIES, INITIAL_RECIPE_CATEGORIES, INITIAL_INGREDIENTS };
+export { INITIAL_INGREDIENT_CATEGORIES, INITIAL_RECIPE_CATEGORIES };
 
 export const INITIAL_RECIPES: Recipe[] = [
   ...RECIPES_FRANCE,
@@ -20,6 +20,9 @@ export const INITIAL_RECIPES: Recipe[] = [
   ...RECIPES_PORTUGAL,
   ...CLOUD_RECIPES,
 ];
+
+export const INITIAL_INGREDIENTS = buildDynamicIngredientsList(INITIAL_RECIPES);
+
 
 export const INITIAL_PANTRY: Record<string, boolean> = {
   'ing-sel': true,

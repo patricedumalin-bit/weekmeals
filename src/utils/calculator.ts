@@ -13,6 +13,7 @@ import {
   AutoPlanOptions,
   RecipeMatchResult
 } from '../types';
+import { normalizeExternalIngredient } from './datasetCorrelator';
 
 export function inferCookingMode(recipe: Recipe): CookingModeType {
   if (recipe.cookingMode) return recipe.cookingMode;
@@ -43,6 +44,38 @@ export function formatQuantity(num: number): string {
   if (Math.abs(frac - 0.67) < 0.05) return intPart > 0 ? `${intPart} ⅔` : '⅔';
   
   return rounded.toFixed(1).replace(/\.0$/, '');
+}
+
+const UNIT_CONVERSIONS: Record<string, number> = {
+  'g': 1,
+  'kg': 1000,
+  'ml': 1,
+  'cl': 10,
+  'l': 1000,
+  'tbsp': 15,
+  'tsp': 5,
+  'pinch': 0.5,
+  'unit': 1,
+  'clove': 1,
+  'can': 1,
+  'pack': 1,
+  'bunch': 1,
+  'slice': 1,
+};
+
+export function convertUnit(quantity: number, fromUnit: UnitType, toUnit: UnitType): number {
+  if (fromUnit === toUnit) return quantity;
+  const fromFactor = UNIT_CONVERSIONS[fromUnit];
+  const toFactor = UNIT_CONVERSIONS[toUnit];
+  if (!fromFactor || !toFactor) return quantity;
+
+  const isVol = (u: string) => ['ml', 'cl', 'l', 'tbsp', 'tsp', 'pinch'].includes(u);
+  const isMass = (u: string) => ['g', 'kg'].includes(u);
+
+  if ((isVol(fromUnit) && isVol(toUnit)) || (isMass(fromUnit) && isMass(toUnit))) {
+    return (quantity * fromFactor) / toFactor;
+  }
+  return quantity;
 }
 
 export function calculateShoppingList(
@@ -92,8 +125,11 @@ export function calculateShoppingList(
             order: 99
           };
 
-          const key = `${ingredient.id}_${customIng.unit}`;
-          const scaledQty = customIng.quantity * (mealServings / 4);
+          const { ingredientId } = normalizeExternalIngredient(ingredient.name);
+          const resolvedIng = ingredientMap.get(ingredientId) || ingredient;
+          const targetUnit = resolvedIng.defaultUnit || customIng.unit;
+          const convertedQty = convertUnit(scaledQty, customIng.unit, targetUnit);
+          const key = resolvedIng.id;
 
           const source: ShoppingSource = {
             mealNumber: meal.mealNumber,
@@ -101,27 +137,27 @@ export function calculateShoppingList(
             recipeTitle: customMeal.name || 'Repas sur mesure',
             recipeId: `custom-meal-${customMeal.id}`,
             rawQuantity: customIng.quantity,
-            scaledQuantity: scaledQty,
-            unit: customIng.unit,
+            scaledQuantity: convertedQty,
+            unit: targetUnit,
             servings: mealServings
           };
 
           if (aggregatedMap.has(key)) {
             const existing = aggregatedMap.get(key)!;
-            existing.totalQuantity += scaledQty;
+            existing.totalQuantity += convertedQty;
             existing.sources.push(source);
           } else {
             aggregatedMap.set(key, {
-              ingredientId: ingredient.id,
-              ingredientName: ingredient.name,
+              ingredientId: resolvedIng.id,
+              ingredientName: resolvedIng.name,
               categoryId: category.id,
               categoryName: category.name,
               categoryIcon: category.icon,
               categoryColor: category.color,
-              totalQuantity: scaledQty,
-              unit: customIng.unit,
+              totalQuantity: convertedQty,
+              unit: targetUnit,
               checked: !!checkedMap[key],
-              inPantry: !!pantryMap[ingredient.id],
+              inPantry: !!pantryMap[resolvedIng.id],
               sources: [source]
             });
           }
@@ -159,8 +195,11 @@ export function calculateShoppingList(
           order: 99
         };
 
-        const key = `${ingredient.id}_${recipeIng.unit}`;
-        const scaledQty = recipeIng.quantity * scaleFactor;
+        const { ingredientId } = normalizeExternalIngredient(ingredient.name);
+        const resolvedIng = ingredientMap.get(ingredientId) || ingredient;
+        const targetUnit = resolvedIng.defaultUnit || recipeIng.unit;
+        const convertedQty = convertUnit(scaledQty, recipeIng.unit, targetUnit);
+        const key = resolvedIng.id;
 
         const source: ShoppingSource = {
           mealNumber: meal.mealNumber,
@@ -168,27 +207,27 @@ export function calculateShoppingList(
           recipeTitle: recipe.title,
           recipeId: recipe.id,
           rawQuantity: recipeIng.quantity,
-          scaledQuantity: scaledQty,
-          unit: recipeIng.unit,
+          scaledQuantity: convertedQty,
+          unit: targetUnit,
           servings: mealServings
         };
 
         if (aggregatedMap.has(key)) {
           const existing = aggregatedMap.get(key)!;
-          existing.totalQuantity += scaledQty;
+          existing.totalQuantity += convertedQty;
           existing.sources.push(source);
         } else {
           aggregatedMap.set(key, {
-            ingredientId: ingredient.id,
-            ingredientName: ingredient.name,
+            ingredientId: resolvedIng.id,
+            ingredientName: resolvedIng.name,
             categoryId: category.id,
             categoryName: category.name,
             categoryIcon: category.icon,
             categoryColor: category.color,
-            totalQuantity: scaledQty,
-            unit: recipeIng.unit,
+            totalQuantity: convertedQty,
+            unit: targetUnit,
             checked: !!checkedMap[key],
-            inPantry: !!pantryMap[ingredient.id],
+            inPantry: !!pantryMap[resolvedIng.id],
             sources: [source]
           });
         }
