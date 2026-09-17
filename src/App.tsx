@@ -1329,8 +1329,9 @@ function AppContent({
         onClose={() => setIsRecipeImportModalOpen(false)}
         recipeCategories={recipeCategories}
         ingredients={ingredients}
-        onImportRecipe={async (recipe) => {
-          await handleSaveRecipe(recipe);
+        ingredientCategories={ingredientCategories}
+        onSaveImportedRecipe={(recipe) => {
+          handleSaveRecipe(recipe);
           setPreviewRecipeState({ recipe });
         }}
       />
