@@ -77,9 +77,19 @@ export function loadRecipeTranslations(): Promise<void> {
  * the translation data hasn't finished loading yet (see loadRecipeTranslations).
  */
 export function getLocalizedRecipeContent(
-  recipe: Recipe | { id: string; title: string; description?: string; instructions?: string[]; tags?: string[] },
+  recipe: any,
   language: SupportedLanguage
 ): LocalizedRecipeContent {
+  // If the recipe contains custom runtime localizations embedded directly (e.g. AI-imported multilingual recipes)
+  if (recipe && recipe.localizations && recipe.localizations[language]) {
+    return {
+      title: recipe.localizations[language].title || recipe.title,
+      description: recipe.localizations[language].description || recipe.description || '',
+      instructions: recipe.localizations[language].instructions || recipe.instructions || [],
+      tags: recipe.tags || []
+    };
+  }
+
   const translations = cache[recipe.id];
   if (translations && translations[language]) {
     return translations[language];

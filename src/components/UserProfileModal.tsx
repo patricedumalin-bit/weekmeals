@@ -367,18 +367,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
-          {/* Gemini API Key Configuration */}
+          {/* Groq AI API Key Configuration */}
           <div>
             <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider mb-2 flex items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-amber-500" />
-                <span>{language === 'fr' ? "Intelligence Artificielle Google Gemini" : "Google Gemini AI Settings"}</span>
+                <Key className="w-3.5 h-3.5 text-orange-500" />
+                <span>{language === 'fr' ? "Intelligence Artificielle Groq" : "Groq AI Settings"}</span>
               </div>
               <a
-                href="https://aistudio.google.com/app/apikey"
+                href="https://console.groq.com/keys"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 normal-case"
+                className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-0.5 normal-case"
               >
                 <span>{language === 'fr' ? "Obtenir ma clé gratuite ↗" : "Get Free Key ↗"}</span>
               </a>
@@ -386,22 +386,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                 {language === 'fr'
-                  ? "Activez l'importation par lien ou par photo gratuitement. Cliquez sur le lien ci-dessus pour générer votre clé en 2 clics avec votre compte Google, puis collez-la ci-dessous."
-                  : "Empower smart image OCR and real web parsing features. Click the link above to generate a free key instantly with your Google account, then paste it below."}
+                  ? "Groq est l'IA la plus rapide et stable. Créez un compte gratuit sur console.groq.com, générez une clé (gsk_...), et collez-la ici pour activer l'import par lien et photo."
+                  : "Groq is the fastest and most stable AI. Get a free key at console.groq.com (gsk_...), and paste it here to enable link and photo parsing."}
               </p>
               <input
                 type="password"
-                placeholder="AIzaSy..."
-                defaultValue={localStorage.getItem('gemini_api_key') || ''}
+                placeholder="gsk_..."
+                defaultValue={localStorage.getItem('groq_api_key') || ''}
                 onChange={(e) => {
                   const val = e.target.value.trim();
                   if (val) {
-                    localStorage.setItem('gemini_api_key', val);
+                    localStorage.setItem('groq_api_key', val);
                   } else {
-                    localStorage.removeItem('gemini_api_key');
+                    localStorage.removeItem('groq_api_key');
                   }
                 }}
-                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 font-mono"
               />
             </div>
           </div>

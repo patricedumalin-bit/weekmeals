@@ -74,6 +74,7 @@ export interface UserCloudSyncPayload {
   checkedMap?: Record<string, boolean>;
   customItems?: CustomShoppingItem[];
   customRecipes?: Recipe[];
+  customIngredients?: Ingredient[];
   pantryMap?: Record<string, boolean>;
   theme?: string;
   subscriptionStatus?: 'free' | 'premium';
@@ -121,6 +122,7 @@ export async function saveUserCloudData(userId: string, payload: UserCloudSyncPa
     if (payload.checkedMap !== undefined) cleanPayload.checkedMap = payload.checkedMap;
     if (payload.customItems !== undefined) cleanPayload.customItems = payload.customItems;
     if (payload.customRecipes !== undefined) cleanPayload.customRecipes = payload.customRecipes;
+    if (payload.customIngredients !== undefined) cleanPayload.customIngredients = payload.customIngredients;
     if (payload.pantryMap !== undefined) cleanPayload.pantryMap = payload.pantryMap;
     if (payload.theme !== undefined) cleanPayload.theme = payload.theme;
     if (payload.subscriptionStatus !== undefined) cleanPayload.subscriptionStatus = payload.subscriptionStatus;

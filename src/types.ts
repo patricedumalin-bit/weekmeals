@@ -46,6 +46,7 @@ export interface Ingredient {
   categoryId: string;
   defaultUnit: UnitType;
   notes?: string;
+  localizations?: Record<string, string>;
 }
 
 export type CookingModeType = 'four' | 'poele' | 'cookeo' | 'robot' | 'cocotte' | 'vapeur' | 'grill' | 'sans-cuisson';
@@ -87,6 +88,7 @@ export interface Recipe {
   cookingMode?: CookingModeType;
   source?: string; // Attribution label, e.g. "Wikibooks Cookbook (CC BY-SA 4.0)"
   sourceUrl?: string; // Link to the original recipe page
+  localizations?: Record<string, { title: string; description: string; instructions: string[] }>;
 }
 
 export interface CustomMeal {

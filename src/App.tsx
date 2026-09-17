@@ -319,7 +319,8 @@ function AppContent({
     planToSync?: WeeklyPlan | null, 
     checkedToSync?: Record<string, boolean>, 
     customItemsToSync?: CustomShoppingItem[], 
-    recipesToSync?: Recipe[]
+    recipesToSync?: Recipe[],
+    ingredientsToSync?: Ingredient[]
   ) => {
     if (!user || user.uid === 'local-guest') {
       setSyncStatus('offline');
@@ -330,11 +331,18 @@ function AppContent({
       isSyncingFromCloudRef.current = true;
       const targetRecipes = recipesToSync || recipes;
       const customRecipes = targetRecipes.filter(r => r.isCustom);
+
+      // Keep track of ingredients that were newly added or customized
+      const targetIngredients = ingredientsToSync || ingredients;
+      // We can sync custom ingredients (all ingredients or just the ones that don't start with standard catalog prefix if any, but since ingredients can be extended, we can sync the custom ones or the whole array if preferred, let's filter those containing notes 'Ingrédient importé' or added by user)
+      const customIngredients = targetIngredients.filter(i => i.notes?.includes('importé') || i.id.startsWith('ing-'));
+
       const syncedTimestamp = await saveUserCloudData(user.uid, {
         weeklyPlan: planToSync !== undefined ? planToSync : weeklyPlan,
         checkedMap: checkedToSync !== undefined ? checkedToSync : checkedMap,
         customItems: customItemsToSync !== undefined ? customItemsToSync : customItems,
         customRecipes,
+        customIngredients,
         recipeCount: customRecipes.length,
         theme: userData?.theme || theme,
         subscriptionStatus: userData?.subscriptionStatus || 'free',
@@ -354,18 +362,19 @@ function AppContent({
         isSyncingFromCloudRef.current = false;
       }, 500);
     }
-  }, [user, recipes, weeklyPlan, checkedMap, customItems, theme, userData]);
+  }, [user, recipes, ingredients, weeklyPlan, checkedMap, customItems, theme, userData]);
 
   const scheduleCloudSync = useCallback((
     plan?: WeeklyPlan | null,
     checked?: Record<string, boolean>,
     items?: CustomShoppingItem[],
-    recs?: Recipe[]
+    recs?: Recipe[],
+    ings?: Ingredient[]
   ) => {
     if (!user || user.uid === 'local-guest') return;
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     syncTimeoutRef.current = setTimeout(() => {
-      pushCloudChanges(plan, checked, items, recs);
+      pushCloudChanges(plan, checked, items, recs, ings);
     }, 1000);
   }, [user, pushCloudChanges]);
 
@@ -383,6 +392,15 @@ function AppContent({
             cloudData.customRecipes.forEach((cr: Recipe) => map.set(cr.id, cr));
             const merged = Array.from(map.values());
             saveRecipes(merged);
+            return merged;
+          });
+        }
+        if (cloudData.customIngredients) {
+          setIngredients(prev => {
+            const map = new Map<string, Ingredient>(prev.map(i => [i.id, i]));
+            cloudData.customIngredients.forEach((ci: Ingredient) => map.set(ci.id, ci));
+            const merged = Array.from(map.values());
+            saveIngredients(merged);
             return merged;
           });
         }
@@ -406,11 +424,13 @@ function AppContent({
 
       // 2. Upload consolidated state
       const customRecipes = recipes.filter(r => r.isCustom);
+      const customIngredients = ingredients.filter(i => i.notes?.includes('importé') || i.id.startsWith('ing-'));
       const syncedTimestamp = await saveUserCloudData(user.uid, {
         weeklyPlan,
         checkedMap,
         customItems,
         customRecipes,
+        customIngredients,
         recipeCount: customRecipes.length,
         theme,
         subscriptionStatus: userData?.subscriptionStatus || 'free',
@@ -708,6 +728,7 @@ function AppContent({
       : [ing, ...ingredients];
     setIngredients(updated);
     saveIngredients(updated);
+    scheduleCloudSync(undefined, undefined, undefined, undefined, updated);
   };
 
   const handleDeleteIngredient = (ingId: string) => {
@@ -1334,6 +1355,7 @@ function AppContent({
           handleSaveRecipe(recipe);
           setPreviewRecipeState({ recipe });
         }}
+        onSaveNewIngredient={handleSaveIngredient}
       />
 
       {/* Modal 9: Nutrition Dashboard */}

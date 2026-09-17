@@ -207,7 +207,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const translateIngredient = (ingredientId: string, fallbackName?: string): string => {
-    return getLocalizedIngredientName(ingredientId, fallbackName || ingredientId, language);
+    return getLocalizedIngredientName(ingredientId, fallbackName || ingredientId, language, undefined);
   };
 
   const translateRecipe = (

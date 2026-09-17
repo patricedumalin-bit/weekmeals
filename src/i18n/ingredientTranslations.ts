@@ -1465,8 +1465,12 @@ export const INGREDIENT_TRANSLATIONS: Record<string, Record<SupportedLanguage, s
 export function getLocalizedIngredientName(
   ingredientId: string,
   fallbackName: string,
-  language: SupportedLanguage
+  language: SupportedLanguage,
+  ingredientObj?: any
 ): string {
+  if (ingredientObj && ingredientObj.localizations && ingredientObj.localizations[language]) {
+    return ingredientObj.localizations[language];
+  }
   const translations = INGREDIENT_TRANSLATIONS[ingredientId];
   if (translations && translations[language]) {
     return translations[language];
