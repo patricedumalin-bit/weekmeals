@@ -534,13 +534,20 @@ export function matchRecipesWithPantry(
   }
 
   results.sort((a, b) => {
-    if (b.matchPercentage !== a.matchPercentage) {
-      return b.matchPercentage - a.matchPercentage;
+    // 1. Trier par le plus grand nombre d'ingrédients du frigo utilisés
+    if (b.availableCount !== a.availableCount) {
+      return b.availableCount - a.availableCount;
     }
-    return a.missingIngredients.length - b.missingIngredients.length;
+    // 2. En cas d'égalité, trier par le minimum d'ingrédients manquants
+    if (a.missingIngredients.length !== b.missingIngredients.length) {
+      return a.missingIngredients.length - b.missingIngredients.length;
+    }
+    // 3. Enfin, trier par pourcentage de correspondance
+    return b.matchPercentage - a.matchPercentage;
   });
 
-  return results;
+  // Limiter le résultat aux 20 meilleures recettes
+  return results.slice(0, 20);
 }
 
 // -------------------------------------------------------------
