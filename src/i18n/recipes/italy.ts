@@ -446,5 +446,72 @@ export const ITALY_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLanguage,
       ],
       tags: ['Italiano', 'Salada', 'Toscano', 'Vegetariano', 'Fresco', 'Verão']
     }
+  },
+  'rec-tiramisu': {
+    en: {
+      title: 'Authentic Italian Tiramisu',
+      description: 'The definitive Italian no-bake dessert: delicate ladyfinger biscuits dipped in espresso, layered with luscious mascarpone cream, and dusted with dark cocoa.',
+      instructions: [
+        'Separate 3 eggs. In a mixing bowl, whisk the egg yolks with granulated sugar and vanilla extract until thick and pale yellow.',
+        'Gently fold in the mascarpone cheese with a spatula until completely smooth and velvety.',
+        'In another clean bowl, whip the egg whites with a pinch of salt until soft peaks form, then gently fold into the mascarpone cream.',
+        'Dip the ladyfinger biscuits briefly into cold brewed coffee/espresso (do not over-soak).',
+        'Arrange a single layer of soaked ladyfingers in a serving dish, spread half the mascarpone cream over, and repeat with a second layer.',
+        'Refrigerate for at least 2 hours. Dust generously with unsweetened dark cocoa powder right before serving.'
+      ],
+      tags: ['Italian', 'Italy', 'Dessert', 'No-Bake', 'Coffee', 'Classic']
+    },
+    fr: {
+      title: 'Tiramisu Traditionnel Italien',
+      description: 'Le grand classique italien sans cuisson : délicats biscuits à la cuillère trempés dans le café, superposés avec une onctueuse crème au mascarpone, saupoudrés de cacao noir.',
+      instructions: [
+        'Séparez 3 œufs. Dans un saladier, fouettez les jaunes avec le sucre et l’extrait de vanille jusqu’à obtenir un mélange épais et pâle.',
+        'Incorporez délicatement le mascarpone à la spatule jusqu’à obtenir une texture lisse et veloutée.',
+        'Dans un autre saladier propre, montez les blancs en neige souple avec une pincée de sel, puis incorporez-les délicatement à la crème de mascarpone.',
+        'Trempez rapidement les biscuits à la cuillère dans le café froid (ne pas trop les imbiber).',
+        'Disposez une couche de biscuits imbibés dans un plat, étalez la moitié de la crème par-dessus, puis répétez avec une seconde couche.',
+        'Réfrigérez au moins 2 heures. Saupoudrez généreusement de cacao noir non sucré juste avant de servir.'
+      ],
+      tags: ['Italien', 'Italie', 'Dessert', 'Sans Cuisson', 'Café', 'Classique']
+    },
+    de: {
+      title: 'Original Italienisches Tiramisu',
+      description: 'Der italienische Klassiker ohne Backen: zarte Löffelbiskuits in Espresso getaucht, geschichtet mit cremiger Mascarpone-Creme und mit dunklem Kakao bestäubt.',
+      instructions: [
+        '3 Eier trennen. In einer Schüssel das Eigelb mit Zucker und Vanilleextrakt schaumig und hell aufschlagen.',
+        'Den Mascarpone vorsichtig mit einem Spatel unterheben, bis eine glatte, samtige Masse entsteht.',
+        'In einer anderen sauberen Schüssel das Eiweiß mit einer Prise Salz zu weichen Spitzen schlagen, dann vorsichtig unter die Mascarpone-Creme heben.',
+        'Die Löffelbiskuits kurz in kalten Kaffee/Espresso tauchen (nicht zu stark tränken).',
+        'Eine Schicht getränkter Löffelbiskuits in eine Servierschale legen, die Hälfte der Creme darauf verteilen und eine zweite Schicht wiederholen.',
+        'Mindestens 2 Stunden kühlen. Kurz vor dem Servieren großzügig mit ungesüßtem dunklem Kakaopulver bestäuben.'
+      ],
+      tags: ['Italienisch', 'Italien', 'Dessert', 'Ohne Backen', 'Kaffee', 'Klassiker']
+    },
+    es: {
+      title: 'Tiramisú Tradicional Italiano',
+      description: 'El definitivo postre italiano sin horno: delicados bizcochos de soletilla remojados en café espresso, en capas con una deliciosa crema de mascarpone y espolvoreados con cacao negro.',
+      instructions: [
+        'Separe 3 huevos. En un bol, bata las yemas con el azúcar y el extracto de vainilla hasta obtener una mezcla espesa y pálida.',
+        'Incorpore con delicadeza el queso mascarpone con una espátula hasta lograr una textura lisa y aterciopelada.',
+        'En otro bol limpio, monte las claras con una pizca de sal a punto de nieve suave y luego incorpórelas con delicadeza a la crema de mascarpone.',
+        'Sumerja brevemente los bizcochos de soletilla en café frío recién hecho (sin empaparlos demasiado).',
+        'Coloque una capa de bizcochos remojados en una fuente, extienda la mitad de la crema de mascarpone encima y repita con una segunda capa.',
+        'Refrigere al menos 2 horas. Espolvoree generosamente con cacao negro sin azúcar justo antes de servir.'
+      ],
+      tags: ['Italiano', 'Italia', 'Postre', 'Sin Horno', 'Café', 'Clásico']
+    },
+    pt: {
+      title: 'Tiramisù Tradicional Italiano',
+      description: 'A verdadeira sobremesa italiana sem forno: delicados biscoitos champanhe embebidos em café, dispostos em camadas com um creme suave de mascarpone e polvilhados com cacau escuro.',
+      instructions: [
+        'Separe 3 ovos. Numa tigela, bata as gemas com o açúcar e o extrato de baunilha até obter uma mistura espessa e clara.',
+        'Incorpore delicadamente o mascarpone com uma espátula até obter uma textura lisa e aveludada.',
+        'Noutra tigela limpa, bata as claras com uma pitada de sal em picos suaves e incorpore-as delicadamente ao creme de mascarpone.',
+        'Mergulhe rapidamente os biscoitos champanhe em café frio (sem os encharcar demasiado).',
+        'Disponha uma camada de biscoitos embebidos num recipiente, espalhe metade do creme por cima e repita com uma segunda camada.',
+        'Leve ao frigorífico pelo menos 2 horas. Polvilhe generosamente com cacau escuro sem açúcar mesmo antes de servir.'
+      ],
+      tags: ['Italiano', 'Itália', 'Sobremesa', 'Sem Forno', 'Café', 'Clássico']
+    }
   }
 };

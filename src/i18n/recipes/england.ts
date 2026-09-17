@@ -441,5 +441,67 @@ export const ENGLAND_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLanguag
       ],
       tags: ['Britânico', 'Assado', 'Carne', 'Domingo', 'Clássico']
     }
+  },
+  'rec-full-english': {
+    en: {
+      title: 'Full English Breakfast Skillet (Traditional Fry-Up)',
+      description: 'The legendary British breakfast: juicy Cumberland sausages, crispy smoked bacon, sunny fried eggs, grilled tomatoes, button mushrooms, and baked beans with warm toast.',
+      instructions: [
+        'Heat 1 tbsp butter and olive oil in a large skillet. Add pork sausages and cook for 8-10 mins, turning until browned on all sides and cooked through.',
+        'Add bacon rashers/lardons, halved vine tomatoes, and sliced button mushrooms to the pan. Sauté 4-5 mins until mushrooms are golden and bacon is crisp.',
+        'Warm the canned British baked beans gently in a small saucepan.',
+        'Crack eggs directly into the skillet gaps and fry sunny-side up for 3 mins until whites are set and yolks are runny.',
+        'Toast sliced bread and butter generously. Serve the skillet feast immediately with warm baked beans.'
+      ],
+      tags: ['British', 'England', 'Breakfast', 'Brunch', 'High Protein', '15-Min Meal']
+    },
+    fr: {
+      title: 'Poêlée du Petit-Déjeuner Anglais Complet (Fry-Up Traditionnel)',
+      description: 'Le légendaire petit-déjeuner britannique : saucisses de Cumberland juteuses, bacon fumé croustillant, œufs au plat, tomates grillées, champignons de Paris et haricots blancs à la tomate, avec des toasts chauds.',
+      instructions: [
+        'Faites chauffer 1 c. à soupe de beurre et d’huile d’olive dans une grande poêle. Ajoutez les saucisses de porc et faites cuire 8 à 10 minutes en les retournant jusqu’à ce qu’elles soient dorées de tous côtés et bien cuites.',
+        'Ajoutez le bacon, les tomates cerises coupées en deux et les champignons de Paris émincés à la poêle. Faites sauter 4 à 5 minutes jusqu’à ce que les champignons soient dorés et le bacon croustillant.',
+        'Réchauffez doucement les haricots blancs à la tomate en conserve dans une petite casserole.',
+        'Cassez les œufs directement dans les espaces de la poêle et faites-les frire au plat pendant 3 minutes jusqu’à ce que les blancs soient pris et les jaunes coulants.',
+        'Faites griller des tranches de pain généreusement beurrées. Servez la poêlée immédiatement avec les haricots chauds.'
+      ],
+      tags: ['Britannique', 'Angleterre', 'Petit-Déjeuner', 'Brunch', 'Riche en Protéines', 'Repas Express']
+    },
+    de: {
+      title: 'Full English Breakfast aus der Pfanne (Traditionelles Fry-Up)',
+      description: 'Das legendäre britische Frühstück: saftige Cumberland-Würstchen, knuspriger Räucherspeck, Spiegeleier, gegrillte Tomaten, Champignons und gebackene Bohnen mit warmem Toast.',
+      instructions: [
+        '1 EL Butter und Olivenöl in einer großen Pfanne erhitzen. Schweinswürstchen zugeben und 8-10 Minuten braten, dabei wenden, bis sie rundum braun und durchgegart sind.',
+        'Speckstreifen, halbierte Tomaten und geschnittene Champignons in die Pfanne geben. 4-5 Minuten braten, bis die Champignons goldbraun und der Speck knusprig sind.',
+        'Die gebackenen Bohnen in Tomatensauce sanft in einem kleinen Topf erwärmen.',
+        'Eier direkt in die freien Stellen der Pfanne aufschlagen und 3 Minuten spiegeln, bis das Eiweiß fest und das Eigelb noch flüssig ist.',
+        'Brotscheiben großzügig toasten und buttern. Das Pfannengericht sofort mit den warmen Bohnen servieren.'
+      ],
+      tags: ['Britisch', 'England', 'Frühstück', 'Brunch', 'Proteinreich', '15-Minuten-Gericht']
+    },
+    es: {
+      title: 'Sartén de Desayuno Inglés Completo (Fry-Up Tradicional)',
+      description: 'El legendario desayuno británico: jugosas salchichas Cumberland, panceta ahumada crujiente, huevos fritos, tomates a la parrilla, champiñones y alubias con tomate, acompañado de tostadas calientes.',
+      instructions: [
+        'Caliente 1 cucharada de mantequilla y aceite de oliva en una sartén grande. Añada las salchichas de cerdo y cocine 8-10 minutos, dándoles la vuelta hasta que estén doradas por todos los lados y bien cocidas.',
+        'Añada la panceta, los tomates cherry cortados por la mitad y los champiñones laminados a la sartén. Saltee 4-5 minutos hasta que los champiñones estén dorados y la panceta crujiente.',
+        'Caliente suavemente las alubias con tomate enlatadas en un cazo pequeño.',
+        'Casque los huevos directamente en los huecos de la sartén y fríalos 3 minutos hasta que las claras estén cuajadas y las yemas líquidas.',
+        'Tueste rebanadas de pan generosamente untadas con mantequilla. Sirva el festín de inmediato con las alubias calientes.'
+      ],
+      tags: ['Británico', 'Inglaterra', 'Desayuno', 'Brunch', 'Alto en Proteínas', 'Comida en 15 Minutos']
+    },
+    pt: {
+      title: 'Pequeno-Almoço Inglês Completo na Frigideira (Fry-Up Tradicional)',
+      description: 'O lendário pequeno-almoço britânico: salsichas Cumberland suculentas, bacon fumado estaladiço, ovos estrelados, tomates grelhados, cogumelos e feijão com tomate, acompanhado de torradas quentes.',
+      instructions: [
+        'Aqueça 1 colher de sopa de manteiga e azeite numa frigideira grande. Junte as salsichas de porco e cozinhe 8-10 minutos, virando até ficarem douradas de todos os lados e bem cozinhadas.',
+        'Junte o bacon, os tomates cherry cortados ao meio e os cogumelos fatiados à frigideira. Salteie 4-5 minutos até os cogumelos ficarem dourados e o bacon estaladiço.',
+        'Aqueça suavemente o feijão com tomate enlatado numa panela pequena.',
+        'Parta os ovos diretamente nos espaços da frigideira e frite estrelados durante 3 minutos até as claras estarem firmes e as gemas líquidas.',
+        'Torre fatias de pão generosamente barradas com manteiga. Sirva o prato imediatamente com o feijão quente.'
+      ],
+      tags: ['Britânico', 'Inglaterra', 'Pequeno-Almoço', 'Brunch', 'Rico em Proteína', 'Refeição em 15 Minutos']
+    }
   }
 };

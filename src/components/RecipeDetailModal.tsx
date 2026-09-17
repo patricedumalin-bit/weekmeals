@@ -268,6 +268,26 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               ))}
             </div>
           )}
+
+          {recipe.source && (
+            <p className="mt-3 text-[11px] text-slate-400 dark:text-slate-500 italic">
+              {recipe.sourceUrl ? (
+                <>
+                  Source :{' '}
+                  <a
+                    href={recipe.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-[var(--accent)]"
+                  >
+                    {recipe.source}
+                  </a>
+                </>
+              ) : (
+                <>Source : {recipe.source}</>
+              )}
+            </p>
+          )}
         </div>
 
         {/* Footer actions */}

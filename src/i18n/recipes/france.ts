@@ -451,5 +451,365 @@ export const FRANCE_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLanguage
       ],
       tags: ['Francês', 'Sobremesa', 'Maçã', 'Doce', 'Pastelaria']
     }
+  },
+  'rec-fr-tarte-tatin-authentique': {
+    en: {
+      title: 'Authentic Apple Tarte Tatin with Caramelized Apples',
+      description: 'The Tatin sisters’ famous upside-down tart: melting caramelized apple wedges in a salted butter caramel, topped with a crisp pastry crust.',
+      instructions: [
+        'Peel 6 large apples (Reine des Reinettes or Golden variety), cut into large wedges and core them.',
+        'In a Tatin dish or an oven-proof skillet, melt 100 g sugar with 60 g salted butter over medium heat to make a beautiful amber caramel.',
+        'Arrange the apple wedges tightly, standing upright, in the hot caramel.',
+        'Cook the apples over low heat for 15 minutes so they soak up the caramel and begin to candy.',
+        'Remove from the heat and cover the apples with the puff or shortcrust pastry disc, tucking the edges down inside the dish.',
+        'Prick the pastry a few times with a knife to let steam escape.',
+        'Bake at 190°C for 30 minutes until the pastry is golden and crisp.',
+        'Let cool for 10 minutes, then unmould with a quick, confident flip onto a serving plate.',
+        'Serve warm with a dollop of thick crème fraîche or a scoop of vanilla ice cream.'
+      ],
+      tags: ['French', 'France', 'Sologne', 'Dessert', 'Tart', 'Apples', 'Tradition']
+    },
+    fr: {
+      title: 'Tarte Tatin Authentique aux Pommes Caramélisées',
+      description: 'La célèbre tarte renversée des sœurs Tatin : quartiers de pommes fondants et confits dans un caramel au beurre demi-sel, recouverts d’une pâte croustillante.',
+      instructions: [
+        'Épluchez 6 grosses pommes (variété Reine des Reinettes ou Golden), coupez-les en gros quartiers et évidez-les.',
+        'Dans un moule à Tatin ou une poêle allant au four, faites fondre 100 g de sucre avec 60 g de beurre demi-sel à feu moyen pour réaliser un beau caramel ambré.',
+        'Disposez les quartiers de pommes bien serrés verticalement dans le caramel chaud.',
+        'Laissez cuire les pommes à feu doux pendant 15 minutes pour qu’elles s’imprègnent du caramel et commencent à confire.',
+        'Retirez du feu et recouvrez les pommes avec le disque de pâte feuilletée ou brisée en rentrant les bords vers l’intérieur du moule.',
+        'Piquez la pâte de quelques coups de couteau pour laisser la vapeur s’échapper.',
+        'Enfournez à 190°C pendant 30 minutes jusqu’à ce que la pâte soit bien dorée et croustillante.',
+        'Laissez tiédir 10 minutes, puis démoulez d’un geste vif et assuré en retournant la tarte sur un plat de service.',
+        'Servez tiède avec une quenelle de crème fraîche épaisse d’Isigny ou une boule de glace vanille.'
+      ],
+      tags: ['Français', 'France', 'Sologne', 'Dessert', 'Tarte', 'Pommes', 'Tradition']
+    },
+    de: {
+      title: 'Original Tarte Tatin mit karamellisierten Äpfeln',
+      description: 'Die berühmte umgestürzte Tarte der Schwestern Tatin: zergehende karamellisierte Apfelspalten in gesalzenem Butterkaramell, bedeckt mit knusprigem Blätterteig.',
+      instructions: [
+        '6 große Äpfel (Reinette oder Golden) schälen, in große Spalten schneiden und entkernen.',
+        'In einer Tatin-Form oder einer ofenfesten Pfanne 100 g Zucker mit 60 g gesalzener Butter bei mittlerer Hitze zu einem schönen bernsteinfarbenen Karamell schmelzen.',
+        'Die Apfelspalten dicht stehend im heißen Karamell anordnen.',
+        'Die Äpfel 15 Minuten bei schwacher Hitze garen, damit sie sich mit dem Karamell vollsaugen und leicht kandieren.',
+        'Vom Herd nehmen und die Äpfel mit dem Blätter- oder Mürbeteigkreis bedecken, die Ränder dabei nach innen einschlagen.',
+        'Den Teig mehrmals mit einem Messer einstechen, damit Dampf entweichen kann.',
+        'Bei 190°C 30 Minuten backen, bis der Teig goldbraun und knusprig ist.',
+        '10 Minuten abkühlen lassen, dann mit einer schnellen, sicheren Bewegung auf eine Servierplatte stürzen.',
+        'Warm servieren mit einem Klößchen dicker Crème fraîche oder einer Kugel Vanilleeis.'
+      ],
+      tags: ['Französisch', 'Frankreich', 'Sologne', 'Dessert', 'Tarte', 'Äpfel', 'Tradition']
+    },
+    es: {
+      title: 'Tarta Tatin Auténtica de Manzanas Caramelizadas',
+      description: 'La famosa tarta invertida de las hermanas Tatin: gajos de manzana fundentes y confitados en un caramelo de mantequilla salada, cubiertos con un hojaldre crujiente.',
+      instructions: [
+        'Pele 6 manzanas grandes (variedad Reineta o Golden), córtelas en gajos grandes y quíteles el corazón.',
+        'En un molde Tatin o una sartén apta para horno, derrita 100 g de azúcar con 60 g de mantequilla salada a fuego medio para lograr un bonito caramelo ambarino.',
+        'Coloque los gajos de manzana bien apretados, en posición vertical, en el caramelo caliente.',
+        'Cueza las manzanas a fuego lento durante 15 minutos para que se impregnen del caramelo y empiecen a confitarse.',
+        'Retire del fuego y cubra las manzanas con el disco de hojaldre o masa quebrada, remetiendo los bordes hacia el interior del molde.',
+        'Pinche la masa con un cuchillo varias veces para dejar escapar el vapor.',
+        'Hornee a 190°C durante 30 minutos hasta que la masa esté bien dorada y crujiente.',
+        'Deje templar 10 minutos y desmolde con un gesto rápido y firme, volcando la tarta sobre un plato de servir.',
+        'Sirva tibia con una cucharada de nata espesa o una bola de helado de vainilla.'
+      ],
+      tags: ['Francés', 'Francia', 'Sologne', 'Postre', 'Tarta', 'Manzanas', 'Tradición']
+    },
+    pt: {
+      title: 'Tarte Tatin Autêntica de Maçãs Caramelizadas',
+      description: 'A famosa tarte invertida das irmãs Tatin: gomos de maçã derretidos e cristalizados num caramelo de manteiga salgada, cobertos com uma massa folhada estaladiça.',
+      instructions: [
+        'Descasque 6 maçãs grandes (variedade Reineta ou Golden), corte em gomos grandes e retire o miolo.',
+        'Numa forma Tatin ou frigideira própria para forno, derreta 100 g de açúcar com 60 g de manteiga salgada em lume médio para obter um belo caramelo âmbar.',
+        'Disponha os gomos de maçã bem apertados, na vertical, no caramelo quente.',
+        'Deixe cozinhar as maçãs em lume brando durante 15 minutos para que absorvam o caramelo e comecem a cristalizar.',
+        'Retire do lume e cubra as maçãs com o disco de massa folhada ou quebrada, dobrando as pontas para dentro da forma.',
+        'Pique a massa algumas vezes com uma faca para deixar sair o vapor.',
+        'Leve ao forno a 190°C durante 30 minutos até a massa ficar dourada e estaladiça.',
+        'Deixe amornar 10 minutos e desenforme com um gesto rápido e firme, virando a tarte sobre um prato de servir.',
+        'Sirva morna com uma colherada de natas espessas ou uma bola de gelado de baunilha.'
+      ],
+      tags: ['Francês', 'França', 'Sologne', 'Sobremesa', 'Tarte', 'Maçãs', 'Tradição']
+    }
+  },
+  'rec-fr-poulet-basquaise-traditionnel': {
+    en: {
+      title: 'Traditional Chicken Basquaise Simmered in Piperade and White Wine',
+      description: 'Golden farmhouse chicken thighs simmered in a flavorful sauce of fresh tomatoes, red and green peppers, onions, and Espelette pepper.',
+      instructions: [
+        'In a Dutch oven, brown the chicken thighs in olive oil for 10 minutes. Set aside.',
+        'In the same pot, soften the sliced peppers and onions for 8 minutes.',
+        'Add the crushed tomatoes, crushed garlic, thyme, bay leaf, and Espelette pepper.',
+        'Deglaze with the dry white wine.',
+        'Return the chicken pieces to the sauce, cover and simmer for 35 minutes.',
+        'Serve with white Camargue rice.'
+      ],
+      tags: ['French', 'France', 'Basque Country', 'Main', 'Chicken', 'Classic']
+    },
+    fr: {
+      title: 'Poulet Basquaise Traditionnel Mijoté à la Pipérade et Vin Blanc',
+      description: 'Cuisseaux de poulet fermier dorés dans l’huile d’olive, mijotés dans une sauce savoureuse de tomates fraîches, poivrons rouges et verts, oignons et piment d’Espelette.',
+      instructions: [
+        'Dans une cocotte, faites dorer les cuisses de poulet dans l’huile d’olive pendant 10 minutes. Réservez.',
+        'Dans la même cocotte, faites fondre les poivrons émincés et les oignons pendant 8 minutes.',
+        'Ajoutez les tomates concassées, l’ail écrasé, le thym, le laurier et le piment d’Espelette.',
+        'Déglacez avec le vin blanc sec.',
+        'Remettez les morceaux de poulet dans la sauce, couvrez et laissez mijoter 35 minutes.',
+        'Servez avec du riz blanc de Camargue.'
+      ],
+      tags: ['Français', 'France', 'Pays Basque', 'Plat', 'Poulet', 'Classique']
+    },
+    de: {
+      title: 'Traditionelles Poulet Basquaise mit Piperade und Weißwein geschmort',
+      description: 'Goldbraun gebratene Hähnchenschenkel vom Bauernhof, geschmort in einer aromatischen Soße aus frischen Tomaten, roten und grünen Paprika, Zwiebeln und Espelette-Pfeffer.',
+      instructions: [
+        'In einem Schmortopf die Hähnchenschenkel 10 Minuten in Olivenöl braten. Beiseitestellen.',
+        'Im selben Topf die geschnittenen Paprika und Zwiebeln 8 Minuten andünsten.',
+        'Gehackte Tomaten, zerdrückten Knoblauch, Thymian, Lorbeer und Espelette-Pfeffer zugeben.',
+        'Mit trockenem Weißwein ablöschen.',
+        'Die Hähnchenstücke wieder in die Soße geben, abdecken und 35 Minuten schmoren lassen.',
+        'Mit weißem Camargue-Reis servieren.'
+      ],
+      tags: ['Französisch', 'Frankreich', 'Baskenland', 'Hauptgericht', 'Hähnchen', 'Klassiker']
+    },
+    es: {
+      title: 'Pollo Vasco Tradicional Guisado con Piperada y Vino Blanco',
+      description: 'Muslos de pollo de granja dorados en aceite de oliva, guisados en una sabrosa salsa de tomates frescos, pimientos rojos y verdes, cebollas y pimiento de Espelette.',
+      instructions: [
+        'En una cazuela, dore los muslos de pollo en aceite de oliva durante 10 minutos. Reserve.',
+        'En la misma cazuela, sofría los pimientos en tiras y las cebollas durante 8 minutos.',
+        'Añada los tomates triturados, el ajo machacado, el tomillo, el laurel y el pimiento de Espelette.',
+        'Desglase con el vino blanco seco.',
+        'Vuelva a poner los trozos de pollo en la salsa, tape y cueza a fuego lento 35 minutos.',
+        'Sirva con arroz blanco de Camarga.'
+      ],
+      tags: ['Francés', 'Francia', 'País Vasco', 'Plato principal', 'Pollo', 'Clásico']
+    },
+    pt: {
+      title: 'Frango Basquaise Tradicional Estufado com Piperade e Vinho Branco',
+      description: 'Coxas de frango caseiro douradas em azeite, estufadas num molho saboroso de tomates frescos, pimentos vermelhos e verdes, cebolas e pimenta de Espelette.',
+      instructions: [
+        'Numa panela, doure as coxas de frango em azeite durante 10 minutos. Reserve.',
+        'Na mesma panela, refogue os pimentos às tiras e as cebolas durante 8 minutos.',
+        'Junte os tomates triturados, o alho esmagado, o tomilho, o louro e a pimenta de Espelette.',
+        'Deglaceie com o vinho branco seco.',
+        'Volte a colocar os pedaços de frango no molho, tape e deixe cozinhar em lume brando 35 minutos.',
+        'Sirva com arroz branco da Camarga.'
+      ],
+      tags: ['Francês', 'França', 'País Basco', 'Prato principal', 'Frango', 'Clássico']
+    }
+  },
+  'rec-fr-soupe-cresson-veloute': {
+    en: {
+      title: 'Traditional Watercress and Potato Velouté',
+      description: 'Silky emerald-green soup made from fresh spring watercress stewed in butter and blended with melting potatoes and cream.',
+      instructions: [
+        'Wash the watercress thoroughly and remove the thick stems.',
+        'Melt the butter in a large pot and sweat the shallot and watercress leaves for 3 minutes.',
+        'Add the diced potatoes and the chicken broth.',
+        'Cook for 20 minutes over medium heat.',
+        'Blend until smooth, stir in the crème fraîche, and season with salt and nutmeg.',
+        'Serve with golden butter croutons.'
+      ],
+      tags: ['French', 'France', 'Île-de-France', 'Starter', 'Soup', 'Tradition']
+    },
+    fr: {
+      title: 'Velouté Traditionnel de Cresson et Pommes de Terre',
+      description: 'Soupe vert émeraude poivrée et soyeuse de cresson frais de fontaine étuvé au beurre et lié aux pommes de terre fondantes et crème.',
+      instructions: [
+        'Lavez soigneusement le cresson et éliminez les grosses tiges.',
+        'Faites fondre le beurre dans un faitout et faites suer l’échalote et les feuilles de cresson pendant 3 minutes.',
+        'Ajoutez les pommes de terre coupées en morceaux et le bouillon de volaille.',
+        'Laissez cuire 20 minutes à feu moyen.',
+        'Mixez finement, incorporez la crème fraîche, assaisonnez de sel et muscade.',
+        'Servez avec des croûtons dorés au beurre.'
+      ],
+      tags: ['Français', 'France', 'Île-de-France', 'Entrée', 'Soupe', 'Tradition']
+    },
+    de: {
+      title: 'Traditionelle Brunnenkresse-Kartoffel-Suppe',
+      description: 'Seidig-smaragdgrüne Suppe aus frischer Brunnenkresse, in Butter gedünstet und mit zerfallenden Kartoffeln und Sahne verfeinert.',
+      instructions: [
+        'Die Brunnenkresse gründlich waschen und die dicken Stiele entfernen.',
+        'Die Butter in einem großen Topf schmelzen und die Schalotte sowie die Kresseblätter 3 Minuten andünsten.',
+        'Die gewürfelten Kartoffeln und die Hühnerbrühe zugeben.',
+        '20 Minuten bei mittlerer Hitze kochen.',
+        'Fein pürieren, die Crème fraîche einrühren und mit Salz und Muskat abschmecken.',
+        'Mit goldenen Butter-Croûtons servieren.'
+      ],
+      tags: ['Französisch', 'Frankreich', 'Île-de-France', 'Vorspeise', 'Suppe', 'Tradition']
+    },
+    es: {
+      title: 'Velouté Tradicional de Berros y Patatas',
+      description: 'Sopa de un verde esmeralda sedoso, elaborada con berros frescos rehogados en mantequilla y ligada con patatas fundentes y nata.',
+      instructions: [
+        'Lave bien los berros y elimine los tallos gruesos.',
+        'Derrita la mantequilla en una olla grande y sofría la chalota y las hojas de berro durante 3 minutos.',
+        'Añada las patatas troceadas y el caldo de pollo.',
+        'Cueza 20 minutos a fuego medio.',
+        'Triture hasta obtener una textura fina, incorpore la nata y sazone con sal y nuez moscada.',
+        'Sirva con picatostes dorados en mantequilla.'
+      ],
+      tags: ['Francés', 'Francia', 'Île-de-France', 'Entrante', 'Sopa', 'Tradición']
+    },
+    pt: {
+      title: 'Velouté Tradicional de Agrião e Batata',
+      description: 'Sopa verde-esmeralda sedosa feita com agrião fresco refogado em manteiga e ligada com batatas macias e natas.',
+      instructions: [
+        'Lave bem o agrião e retire os talos grossos.',
+        'Derreta a manteiga numa panela grande e refogue a chalota e as folhas de agrião durante 3 minutos.',
+        'Junte as batatas cortadas em pedaços e o caldo de galinha.',
+        'Deixe cozinhar 20 minutos em lume médio.',
+        'Triture bem, incorpore as natas e tempere com sal e noz-moscada.',
+        'Sirva com croutons dourados na manteiga.'
+      ],
+      tags: ['Francês', 'França', 'Île-de-France', 'Entrada', 'Sopa', 'Tradição']
+    }
+  },
+  'rec-fr-mousse-chocolat': {
+    en: {
+      title: 'Classic Homemade Dark Chocolate Mousse',
+      description: 'The real French chocolate mousse: airy, intensely flavored with 70% cocoa, made without gelatin using very firmly whipped egg whites and a touch of fleur de sel.',
+      instructions: [
+        'Break the dark chocolate into pieces and melt it in a double boiler (or gently in the microwave) with the unsalted butter, smoothing with a spatula.',
+        'Separate the egg whites from the yolks.',
+        'Stir the yolks in one by one into the warm melted chocolate, mixing vigorously.',
+        'In another clean bowl, whip the 6 egg whites into a firm foam with a pinch of salt.',
+        'Whisk in a third of the whites vigorously to loosen the chocolate.',
+        'Gently fold in the rest of the whites with a spatula, lifting the mixture from bottom to top so as not to knock the air out.',
+        'Divide among small glasses or a large serving bowl.',
+        'Chill in the refrigerator for at least 4 hours (ideally overnight) before serving.'
+      ],
+      tags: ['French', 'France', 'Dessert', 'Chocolate', 'Classic', 'Pastry']
+    },
+    fr: {
+      title: 'Mousse au Chocolat Noir Traditionnelle Maison',
+      description: 'La véritable mousse au chocolat à la française : aérienne, intense en cacao 70%, réalisée sans gélatine avec des blancs montés en neige très ferme et une pointe de fleur de sel.',
+      instructions: [
+        'Cassez le chocolat noir en morceaux et faites-le fondre au bain-marie (ou micro-ondes doux) avec le beurre doux en lissant à la spatule.',
+        'Séparez les blancs des jaunes d’œufs.',
+        'Incorporez les jaunes un à un dans le chocolat fondu tiédi en mélangeant vigoureusement.',
+        'Dans un autre saladier propre, montez les 6 blancs d’œufs en neige ferme avec une pincée de sel.',
+        'Incorporez un tiers des blancs énergiquement au fouet pour assouplir le chocolat.',
+        'Incorporez délicatement le reste des blancs à la maryse en soulevant la masse de bas en haut pour ne pas les casser.',
+        'Répartissez dans des verrines ou un grand compotier.',
+        'Laissez reposer au réfrigérateur pendant au moins 4 heures (idéalement toute la nuit) avant de déguster.'
+      ],
+      tags: ['Français', 'France', 'Dessert', 'Chocolat', 'Classique', 'Pâtisserie']
+    },
+    de: {
+      title: 'Klassische Hausgemachte Zartbitter-Schokoladenmousse',
+      description: 'Die echte französische Schokoladenmousse: luftig, intensiv nach 70%iger Kakaoschokolade schmeckend, ohne Gelatine zubereitet mit sehr fest geschlagenem Eiweiß und einer Prise Fleur de Sel.',
+      instructions: [
+        'Die dunkle Schokolade in Stücke brechen und über einem Wasserbad (oder sanft in der Mikrowelle) mit der ungesalzenen Butter schmelzen, mit einem Spatel glatt rühren.',
+        'Die Eiweiß vom Eigelb trennen.',
+        'Das Eigelb nach und nach unter die warme geschmolzene Schokolade rühren, kraftvoll mischen.',
+        'In einer anderen sauberen Schüssel die 6 Eiweiß mit einer Prise Salz steif schlagen.',
+        'Ein Drittel des Eiweißes kraftvoll unterrühren, um die Schokolade zu lockern.',
+        'Den Rest des Eiweißes vorsichtig mit einem Teigschaber unterheben, dabei von unten nach oben heben, um die Luft nicht herauszudrücken.',
+        'In kleine Gläser oder eine große Schüssel füllen.',
+        'Mindestens 4 Stunden (idealerweise über Nacht) im Kühlschrank ruhen lassen, bevor serviert wird.'
+      ],
+      tags: ['Französisch', 'Frankreich', 'Dessert', 'Schokolade', 'Klassiker', 'Konditorei']
+    },
+    es: {
+      title: 'Mousse de Chocolate Negro Tradicional Casera',
+      description: 'La verdadera mousse de chocolate a la francesa: aérea, de sabor intenso a cacao 70%, elaborada sin gelatina con claras montadas muy firmes y un toque de flor de sal.',
+      instructions: [
+        'Rompa el chocolate negro en trozos y derrítalo al baño maría (o suavemente en el microondas) con la mantequilla sin sal, alisando con una espátula.',
+        'Separe las claras de las yemas.',
+        'Incorpore las yemas una a una al chocolate fundido tibio, mezclando enérgicamente.',
+        'En otro bol limpio, monte las 6 claras a punto de nieve firme con una pizca de sal.',
+        'Incorpore un tercio de las claras enérgicamente para aligerar el chocolate.',
+        'Incorpore con delicadeza el resto de las claras con una espátula, levantando la masa de abajo hacia arriba para no romperlas.',
+        'Reparta en vasitos o en un cuenco grande.',
+        'Deje reposar en el refrigerador al menos 4 horas (idealmente toda la noche) antes de degustar.'
+      ],
+      tags: ['Francés', 'Francia', 'Postre', 'Chocolate', 'Clásico', 'Pastelería']
+    },
+    pt: {
+      title: 'Mousse de Chocolate Negro Tradicional Caseira',
+      description: 'A verdadeira mousse de chocolate à francesa: leve, com sabor intenso a cacau 70%, feita sem gelatina com claras batidas bem firmes e um toque de flor de sal.',
+      instructions: [
+        'Parta o chocolate negro em pedaços e derreta em banho-maria (ou suavemente no micro-ondas) com a manteiga sem sal, alisando com uma espátula.',
+        'Separe as claras das gemas.',
+        'Incorpore as gemas uma a uma no chocolate derretido morno, misturando vigorosamente.',
+        'Noutra tigela limpa, bata as 6 claras em castelo firme com uma pitada de sal.',
+        'Incorpore um terço das claras energicamente para amaciar o chocolate.',
+        'Incorpore delicadamente o resto das claras com uma espátula, levantando a massa de baixo para cima para não as quebrar.',
+        'Distribua por copinhos ou uma taça grande.',
+        'Deixe repousar no frigorífico pelo menos 4 horas (idealmente de um dia para o outro) antes de servir.'
+      ],
+      tags: ['Francês', 'França', 'Sobremesa', 'Chocolate', 'Clássico', 'Pastelaria']
+    }
+  },
+  'rec-fr-moules-frites-sauce-mariniere': {
+    en: {
+      title: 'Traditional Northern French Moules-Frites in Mariniere Sauce',
+      description: 'The popular dish of the brasseries of northern France: a large pot of bouchot mussels opened in dry white wine, shallots and parsley, served with fries.',
+      instructions: [
+        'Clean and debeard the mussels under fresh water.',
+        'In a large pot, soften the sliced shallots in the butter.',
+        'Pour in the dry white wine and bring to the boil.',
+        'Add the mussels to the pot, cover and cook for 5 to 7 minutes over very high heat, shaking the pot twice.',
+        'As soon as all the mussels have opened, add the chopped flat-leaf parsley and season with pepper.',
+        'Serve piping hot in the pots with a paper cone of crispy fresh fries.'
+      ],
+      tags: ['French', 'France', 'Nord', 'Brasserie', 'Main', 'Seafood', 'Classic']
+    },
+    fr: {
+      title: 'Moules-Frites Traditionnelles du Nord à la Sauce Marinière',
+      description: 'Le plat populaire des brasseries du Nord : grande cocotte de moules de bouchot ouvertes au vin blanc sec, échalotes et persil, servies avec frites.',
+      instructions: [
+        'Nettoyez et ébarbez les moules sous l’eau fraîche.',
+        'Dans un grand faitout, faites fondre les échalotes émincées dans le beurre.',
+        'Versez le vin blanc sec et portez à ébullition.',
+        'Jetez les moules dans le faitout, couvrez et faites cuire 5 à 7 minutes à feu très vif en secouant la cocotte 2 fois.',
+        'Dès que toutes les moules sont ouvertes, ajoutez le persil plat ciselé et poivrez.',
+        'Servez brûlant dans les cocottes avec un cornet de frites fraîches bien croustillantes.'
+      ],
+      tags: ['Français', 'France', 'Nord', 'Brasserie', 'Plat', 'Fruits de mer', 'Classique']
+    },
+    de: {
+      title: 'Traditionelle Miesmuscheln mit Pommes aus Nordfrankreich in Weißweinsauce',
+      description: 'Das beliebte Gericht der Brasserien Nordfrankreichs: ein großer Topf Bouchot-Miesmuscheln, geöffnet in trockenem Weißwein, mit Schalotten und Petersilie, serviert mit Pommes frites.',
+      instructions: [
+        'Die Miesmuscheln unter frischem Wasser putzen und die Bärte entfernen.',
+        'In einem großen Topf die geschnittenen Schalotten in der Butter andünsten.',
+        'Den trockenen Weißwein angießen und zum Kochen bringen.',
+        'Die Muscheln in den Topf geben, abdecken und 5 bis 7 Minuten bei sehr starker Hitze garen, dabei den Topf zweimal schütteln.',
+        'Sobald alle Muscheln geöffnet sind, die gehackte glatte Petersilie zugeben und pfeffern.',
+        'Kochend heiß in den Töpfen servieren, mit einer Tüte knuspriger frischer Pommes frites.'
+      ],
+      tags: ['Französisch', 'Frankreich', 'Nord', 'Brasserie', 'Hauptgericht', 'Meeresfrucht', 'Klassiker']
+    },
+    es: {
+      title: 'Mejillones con Patatas Fritas Tradicionales del Norte en Salsa Marinera',
+      description: 'El plato popular de las brasseries del norte de Francia: una gran cazuela de mejillones de bouchot abiertos con vino blanco seco, chalotas y perejil, servidos con patatas fritas.',
+      instructions: [
+        'Limpie y quite las barbas a los mejillones bajo agua fresca.',
+        'En una cazuela grande, sofría las chalotas en tiras con la mantequilla.',
+        'Vierta el vino blanco seco y lleve a ebullición.',
+        'Añada los mejillones a la cazuela, tape y cueza de 5 a 7 minutos a fuego muy fuerte, agitando la cazuela dos veces.',
+        'En cuanto todos los mejillones estén abiertos, añada el perejil picado y sazone con pimienta.',
+        'Sirva bien caliente en las cazuelas con un cucurucho de patatas fritas bien crujientes.'
+      ],
+      tags: ['Francés', 'Francia', 'Norte', 'Brasserie', 'Plato principal', 'Mariscos', 'Clásico']
+    },
+    pt: {
+      title: 'Mexilhões com Batatas Fritas Tradicionais do Norte em Molho Marinês',
+      description: 'O prato popular das brasseries do norte de França: uma grande panela de mexilhões de bouchot abertos em vinho branco seco, chalotas e salsa, servidos com batatas fritas.',
+      instructions: [
+        'Limpe e retire as barbas dos mexilhões em água fresca.',
+        'Numa panela grande, refogue as chalotas às tiras na manteiga.',
+        'Deite o vinho branco seco e leve à fervura.',
+        'Junte os mexilhões à panela, tape e cozinhe de 5 a 7 minutos em lume muito forte, agitando a panela duas vezes.',
+        'Assim que todos os mexilhões estiverem abertos, junte a salsa picada e tempere com pimenta.',
+        'Sirva bem quente nas panelas com um cone de batatas fritas bem estaladiças.'
+      ],
+      tags: ['Francês', 'França', 'Norte', 'Brasserie', 'Prato principal', 'Marisco', 'Clássico']
+    }
   }
 };

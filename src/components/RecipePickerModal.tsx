@@ -20,7 +20,8 @@ import {
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory, CustomMealIngredient, UnitType, CookingModeType, CustomMeal, DatabaseViewSource } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { useLanguage } from '../i18n/LanguageContext';
-import { inferCookingMode } from '../utils/calculator';
+import { inferCookingMode, getAvailableCookingModes } from '../utils/calculator';
+import { getAvailableCuisines, recipeMatchesCuisine } from '../data/cuisineData';
 import { SaveCustomMealModal } from './SaveCustomMealModal';
 import { Save } from 'lucide-react';
 import { DatabaseSwitcher } from './DatabaseSwitcher';
@@ -72,7 +73,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   onDeleteRecipe,
   onCreateNewRecipe
 }) => {
-  const { language, t, translateRecipeCategory, translateMealLabel, translateRecipe, translateCookingMode, translateUnit, translateDifficulty } = useLanguage();
+  const { t, translateRecipeCategory, translateMealLabel, translateRecipe, translateCookingMode, translateUnit } = useLanguage();
   if (!isOpen) return null;
 
   const safeRecipes = Array.isArray(recipes) ? recipes : [];
@@ -96,7 +97,6 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCookingMode, setSelectedCookingMode] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
 
   // Custom meal state (simplified: just take the first one for now)
   const [customName, setCustomName] = useState(currentCustomMeals[0]?.name || '');
@@ -106,27 +106,9 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [showSaveAsRecipe, setShowSaveAsRecipe] = useState(false);
 
-  const COOKING_MODES = [
-    { id: 'all', labelKey: 'cookingMode_all' },
-    { id: 'four', labelKey: 'cookingMode_four' },
-    { id: 'poele', labelKey: 'cookingMode_poele' },
-    { id: 'cookeo', labelKey: 'cookingMode_cookeo' },
-    { id: 'robot', labelKey: 'cookingMode_robot' },
-    { id: 'cocotte', labelKey: 'cookingMode_cocotte' },
-    { id: 'vapeur', labelKey: 'cookingMode_vapeur' },
-    { id: 'grill', labelKey: 'cookingMode_grill' },
-    { id: 'sans-cuisson', labelKey: 'cookingMode_sansCuisson' },
-  ];
+  const COOKING_MODES = getAvailableCookingModes(safeRecipes);
 
-  const COUNTRIES = [
-    { id: 'all', label: 'All Cuisines', flag: '🌍' },
-    { id: 'France', label: 'France', flag: '🇫🇷' },
-    { id: 'Italy', label: 'Italy', flag: '🇮🇹' },
-    { id: 'England', label: 'England / UK', flag: '🇬🇧' },
-    { id: 'Germany', label: 'Germany', flag: '🇩🇪' },
-    { id: 'Spain', label: 'Spain', flag: '🇪🇸' },
-    { id: 'Portugal', label: 'Portugal', flag: '🇵🇹' },
-  ];
+  const COUNTRIES = getAvailableCuisines(safeRecipes);
 
   const filteredRecipes = recipes.filter((recipe) => {
     const matchesSource =
@@ -138,23 +120,20 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
     if (!matchesSource) return false;
 
     const localized = translateRecipe(recipe);
-    const mode = recipe.cookingMode || inferCookingMode(recipe);
+    const mode = inferCookingMode(recipe);
     const matchesCategory = selectedCategory === 'all' || recipe.categoryId === selectedCategory;
     const matchesMode = selectedCookingMode === 'all' || mode === selectedCookingMode;
-    const matchesCountry = selectedCountry === 'all' || 
-      (recipe.tags || []).some(t => t.toLowerCase() === selectedCountry.toLowerCase() || (selectedCountry === 'England' && t.toLowerCase() === 'british')) ||
-      (localized.tags || []).some(t => t.toLowerCase() === selectedCountry.toLowerCase() || (selectedCountry === 'England' && t.toLowerCase() === 'british'));
-    const matchesDifficulty = selectedDifficulty === 'all' || recipe.difficulty === selectedDifficulty;
+    const matchesCountry = recipeMatchesCuisine(recipe, selectedCountry);
     const query = searchQuery.toLowerCase();
     const matchesSearch =
       !query ||
       recipe.title.toLowerCase().includes(query) ||
-      (recipe.description || '').toLowerCase().includes(query) ||
-      (localized.title || '').toLowerCase().includes(query) ||
-      (localized.description || '').toLowerCase().includes(query) ||
-      (recipe.tags || []).some(t => t.toLowerCase().includes(query)) ||
-      (localized.tags || []).some(t => t.toLowerCase().includes(query));
-    return matchesCategory && matchesMode && matchesCountry && matchesDifficulty && matchesSearch;
+      recipe.description.toLowerCase().includes(query) ||
+      localized.title.toLowerCase().includes(query) ||
+      localized.description.toLowerCase().includes(query) ||
+      recipe.tags.some(t => t.toLowerCase().includes(query)) ||
+      localized.tags.some(t => t.toLowerCase().includes(query));
+    return matchesCategory && matchesMode && matchesCountry && matchesSearch;
   });
 
   const selectedCount = currentRecipeIds.length;
@@ -272,60 +251,58 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 />
               </div>
 
-              {/* Advanced Filters Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {/* Category Dropdown */}
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
-                >
-                  <option value="all">{language === 'fr' ? 'Toutes catégories' : 'All categories'}</option>
-                  {recipeCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {translateRecipeCategory(cat.id, cat.name)}
-                    </option>
-                  ))}
-                </select>
+              {/* Category / Country / Cooking Mode dropdown filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="relative">
+                  <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">{t('allCategoriesFilter', { count: recipes.length })}</option>
+                    {safeRecipeCategories
+                      .map((cat) => ({ ...cat, count: recipes.filter(r => r.categoryId === cat.id).length }))
+                      .filter((cat) => cat.count > 0)
+                      .map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {translateRecipeCategory(cat.id, cat.name)} ({cat.count})
+                        </option>
+                      ))}
+                  </select>
+                </div>
 
-                {/* Country Dropdown */}
-                <select
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(e.target.value)}
-                  className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
-                >
-                  {COUNTRIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.flag} {c.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">🌍 {t('allCuisinesFilter')}</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.flag} {c.label} ({c.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                {/* Cooking Mode Dropdown */}
-                <select
-                  value={selectedCookingMode}
-                  onChange={(e) => setSelectedCookingMode(e.target.value)}
-                  className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
-                >
-                  <option value="all">{language === 'fr' ? 'Tous les modes' : 'All cooking modes'}</option>
-                  {COOKING_MODES.slice(1).map(mode => (
-                    <option key={mode.id} value={mode.id}>
-                      {translateCookingMode(mode.id)}
-                    </option>
-                  ))}
-                </select>
-
-                {/* Difficulty Dropdown */}
-                <select
-                  value={selectedDifficulty}
-                  onChange={(e) => setSelectedDifficulty(e.target.value)}
-                  className="px-3 py-2 rounded-xl text-[11px] font-semibold bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] cursor-pointer"
-                >
-                  <option value="all">{language === 'fr' ? 'Toutes difficultés' : 'All difficulties'}</option>
-                  <option value="easy">{language === 'fr' ? 'Facile' : 'Easy'}</option>
-                  <option value="medium">{language === 'fr' ? 'Moyen' : 'Medium'}</option>
-                  <option value="hard">{language === 'fr' ? 'Difficile' : 'Hard'}</option>
-                </select>
+                <div className="relative">
+                  <Flame className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCookingMode}
+                    onChange={(e) => setSelectedCookingMode(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">{t('cookingMode_all')}</option>
+                    {COOKING_MODES.map((mode) => (
+                      <option key={mode.id} value={mode.id}>
+                        {t(mode.labelKey as any)} ({mode.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 

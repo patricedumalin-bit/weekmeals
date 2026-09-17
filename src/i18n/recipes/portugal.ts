@@ -451,5 +451,72 @@ export const PORTUGAL_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLangua
       ],
       tags: ['Português', 'Porto', 'Sanduíche', 'Bifanas', 'Porco', 'Petiscos', 'Clássico']
     }
+  },
+  'rec-bacalhau-com-natas': {
+    en: {
+      title: 'Baked Cod Casserole in Cream (Bacalhau com Natas)',
+      description: 'Ultimate Portuguese comfort food: flaked salted cod layered with soft sautéed potatoes and sweet onions in rich béchamel cream, baked with golden cheese.',
+      instructions: [
+        'Preheat oven to 190°C (375°F).',
+        'Dice potatoes small and shallow-fry or parboil until just tender (10 mins).',
+        'In a pan, sauté sliced onions and garlic in 2 tbsp olive oil until soft and golden (8 mins). Stir in the flaked cod and cook 4 mins.',
+        'For the béchamel: melt 30g butter in a pot, whisk in 30g flour for 1 min, then whisk in 350ml milk and 150ml heavy cream until thick and smooth. Season with nutmeg, salt, and pepper.',
+        'In a baking casserole dish, combine the sautéed cod, onions, potatoes, and béchamel cream sauce.',
+        'Top with grated mozzarella / Gruyère cheese and bake for 25 minutes until bubbly and a golden brown crust forms.'
+      ],
+      tags: ['Portuguese', 'Portugal', 'Casserole', 'Seafood', 'Comfort Food', 'Family Classic']
+    },
+    fr: {
+      title: 'Bacalhau com Natas au Four (Gratin de Morue à la Crème)',
+      description: 'Le grand classique du réconfort portugais : morue salée effeuillée, superposée avec des pommes de terre fondantes et des oignons doux dans une riche béchamel, gratinée au fromage doré.',
+      instructions: [
+        'Préchauffez le four à 190°C.',
+        'Coupez les pommes de terre en petits dés et faites-les revenir ou précuire jusqu’à ce qu’elles soient juste tendres (10 minutes).',
+        'Dans une poêle, faites revenir les oignons émincés et l’ail dans 2 c. à soupe d’huile d’olive jusqu’à ce qu’ils soient tendres et dorés (8 minutes). Ajoutez la morue effeuillée et faites cuire 4 minutes.',
+        'Pour la béchamel : faites fondre 30 g de beurre dans une casserole, incorporez 30 g de farine pendant 1 minute, puis ajoutez 350 ml de lait et 150 ml de crème épaisse en fouettant jusqu’à obtenir une texture lisse et épaisse. Assaisonnez de muscade, sel et poivre.',
+        'Dans un plat à gratin, mélangez la morue sautée, les oignons, les pommes de terre et la sauce béchamel.',
+        'Recouvrez de mozzarella / gruyère râpé et enfournez 25 minutes jusqu’à ce que le dessus soit doré et bouillonnant.'
+      ],
+      tags: ['Portugais', 'Portugal', 'Gratin', 'Fruits de Mer', 'Réconfort', 'Classique Familial']
+    },
+    de: {
+      title: 'Kabeljau-Auflauf mit Sahne (Bacalhau com Natas)',
+      description: 'Das ultimative portugiesische Wohlfühlgericht: zerpflückter Salzkabeljau, geschichtet mit sanft gebratenen Kartoffeln und süßen Zwiebeln in einer reichhaltigen Béchamelsauce, überbacken mit goldenem Käse.',
+      instructions: [
+        'Den Backofen auf 190°C vorheizen.',
+        'Kartoffeln klein würfeln und anbraten oder vorkochen, bis sie gerade weich sind (10 Minuten).',
+        'In einer Pfanne geschnittene Zwiebeln und Knoblauch in 2 EL Olivenöl weich und goldbraun braten (8 Minuten). Den zerpflückten Kabeljau zugeben und 4 Minuten garen.',
+        'Für die Béchamel: 30 g Butter in einem Topf schmelzen, 30 g Mehl 1 Minute einrühren, dann 350 ml Milch und 150 ml Sahne einrühren, bis die Soße dick und glatt ist. Mit Muskat, Salz und Pfeffer würzen.',
+        'In einer Auflaufform den angebratenen Kabeljau, die Zwiebeln, die Kartoffeln und die Béchamelsoße vermengen.',
+        'Mit geriebenem Mozzarella / Gruyère bestreuen und 25 Minuten backen, bis eine goldbraune, blubbernde Kruste entsteht.'
+      ],
+      tags: ['Portugiesisch', 'Portugal', 'Auflauf', 'Meeresfrüchte', 'Komfortessen', 'Familienklassiker']
+    },
+    es: {
+      title: 'Bacalao Gratinado con Nata al Horno (Bacalhau com Natas)',
+      description: 'El máximo exponente del confort portugués: bacalao salado desmenuzado en capas con patatas salteadas tiernas y cebollas dulces en una rica bechamel, gratinado con queso dorado.',
+      instructions: [
+        'Precaliente el horno a 190°C.',
+        'Corte las patatas en dados pequeños y saltéelas o precocínelas hasta que estén apenas tiernas (10 minutos).',
+        'En una sartén, sofría las cebollas en tiras y el ajo en 2 cucharadas de aceite de oliva hasta que estén tiernas y doradas (8 minutos). Añada el bacalao desmenuzado y cocine 4 minutos.',
+        'Para la bechamel: derrita 30 g de mantequilla en un cazo, incorpore 30 g de harina durante 1 minuto y luego añada 350 ml de leche y 150 ml de nata espesa, batiendo hasta obtener una textura espesa y lisa. Sazone con nuez moscada, sal y pimienta.',
+        'En una fuente para horno, mezcle el bacalao salteado, las cebollas, las patatas y la salsa bechamel.',
+        'Cubra con mozzarella / gruyère rallado y hornee 25 minutos hasta que esté burbujeante y con una costra dorada.'
+      ],
+      tags: ['Portugués', 'Portugal', 'Gratinado', 'Mariscos', 'Comida Reconfortante', 'Clásico Familiar']
+    },
+    pt: {
+      title: 'Bacalhau com Natas no Forno',
+      description: 'O máximo do conforto português: bacalhau lascado em camadas com batatas salteadas macias e cebolas doces num rico creme de bechamel, gratinado com queijo dourado.',
+      instructions: [
+        'Pré-aqueça o forno a 190°C.',
+        'Corte as batatas em cubos pequenos e salteie ou coza levemente até ficarem apenas macias (10 minutos).',
+        'Numa frigideira, refogue as cebolas às tiras e o alho em 2 colheres de sopa de azeite até ficarem macios e dourados (8 minutos). Junte o bacalhau lascado e cozinhe 4 minutos.',
+        'Para o bechamel: derreta 30 g de manteiga num tacho, junte 30 g de farinha e mexa 1 minuto, depois adicione 350 ml de leite e 150 ml de natas, mexendo até engrossar e ficar liso. Tempere com noz-moscada, sal e pimenta.',
+        'Num tabuleiro de forno, misture o bacalhau salteado, as cebolas, as batatas e o molho bechamel.',
+        'Cubra com mozzarella / gruyère ralado e leve ao forno 25 minutos até dourar e borbulhar.'
+      ],
+      tags: ['Português', 'Portugal', 'Gratinado', 'Marisco', 'Comida Reconfortante', 'Clássico Familiar']
+    }
   }
 };

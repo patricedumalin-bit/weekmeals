@@ -6,14 +6,7 @@ import {
   WeeklyPlan,
   CustomShoppingItem
 } from '../types';
-import { 
-  INITIAL_INGREDIENT_CATEGORIES, 
-  INITIAL_INGREDIENTS, 
-  INITIAL_RECIPE_CATEGORIES, 
-  INITIAL_RECIPES, 
-  INITIAL_WEEKLY_PLAN,
-  INITIAL_PANTRY
-} from '../data/initialData';
+import { normalizeRecipeCategoryId } from '../data/categoriesData';
 
 const STORAGE_KEYS = {
   RECIPES: 'meal_app_recipes_v2',
@@ -26,7 +19,29 @@ const STORAGE_KEYS = {
   PANTRY: 'meal_app_pantry_v1',
 };
 
-export function loadStoredData() {
+// The default recipe/ingredient catalog (~2600 recipes, ~1200 ingredients) is one
+// of the heaviest parts of the app. It is dynamically imported (instead of a
+// top-level static import) so its dedicated build chunk is only downloaded once
+// actually needed, letting the initial app shell render/interact sooner.
+// The import is cached so repeated calls don't re-fetch the chunk.
+let initialDataPromise: Promise<typeof import('../data/initialData')> | null = null;
+function loadInitialDataModule() {
+  if (!initialDataPromise) {
+    initialDataPromise = import('../data/initialData');
+  }
+  return initialDataPromise;
+}
+
+export async function loadStoredData() {
+  const {
+    INITIAL_INGREDIENT_CATEGORIES,
+    INITIAL_INGREDIENTS,
+    INITIAL_RECIPE_CATEGORIES,
+    INITIAL_RECIPES,
+    INITIAL_WEEKLY_PLAN,
+    INITIAL_PANTRY
+  } = await loadInitialDataModule();
+
   try {
     const rawRecipes = localStorage.getItem(STORAGE_KEYS.RECIPES);
     const rawRecipeCats = localStorage.getItem(STORAGE_KEYS.RECIPE_CATEGORIES);
@@ -44,8 +59,12 @@ export function loadStoredData() {
         if (parsed.length === 0) {
           recipes = [];
         } else {
-          const merged: Recipe[] = [...parsed];
-          const existingIds = new Set(parsed.map(r => r.id));
+          // Normalise les categoryId "synonymes" (ex: 'rcat-starters') vers les
+          // 8 catégories officielles, y compris pour les recettes déjà stockées
+          // localement lors d'une session précédente.
+          const normalizedParsed = parsed.map(r => ({ ...r, categoryId: normalizeRecipeCategoryId(r.categoryId) }));
+          const merged: Recipe[] = [...normalizedParsed];
+          const existingIds = new Set(normalizedParsed.map(r => r.id));
           for (const defaultRecipe of INITIAL_RECIPES) {
             if (!existingIds.has(defaultRecipe.id)) {
               merged.push(defaultRecipe);
@@ -153,7 +172,16 @@ export function resetToDefaults() {
   localStorage.removeItem(STORAGE_KEYS.PANTRY);
 }
 
-export function generateFullGenericDatabase() {
+export async function generateFullGenericDatabase() {
+  const {
+    INITIAL_INGREDIENT_CATEGORIES,
+    INITIAL_INGREDIENTS,
+    INITIAL_RECIPE_CATEGORIES,
+    INITIAL_RECIPES,
+    INITIAL_WEEKLY_PLAN,
+    INITIAL_PANTRY
+  } = await loadInitialDataModule();
+
   saveRecipes(INITIAL_RECIPES);
   saveRecipeCategories(INITIAL_RECIPE_CATEGORIES);
   saveIngredients(INITIAL_INGREDIENTS);

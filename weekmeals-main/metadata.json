@@ -1,8 +1,0 @@
-{
-  "name": "Meal & Grocery Planner",
-  "description": "Weekly meal planning and categorized grocery shopping list manager with recipe scaling and ingredient database.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}

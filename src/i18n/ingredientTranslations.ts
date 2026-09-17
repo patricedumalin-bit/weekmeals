@@ -1,4 +1,11 @@
 import { SupportedLanguage } from './translations';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA1 } from './ingredients/wbExtra1';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA2 } from './ingredients/wbExtra2';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA3 } from './ingredients/wbExtra3';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA4 } from './ingredients/wbExtra4';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA5 } from './ingredients/wbExtra5';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA6 } from './ingredients/wbExtra6';
+import { WB_INGREDIENT_TRANSLATIONS_EXTRA7 } from './ingredients/wbExtra7';
 
 export const INGREDIENT_TRANSLATIONS: Record<string, Record<SupportedLanguage, string>> = {
   // 1. Fresh Produce
@@ -1441,7 +1448,14 @@ export const INGREDIENT_TRANSLATIONS: Record<string, Record<SupportedLanguage, s
     de: 'Gelatineblätter',
     es: 'Hojas de gelatina',
     pt: 'Folhas de gelatina'
-  }
+  },
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA1,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA2,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA3,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA4,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA5,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA6,
+  ...WB_INGREDIENT_TRANSLATIONS_EXTRA7
 };
 
 /**

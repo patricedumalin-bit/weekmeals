@@ -104,18 +104,27 @@ function AppContent({
   const [databaseSource, setDatabaseSource] = useState<DatabaseViewSource>('all');
   const [isSeedingGeneric, setIsSeedingGeneric] = useState<boolean>(false);
 
-  // Load local data on initial mount
+  // Load local data on initial mount. The default recipe/ingredient catalog is
+  // fetched via a dynamic import (see utils/storage.ts) so it downloads as a
+  // separate chunk after the initial app shell has already been requested,
+  // instead of blocking/enlarging the main bundle.
   useEffect(() => {
-    const loaded = loadStoredData();
-    setRecipes(loaded.recipes);
-    setRecipeCategories(loaded.recipeCategories);
-    setIngredients(loaded.ingredients);
-    setIngredientCategories(loaded.ingredientCategories);
-    setWeeklyPlan(loaded.weeklyPlan);
-    setCheckedMap(loaded.checkedMap);
-    setCustomItems(loaded.customItems);
-    setPantryMap(loaded.pantryMap || {});
-    setIsLoaded(true);
+    let cancelled = false;
+    loadStoredData().then(loaded => {
+      if (cancelled) return;
+      setRecipes(loaded.recipes);
+      setRecipeCategories(loaded.recipeCategories);
+      setIngredients(loaded.ingredients);
+      setIngredientCategories(loaded.ingredientCategories);
+      setWeeklyPlan(loaded.weeklyPlan);
+      setCheckedMap(loaded.checkedMap);
+      setCustomItems(loaded.customItems);
+      setPantryMap(loaded.pantryMap || {});
+      setIsLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Generic Cloud Catalog: Auto-seed if empty and subscribe to app-wide generic catalog
@@ -441,7 +450,6 @@ function AppContent({
     nature: 'bg-[#FBF8F3]',
     minimalist: 'bg-[#FFFFFF]',
     creative: 'bg-[#F5F3FF]',
-    girly: 'bg-[#FFF1F2]',
     default: 'bg-[#F8F9FA]'
   };
   
@@ -767,9 +775,9 @@ function AppContent({
     savePantryMap({});
   };
 
-  const handleResetDatabase = () => {
+  const handleResetDatabase = async () => {
     resetToDefaults();
-    const fresh = generateFullGenericDatabase();
+    const fresh = await generateFullGenericDatabase();
     setRecipes(fresh.recipes);
     setRecipeCategories(fresh.recipeCategories);
     setIngredients(fresh.ingredients);
@@ -780,8 +788,8 @@ function AppContent({
     setCustomItems([]);
   };
 
-  const handleGenerateGenericDatabase = () => {
-    const data = generateFullGenericDatabase();
+  const handleGenerateGenericDatabase = async () => {
+    const data = await generateFullGenericDatabase();
     setRecipes(data.recipes);
     setRecipeCategories(data.recipeCategories);
     setIngredients(data.ingredients);
@@ -1315,8 +1323,7 @@ function AppContent({
         onClose={() => setIsRecipeImportModalOpen(false)}
         recipeCategories={recipeCategories}
         ingredients={ingredients}
-        ingredientCategories={ingredientCategories}
-        onSaveImportedRecipe={async (recipe) => {
+        onImportRecipe={async (recipe) => {
           await handleSaveRecipe(recipe);
           setPreviewRecipeState({ recipe });
         }}

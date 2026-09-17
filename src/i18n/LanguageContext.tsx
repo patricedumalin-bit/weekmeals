@@ -7,7 +7,7 @@ import {
   LanguageInfo 
 } from './translations';
 import { getLocalizedIngredientName } from './ingredientTranslations';
-import { getLocalizedRecipeContent, LocalizedRecipeContent } from './recipeTranslations';
+import { getLocalizedRecipeContent, loadRecipeTranslations, LocalizedRecipeContent } from './recipeTranslations';
 import { Recipe } from '../types';
 
 interface LanguageContextType {
@@ -47,6 +47,22 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
     return 'en';
   });
+
+  // Recipe translations are the heaviest data chunk in the app; they are
+  // loaded lazily in the background after mount instead of being bundled
+  // eagerly. Until they resolve, translateRecipe() falls back to each
+  // recipe's own (untranslated) fields. This state simply forces a re-render
+  // once the data becomes available so already-mounted recipe views refresh.
+  const [, setRecipeTranslationsReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    loadRecipeTranslations().then(() => {
+      if (!cancelled) setRecipeTranslationsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);

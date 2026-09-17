@@ -441,5 +441,72 @@ export const SPAIN_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLanguage,
       ],
       tags: ['Espanhol', 'Sobremesa', 'Churros', 'Chocolate', 'Doce']
     }
+  },
+  'rec-albondigas-salsa': {
+    en: {
+      title: 'Spanish Tapas Meatballs in Tomato Sauce',
+      description: 'Juicy seasoned beef and pork meatballs simmered in a rich garlic-paprika tomato sauce with fresh parsley and crusty bread.',
+      instructions: [
+        'In a bowl, combine ground beef, ground pork, breadcrumbs, 1 beaten egg, minced garlic, chopped parsley, salt, and black pepper.',
+        'Roll into bite-sized balls (about 16-20 meatballs).',
+        'Heat 2 tbsp olive oil in a skillet; brown the meatballs on all sides (6 mins), then remove to a plate.',
+        'In the same skillet, sauté chopped onion and garlic for 3 mins. Add smoked paprika, crushed canned tomatoes, and a pinch of sugar/salt.',
+        'Return the meatballs to the sauce, cover and simmer gently on low heat for 15 minutes until the sauce is thick and the meatballs are tender.',
+        'Garnish with fresh parsley and serve with baguette or roasted potatoes.'
+      ],
+      tags: ['Spanish', 'Spain', 'Tapas', 'Meatballs', 'Comfort Food', 'Family Favorite']
+    },
+    fr: {
+      title: 'Albóndigas Espagnoles en Sauce Tomate',
+      description: 'Boulettes de bœuf et de porc juteuses et assaisonnées, mijotées dans une riche sauce tomate à l’ail et au paprika, servies avec du persil frais et du pain croustillant.',
+      instructions: [
+        'Dans un saladier, mélangez le bœuf haché, le porc haché, la chapelure, 1 œuf battu, l’ail haché, le persil ciselé, le sel et le poivre noir.',
+        'Formez des boulettes de la taille d’une bouchée (environ 16 à 20 boulettes).',
+        'Faites chauffer 2 c. à soupe d’huile d’olive dans une poêle ; faites dorer les boulettes de tous côtés (6 minutes), puis réservez-les sur une assiette.',
+        'Dans la même poêle, faites revenir l’oignon et l’ail hachés pendant 3 minutes. Ajoutez le paprika fumé, les tomates concassées en conserve et une pincée de sucre/sel.',
+        'Remettez les boulettes dans la sauce, couvrez et laissez mijoter doucement à feu doux pendant 15 minutes jusqu’à ce que la sauce épaississe et que les boulettes soient tendres.',
+        'Garnissez de persil frais et servez avec une baguette ou des pommes de terre rôties.'
+      ],
+      tags: ['Espagnol', 'Espagne', 'Tapas', 'Boulettes', 'Réconfort', 'Plat Familial']
+    },
+    de: {
+      title: 'Spanische Tapas-Fleischbällchen in Tomatensoße',
+      description: 'Saftige, würzige Hackbällchen aus Rind- und Schweinefleisch, geschmort in einer kräftigen Knoblauch-Paprika-Tomatensoße, mit frischer Petersilie und knusprigem Brot.',
+      instructions: [
+        'In einer Schüssel Rinderhack, Schweinehack, Paniermehl, 1 verquirltes Ei, gehackten Knoblauch, gehackte Petersilie, Salz und schwarzen Pfeffer vermengen.',
+        'Zu mundgerechten Bällchen formen (etwa 16-20 Fleischbällchen).',
+        '2 EL Olivenöl in einer Pfanne erhitzen; die Fleischbällchen rundum anbraten (6 Minuten), dann auf einen Teller legen.',
+        'In derselben Pfanne gehackte Zwiebel und Knoblauch 3 Minuten andünsten. Geräuchertes Paprikapulver, gehackte Dosentomaten und eine Prise Zucker/Salz zugeben.',
+        'Die Fleischbällchen zurück in die Soße geben, abdecken und bei schwacher Hitze 15 Minuten sanft köcheln lassen, bis die Soße dick und die Bällchen zart sind.',
+        'Mit frischer Petersilie garnieren und mit Baguette oder Bratkartoffeln servieren.'
+      ],
+      tags: ['Spanisch', 'Spanien', 'Tapas', 'Fleischbällchen', 'Komfortessen', 'Familienfavorit']
+    },
+    es: {
+      title: 'Albóndigas en Salsa de Tomate Española',
+      description: 'Jugosas albóndigas sazonadas de ternera y cerdo, cocidas a fuego lento en una sabrosa salsa de tomate con ajo y pimentón, acompañadas de perejil fresco y pan crujiente.',
+      instructions: [
+        'En un bol, mezcle la carne picada de ternera, la carne picada de cerdo, el pan rallado, 1 huevo batido, el ajo picado, el perejil picado, la sal y la pimienta negra.',
+        'Forme bolitas del tamaño de un bocado (unas 16-20 albóndigas).',
+        'Caliente 2 cucharadas de aceite de oliva en una sartén; dore las albóndigas por todos los lados (6 minutos) y resérvelas en un plato.',
+        'En la misma sartén, sofría la cebolla y el ajo picados durante 3 minutos. Añada el pimentón ahumado, el tomate triturado en conserva y una pizca de azúcar/sal.',
+        'Vuelva a poner las albóndigas en la salsa, tape y cueza a fuego lento durante 15 minutos hasta que la salsa espese y las albóndigas estén tiernas.',
+        'Decore con perejil fresco y sirva con pan baguette o patatas asadas.'
+      ],
+      tags: ['Español', 'España', 'Tapas', 'Albóndigas', 'Comida Reconfortante', 'Favorito Familiar']
+    },
+    pt: {
+      title: 'Almôndegas em Molho de Tomate Espanholas',
+      description: 'Suculentas almôndegas temperadas de vaca e porco, cozinhadas em lume brando num saboroso molho de tomate com alho e colorau, acompanhadas de salsa fresca e pão estaladiço.',
+      instructions: [
+        'Numa tigela, misture a carne picada de vaca, a carne picada de porco, o pão ralado, 1 ovo batido, o alho picado, a salsa picada, o sal e a pimenta preta.',
+        'Molde bolinhas do tamanho de uma dentada (cerca de 16-20 almôndegas).',
+        'Aqueça 2 colheres de sopa de azeite numa frigideira; doure as almôndegas de todos os lados (6 minutos) e reserve num prato.',
+        'Na mesma frigideira, refogue a cebola e o alho picados durante 3 minutos. Junte o colorau fumado, o tomate triturado enlatado e uma pitada de açúcar/sal.',
+        'Volte a colocar as almôndegas no molho, tape e deixe cozinhar em lume brando durante 15 minutos até o molho engrossar e as almôndegas ficarem tenras.',
+        'Decore com salsa fresca e sirva com baguete ou batatas assadas.'
+      ],
+      tags: ['Espanhol', 'Espanha', 'Tapas', 'Almôndegas', 'Comida Reconfortante', 'Favorito da Família']
+    }
   }
 };

@@ -13,7 +13,6 @@ import {
   AutoPlanOptions,
   RecipeMatchResult
 } from '../types';
-import { normalizeExternalIngredient } from './datasetCorrelator';
 
 export function inferCookingMode(recipe: Recipe): CookingModeType {
   if (recipe.cookingMode) return recipe.cookingMode;
@@ -27,6 +26,31 @@ export function inferCookingMode(recipe: Recipe): CookingModeType {
   if (text.includes('grill') || text.includes('plancha') || text.includes('barbecue') || text.includes('griller')) return 'grill';
   if (text.includes('salade') || text.includes('cru') || text.includes('frais') || text.includes('tartare') || text.includes('sans cuisson') || text.includes('carpaccio')) return 'sans-cuisson';
   return 'four';
+}
+
+const ALL_COOKING_MODES: { id: CookingModeType; labelKey: string }[] = [
+  { id: 'four', labelKey: 'cookingMode_four' },
+  { id: 'poele', labelKey: 'cookingMode_poele' },
+  { id: 'cookeo', labelKey: 'cookingMode_cookeo' },
+  { id: 'robot', labelKey: 'cookingMode_robot' },
+  { id: 'cocotte', labelKey: 'cookingMode_cocotte' },
+  { id: 'vapeur', labelKey: 'cookingMode_vapeur' },
+  { id: 'grill', labelKey: 'cookingMode_grill' },
+  { id: 'sans-cuisson', labelKey: 'cookingMode_sansCuisson' },
+];
+
+/**
+ * Computes the list of cooking modes that actually occur among the given
+ * recipes (via inferCookingMode), sorted by number of matching recipes
+ * (descending), so the filter dropdown only ever shows options that return
+ * results.
+ */
+export function getAvailableCookingModes(recipes: Recipe[]): { id: CookingModeType; labelKey: string; count: number }[] {
+  const withCounts = ALL_COOKING_MODES.map(m => ({
+    ...m,
+    count: recipes.reduce((acc, r) => acc + (inferCookingMode(r) === m.id ? 1 : 0), 0),
+  }));
+  return withCounts.filter(m => m.count > 0).sort((a, b) => b.count - a.count);
 }
 
 export function formatQuantity(num: number): string {
@@ -46,36 +70,38 @@ export function formatQuantity(num: number): string {
   return rounded.toFixed(1).replace(/\.0$/, '');
 }
 
-const UNIT_CONVERSIONS: Record<string, number> = {
-  'g': 1,
-  'kg': 1000,
-  'ml': 1,
-  'cl': 10,
-  'l': 1000,
-  'tbsp': 15,
-  'tsp': 5,
-  'pinch': 0.5,
-  'unit': 1,
-  'clove': 1,
-  'can': 1,
-  'pack': 1,
-  'bunch': 1,
-  'slice': 1,
-};
+// -------------------------------------------------------------
+// UNIT CONVERSION HELPERS (used to merge shopping list lines
+// for the same ingredient expressed in different but compatible units)
+// -------------------------------------------------------------
+type UnitFamily = 'mass' | 'volume' | 'count';
 
-export function convertUnit(quantity: number, fromUnit: UnitType, toUnit: UnitType): number {
-  if (fromUnit === toUnit) return quantity;
-  const fromFactor = UNIT_CONVERSIONS[fromUnit];
-  const toFactor = UNIT_CONVERSIONS[toUnit];
-  if (!fromFactor || !toFactor) return quantity;
+const MASS_TO_GRAMS: Partial<Record<UnitType, number>> = { g: 1, kg: 1000 };
+const VOLUME_TO_ML: Partial<Record<UnitType, number>> = { ml: 1, cl: 10, l: 1000, tbsp: 15, tsp: 5 };
 
-  const isVol = (u: string) => ['ml', 'cl', 'l', 'tbsp', 'tsp', 'pinch'].includes(u);
-  const isMass = (u: string) => ['g', 'kg'].includes(u);
+export function getUnitFamily(unit: UnitType): UnitFamily {
+  if (unit in MASS_TO_GRAMS) return 'mass';
+  if (unit in VOLUME_TO_ML) return 'volume';
+  return 'count';
+}
 
-  if ((isVol(fromUnit) && isVol(toUnit)) || (isMass(fromUnit) && isMass(toUnit))) {
-    return (quantity * fromFactor) / toFactor;
-  }
+/** Converts a quantity to the family's base unit (grams for mass, ml for volume, unchanged for count). */
+function toBaseUnit(quantity: number, unit: UnitType): number {
+  const family = getUnitFamily(unit);
+  if (family === 'mass') return quantity * (MASS_TO_GRAMS[unit] || 1);
+  if (family === 'volume') return quantity * (VOLUME_TO_ML[unit] || 1);
   return quantity;
+}
+
+/** Converts a base-unit quantity back to the most readable unit for display. */
+function fromBaseUnit(baseQuantity: number, family: UnitFamily, fallbackUnit: UnitType): { quantity: number; unit: UnitType } {
+  if (family === 'mass') {
+    return baseQuantity >= 1000 ? { quantity: baseQuantity / 1000, unit: 'kg' } : { quantity: baseQuantity, unit: 'g' };
+  }
+  if (family === 'volume') {
+    return baseQuantity >= 1000 ? { quantity: baseQuantity / 1000, unit: 'l' } : { quantity: baseQuantity, unit: 'ml' };
+  }
+  return { quantity: baseQuantity, unit: fallbackUnit };
 }
 
 export function calculateShoppingList(
@@ -125,11 +151,10 @@ export function calculateShoppingList(
             order: 99
           };
 
-          const { ingredientId } = normalizeExternalIngredient(ingredient.name);
-          const resolvedIng = ingredientMap.get(ingredientId) || ingredient;
-          const targetUnit = resolvedIng.defaultUnit || customIng.unit;
-          const convertedQty = convertUnit(scaledQty, customIng.unit, targetUnit);
-          const key = resolvedIng.id;
+          const family = getUnitFamily(customIng.unit);
+          const key = `${ingredient.id}_${family}`;
+          const scaledQty = customIng.quantity * (mealServings / 4);
+          const baseQty = toBaseUnit(scaledQty, customIng.unit);
 
           const source: ShoppingSource = {
             mealNumber: meal.mealNumber,
@@ -137,27 +162,27 @@ export function calculateShoppingList(
             recipeTitle: customMeal.name || 'Repas sur mesure',
             recipeId: `custom-meal-${customMeal.id}`,
             rawQuantity: customIng.quantity,
-            scaledQuantity: convertedQty,
-            unit: targetUnit,
+            scaledQuantity: scaledQty,
+            unit: customIng.unit,
             servings: mealServings
           };
 
           if (aggregatedMap.has(key)) {
             const existing = aggregatedMap.get(key)!;
-            existing.totalQuantity += convertedQty;
+            existing.totalQuantity += baseQty;
             existing.sources.push(source);
           } else {
             aggregatedMap.set(key, {
-              ingredientId: resolvedIng.id,
-              ingredientName: resolvedIng.name,
+              ingredientId: ingredient.id,
+              ingredientName: ingredient.name,
               categoryId: category.id,
               categoryName: category.name,
               categoryIcon: category.icon,
               categoryColor: category.color,
-              totalQuantity: convertedQty,
-              unit: targetUnit,
+              totalQuantity: baseQty,
+              unit: customIng.unit,
               checked: !!checkedMap[key],
-              inPantry: !!pantryMap[resolvedIng.id],
+              inPantry: !!pantryMap[ingredient.id],
               sources: [source]
             });
           }
@@ -195,11 +220,10 @@ export function calculateShoppingList(
           order: 99
         };
 
-        const { ingredientId } = normalizeExternalIngredient(ingredient.name);
-        const resolvedIng = ingredientMap.get(ingredientId) || ingredient;
-        const targetUnit = resolvedIng.defaultUnit || recipeIng.unit;
-        const convertedQty = convertUnit(scaledQty, recipeIng.unit, targetUnit);
-        const key = resolvedIng.id;
+        const family = getUnitFamily(recipeIng.unit);
+        const key = `${ingredient.id}_${family}`;
+        const scaledQty = recipeIng.quantity * scaleFactor;
+        const baseQty = toBaseUnit(scaledQty, recipeIng.unit);
 
         const source: ShoppingSource = {
           mealNumber: meal.mealNumber,
@@ -207,27 +231,27 @@ export function calculateShoppingList(
           recipeTitle: recipe.title,
           recipeId: recipe.id,
           rawQuantity: recipeIng.quantity,
-          scaledQuantity: convertedQty,
-          unit: targetUnit,
+          scaledQuantity: scaledQty,
+          unit: recipeIng.unit,
           servings: mealServings
         };
 
         if (aggregatedMap.has(key)) {
           const existing = aggregatedMap.get(key)!;
-          existing.totalQuantity += convertedQty;
+          existing.totalQuantity += baseQty;
           existing.sources.push(source);
         } else {
           aggregatedMap.set(key, {
-            ingredientId: resolvedIng.id,
-            ingredientName: resolvedIng.name,
+            ingredientId: ingredient.id,
+            ingredientName: ingredient.name,
             categoryId: category.id,
             categoryName: category.name,
             categoryIcon: category.icon,
             categoryColor: category.color,
-            totalQuantity: convertedQty,
-            unit: targetUnit,
+            totalQuantity: baseQty,
+            unit: recipeIng.unit,
             checked: !!checkedMap[key],
-            inPantry: !!pantryMap[resolvedIng.id],
+            inPantry: !!pantryMap[ingredient.id],
             sources: [source]
           });
         }
@@ -252,7 +276,7 @@ export function calculateShoppingList(
       categoryName: category.name,
       categoryIcon: category.icon,
       categoryColor: category.color,
-      totalQuantity: custom.quantity,
+      totalQuantity: toBaseUnit(custom.quantity, custom.unit),
       unit: custom.unit,
       checked: custom.checked || !!checkedMap[key],
       inPantry: false,
@@ -267,6 +291,15 @@ export function calculateShoppingList(
         servings: 0
       }]
     });
+  }
+
+  // Convert accumulated base-unit quantities (grams/ml) back to the most
+  // readable unit (g/kg, ml/l) now that all sources have been summed per ingredient.
+  for (const item of aggregatedMap.values()) {
+    const family = getUnitFamily(item.unit);
+    const display = fromBaseUnit(item.totalQuantity, family, item.unit);
+    item.totalQuantity = display.quantity;
+    item.unit = display.unit;
   }
 
   let allItems = Array.from(aggregatedMap.values());

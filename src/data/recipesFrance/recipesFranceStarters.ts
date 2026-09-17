@@ -565,7 +565,7 @@ export const RECIPES_FRANCE_STARTERS: Recipe[] = [
       { ingredientId: 'ing-celeriac', quantity: 400, unit: 'g' },
       { ingredientId: 'ing-lemon', quantity: 1, unit: 'unit' },
       { ingredientId: 'ing-mayonnaise', quantity: 3, unit: 'tbsp' },
-      { ingredientId: 'ing-dijon-urgent-mustard', quantity: 2, unit: 'tsp' },
+      { ingredientId: 'ing-dijon-mustard', quantity: 2, unit: 'tsp' },
       { ingredientId: 'ing-creme-fraiche', quantity: 1, unit: 'tbsp' },
       { ingredientId: 'ing-parsley', quantity: 0.5, unit: 'bunch' },
       { ingredientId: 'ing-salt', quantity: 0.5, unit: 'tsp' }

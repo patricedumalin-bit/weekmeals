@@ -441,5 +441,67 @@ export const GERMANY_RECIPE_TRANSLATIONS: Record<string, Record<SupportedLanguag
       ],
       tags: ['Alemão', 'Salada', 'Batatas', 'Bacon', 'Tradicional']
     }
+  },
+  'rec-currywurst': {
+    en: {
+      title: 'Berlin Currywurst with Crispy Pan-Fried Potatoes',
+      description: 'Berlin’s iconic street food: seared German bratwurst sausages smothered in tangy spiced curry-tomato sauce with crispy skillet potatoes.',
+      instructions: [
+        'Dice potatoes into small cubes. Heat 2 tbsp sunflower oil in a skillet and fry potatoes over medium-high heat with salt and pepper for 12 mins until crispy and golden.',
+        'In a separate pan, sear bratwurst sausages until browned and sizzling on all sides (8 mins).',
+        'In a small saucepan, combine curry ketchup, tomato paste, 1 tbsp water, sweet paprika, and yellow curry powder. Warm gently.',
+        'Slice the hot bratwurst sausages into bite-sized coins.',
+        'Plate the sliced sausages alongside crispy skillet potatoes, drown the sausages generously with warm spiced curry sauce, and dust with extra yellow curry powder.'
+      ],
+      tags: ['German', 'Germany', 'Street Food', 'Quick', 'Berlin', '15-Min Meal']
+    },
+    fr: {
+      title: 'Currywurst Berlinoise et Pommes de Terre Sautées Croustillantes',
+      description: 'Le plat de rue emblématique de Berlin : saucisses bratwurst allemandes saisies, nappées d’une sauce curry-tomate épicée et acidulée, avec des pommes de terre sautées bien croustillantes.',
+      instructions: [
+        'Coupez les pommes de terre en petits dés. Faites chauffer 2 c. à soupe d’huile de tournesol dans une poêle et faites-les frire à feu moyen-vif avec sel et poivre pendant 12 minutes jusqu’à ce qu’elles soient croustillantes et dorées.',
+        'Dans une autre poêle, saisissez les saucisses bratwurst jusqu’à ce qu’elles soient bien dorées et grésillantes de tous côtés (8 minutes).',
+        'Dans une petite casserole, mélangez le ketchup au curry, le concentré de tomate, 1 c. à soupe d’eau, le paprika doux et la poudre de curry jaune. Faites chauffer doucement.',
+        'Coupez les saucisses bratwurst chaudes en rondelles.',
+        'Dressez les rondelles de saucisse avec les pommes de terre sautées croustillantes, nappez généreusement de sauce curry chaude et saupoudrez d’un peu de curry jaune.'
+      ],
+      tags: ['Allemand', 'Allemagne', 'Street Food', 'Rapide', 'Berlin', 'Repas Express']
+    },
+    de: {
+      title: 'Berliner Currywurst mit knusprigen Bratkartoffeln',
+      description: 'Berlins ikonisches Street Food: angebratene deutsche Bratwürste, überzogen mit würziger Curry-Tomaten-Soße, dazu knusprige Bratkartoffeln aus der Pfanne.',
+      instructions: [
+        'Kartoffeln in kleine Würfel schneiden. 2 EL Sonnenblumenöl in einer Pfanne erhitzen und die Kartoffeln bei mittlerer bis starker Hitze mit Salz und Pfeffer 12 Minuten braten, bis sie knusprig und goldbraun sind.',
+        'In einer separaten Pfanne die Bratwürste rundum braun und knusprig braten (8 Minuten).',
+        'In einem kleinen Topf Curry-Ketchup, Tomatenmark, 1 EL Wasser, süßes Paprikapulver und gelbes Currypulver vermengen und sanft erwärmen.',
+        'Die heißen Bratwürste in mundgerechte Scheiben schneiden.',
+        'Die Wurstscheiben zusammen mit den knusprigen Bratkartoffeln anrichten, großzügig mit der warmen Curry-Soße übergießen und mit etwas gelbem Currypulver bestäuben.'
+      ],
+      tags: ['Deutsch', 'Deutschland', 'Street Food', 'Schnell', 'Berlin', '15-Minuten-Gericht']
+    },
+    es: {
+      title: 'Currywurst Berlinesa con Patatas Salteadas Crujientes',
+      description: 'La icónica comida callejera de Berlín: salchichas bratwurst alemanas doradas, cubiertas con una sabrosa salsa de curry y tomate, acompañadas de patatas salteadas bien crujientes.',
+      instructions: [
+        'Corte las patatas en dados pequeños. Caliente 2 cucharadas de aceite de girasol en una sartén y fría las patatas a fuego medio-alto con sal y pimienta durante 12 minutos hasta que estén crujientes y doradas.',
+        'En otra sartén, dore las salchichas bratwurst por todos los lados hasta que estén bien doradas y chisporroteantes (8 minutos).',
+        'En un cazo pequeño, mezcle el kétchup de curry, el concentrado de tomate, 1 cucharada de agua, el pimentón dulce y el curry en polvo amarillo. Caliente suavemente.',
+        'Corte las salchichas bratwurst calientes en rodajas.',
+        'Sirva las rodajas de salchicha junto con las patatas crujientes, cubra generosamente con la salsa de curry caliente y espolvoree con un poco más de curry amarillo.'
+      ],
+      tags: ['Alemán', 'Alemania', 'Comida Callejera', 'Rápido', 'Berlín', 'Comida en 15 Minutos']
+    },
+    pt: {
+      title: 'Currywurst de Berlim com Batatas Salteadas Crocantes',
+      description: 'A icónica comida de rua de Berlim: salsichas bratwurst alemãs alouradas, cobertas com um molho picante de curry e tomate, acompanhadas de batatas salteadas bem crocantes.',
+      instructions: [
+        'Corte as batatas em cubos pequenos. Aqueça 2 colheres de sopa de óleo de girassol numa frigideira e frite as batatas em lume médio-alto com sal e pimenta durante 12 minutos até ficarem crocantes e douradas.',
+        'Noutra frigideira, doure as salsichas bratwurst de todos os lados até ficarem bem douradas e a chiar (8 minutos).',
+        'Numa panela pequena, misture o ketchup de caril, o concentrado de tomate, 1 colher de sopa de água, o colorau doce e o caril amarelo em pó. Aqueça suavemente.',
+        'Corte as salsichas bratwurst quentes em rodelas.',
+        'Sirva as rodelas de salsicha junto com as batatas crocantes, regue generosamente com o molho de caril quente e polvilhe com um pouco mais de caril amarelo.'
+      ],
+      tags: ['Alemão', 'Alemanha', 'Comida de Rua', 'Rápido', 'Berlim', 'Refeição em 15 Minutos']
+    }
   }
 };

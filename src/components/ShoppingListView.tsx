@@ -26,7 +26,7 @@ import {
   UnitType,
   AggregatedShoppingItem
 } from '../types';
-import { calculateShoppingList, formatQuantity } from '../utils/calculator';
+import { calculateShoppingList, formatQuantity, getUnitFamily } from '../utils/calculator';
 import { CategoryIcon } from './CategoryIcon';
 import { useLanguage } from '../i18n/LanguageContext';
 
@@ -353,7 +353,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                   {filteredItems.map((item) => {
                     const itemKey = item.sources[0]?.recipeId === 'manual'
                       ? `custom_${item.ingredientId}`
-                      : `${item.ingredientId}_${item.unit}`;
+                      : `${item.ingredientId}_${getUnitFamily(item.unit)}`;
                     const isExpanded = !!expandedSources[itemKey];
                     const isCustom = item.sources[0]?.recipeId === 'manual';
                     const unitDisplayName = translateUnit(item.unit);

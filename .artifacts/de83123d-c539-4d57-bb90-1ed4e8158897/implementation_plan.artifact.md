@@ -1,22 +1,20 @@
-# Plan d'implémentation - Unification des unités et agrégation intelligente de la liste de courses
+# Plan d'implémentation - Alignement strict des catégories d'ingrédients et de recettes
 
-Ce plan résout le problème des doublons d'ingrédients dans la liste de courses causés par des unités de mesure différentes (ex: ml vs cuillère à soupe pour la crème). Nous introduisons un moteur de conversion d'unités pour fusionner intelligemment les quantités.
+Ce plan corrige le décalage de clés de catégories entre les définitions système de l'interface et le générateur automatisé des 2000 recettes Cloud, assurant que chaque recette s'associe et se filtre sous la bonne catégorie.
 
 ## Proposed Changes
 
-### Moteur de Conversion d'Unités
+### Recalibrage des Liens de Catégories Cloud
 
-#### [MODIFY] [calculator.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/utils/calculator.ts)
-- Ajouter une fonction utilitaire `convertUnit(quantity: number, fromUnit: UnitType, toUnit: UnitType): number`.
-- Gérer les conversions de volume (ml, cl, l, tbsp, tsp, pinch) et de masse (g, kg).
-- Mettre à jour `calculateShoppingList` pour :
-  - Utiliser l'identifiant de l'ingrédient (`ingredientId`) comme unique clé d'agrégation (au lieu de `ID_Unité`).
-  - Convertir systématiquement les quantités entrantes vers l'unité par défaut (`defaultUnit`) de l'ingrédient de référence.
-  - Fusionner les sources de provenance dans une seule ligne consolidée.
+#### [MODIFY] [cloudRecipesMock.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/data/cloudRecipesMock.ts)
+- Modifier les liaisons `cat` dans le tableau `bases` pour utiliser les identifiants de catégories de recettes officiels de l'application :
+  - `cat-cereales` -> `rcat-pates`
+  - `cat-viandes` -> `rcat-viande`
+  - `cat-poissons` -> `rcat-poisson`
+  - `cat-legumes` -> `rcat-legume`
+  - `cat-fruits` -> `rcat-dessert`
 
 ## Verification Plan
 
-### Manual Verification
-- Créer un plan avec deux recettes utilisant la crème : l'une avec "200ml" et l'autre avec "2 tbsp".
-- Vérifier que la liste de courses affiche une seule ligne "Crème" avec le total converti (ex: "230 ml").
-- Vérifier que les ingrédients solides (ex: Farine en g et kg) fusionnent également correctement.
+### Automated Verification
+- Re-vérifier la conformité de type globale pour s'assurer que le catalogue Cloud s'affiche dans les onglets appropriés de l'application.

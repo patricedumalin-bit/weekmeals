@@ -3,7 +3,7 @@
  * Handles real-time synchronization, offline fallbacks, and error tracking.
  */
 
-import { doc, getDoc, setDoc, onSnapshot, getDocFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, getDocs, query, orderBy, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { WeeklyPlan, CustomShoppingItem, Recipe } from '../types';
 
@@ -211,28 +211,59 @@ export function formatSyncTime(isoString?: string | null, lang: string = 'fr'): 
 export const GENERIC_CATALOG_DOC = 'app_catalog/generic';
 
 /**
+ * Firestore documents are capped at 1MB. With a growing recipe catalog (imports, etc.)
+ * a single document can no longer hold all recipes, so the catalog is split into several
+ * "chunk" documents stored in the `app_catalog/generic/chunks` subcollection. The parent
+ * `app_catalog/generic` document only stores metadata (version, updatedAt, chunkCount).
+ */
+const GENERIC_CATALOG_CHUNK_SIZE = 300;
+
+function tagAsGenericCloud(recipes: Recipe[]): Recipe[] {
+  return recipes.map((r) => ({
+    ...r,
+    isCustom: false,
+    isGenericCloud: true
+  }));
+}
+
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+/**
  * Fetches the official Generic Cloud Database catalog
  */
 export async function fetchGenericCatalog(): Promise<{ recipes: Recipe[]; version: string; updatedAt: string } | null> {
   try {
     const catalogRef = doc(db, 'app_catalog', 'generic');
     const snap = await getDoc(catalogRef);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (Array.isArray(data?.recipes)) {
-        // Tag them as isGenericCloud
-        const taggedRecipes = data.recipes.map((r: Recipe) => ({
-          ...r,
-          isCustom: false,
-          isGenericCloud: true
-        }));
-        return {
-          recipes: taggedRecipes,
-          version: data.version || '1.0.0',
-          updatedAt: data.updatedAt || new Date().toISOString()
-        };
-      }
+    if (!snap.exists()) return null;
+    const data = snap.data();
+    const version = data?.version || '1.0.0';
+    const updatedAt = data?.updatedAt || new Date().toISOString();
+
+    // Legacy format: recipes stored directly on the parent document.
+    if (Array.isArray(data?.recipes) && data.recipes.length) {
+      return { recipes: tagAsGenericCloud(data.recipes), version, updatedAt };
     }
+
+    // Chunked format: recipes stored across `app_catalog/generic/chunks/*` documents.
+    if (data?.chunkCount) {
+      const chunksSnap = await getDocs(
+        query(collection(db, 'app_catalog', 'generic', 'chunks'), orderBy('index'))
+      );
+      const recipes: Recipe[] = [];
+      chunksSnap.forEach((chunkDoc) => {
+        const chunkRecipes = chunkDoc.data()?.recipes;
+        if (Array.isArray(chunkRecipes)) recipes.push(...chunkRecipes);
+      });
+      return { recipes: tagAsGenericCloud(recipes), version, updatedAt };
+    }
+
     return null;
   } catch (err) {
     console.warn('Could not fetch generic catalog from cloud:', err);
@@ -241,28 +272,38 @@ export async function fetchGenericCatalog(): Promise<{ recipes: Recipe[]; versio
 }
 
 /**
- * Seeds or publishes the initial official recipes to the Generic Cloud Database
+ * Seeds or publishes the initial official recipes to the Generic Cloud Database.
+ * Recipes are split into multiple chunk documents to stay under Firestore's 1MB
+ * per-document limit as the catalog grows.
  */
 export async function seedGenericCatalogIfEmpty(defaultRecipes: Recipe[]): Promise<boolean> {
   try {
     const catalogRef = doc(db, 'app_catalog', 'generic');
     const snap = await getDoc(catalogRef);
-    if (!snap.exists() || !snap.data()?.recipes?.length) {
-      const now = new Date().toISOString();
-      const sanitized = defaultRecipes.map(r => ({
-        ...r,
-        isCustom: false,
-        isGenericCloud: true
-      }));
-      await setDoc(catalogRef, {
-        version: '1.0.0',
-        recipes: sanitized,
-        updatedAt: now,
-        author: 'App System'
-      }, { merge: true });
-      return true;
-    }
-    return false;
+    const alreadySeeded = snap.exists() && ((snap.data()?.recipes?.length ?? 0) > 0 || (snap.data()?.chunkCount ?? 0) > 0);
+    if (alreadySeeded) return false;
+
+    const now = new Date().toISOString();
+    const sanitized = tagAsGenericCloud(defaultRecipes);
+    const chunks = chunkArray(sanitized, GENERIC_CATALOG_CHUNK_SIZE);
+
+    const batch = writeBatch(db);
+    chunks.forEach((chunkRecipes, index) => {
+      const chunkRef = doc(db, 'app_catalog', 'generic', 'chunks', `chunk_${index}`);
+      batch.set(chunkRef, { index, recipes: chunkRecipes });
+    });
+    // Parent document keeps only metadata (no `recipes` field) to stay well under 1MB.
+    batch.set(catalogRef, {
+      version: '1.0.0',
+      chunkCount: chunks.length,
+      totalRecipes: sanitized.length,
+      updatedAt: now,
+      author: 'App System',
+      recipes: null
+    }, { merge: true });
+
+    await batch.commit();
+    return true;
   } catch (err) {
     console.warn('Failed to seed generic catalog in cloud:', err);
     return false;
@@ -270,7 +311,9 @@ export async function seedGenericCatalogIfEmpty(defaultRecipes: Recipe[]): Promi
 }
 
 /**
- * Subscribes to real-time updates of the Generic Cloud Database
+ * Subscribes to real-time updates of the Generic Cloud Database.
+ * Listens to the metadata document; whenever it changes (new version published),
+ * all chunk documents are re-fetched and merged into a single recipe list.
  */
 export function subscribeToGenericCatalog(
   onUpdate: (catalog: { recipes: Recipe[]; version: string; updatedAt: string }) => void,
@@ -279,21 +322,33 @@ export function subscribeToGenericCatalog(
   const catalogRef = doc(db, 'app_catalog', 'generic');
   return onSnapshot(
     catalogRef,
-    (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
-        if (Array.isArray(data?.recipes)) {
-          const taggedRecipes = data.recipes.map((r: Recipe) => ({
-            ...r,
-            isCustom: false,
-            isGenericCloud: true
-          }));
-          onUpdate({
-            recipes: taggedRecipes,
-            version: data.version || '1.0.0',
-            updatedAt: data.updatedAt || new Date().toISOString()
-          });
+    async (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const version = data?.version || '1.0.0';
+      const updatedAt = data?.updatedAt || new Date().toISOString();
+
+      try {
+        // Legacy format: recipes stored directly on the parent document.
+        if (Array.isArray(data?.recipes) && data.recipes.length) {
+          onUpdate({ recipes: tagAsGenericCloud(data.recipes), version, updatedAt });
+          return;
         }
+
+        if (data?.chunkCount) {
+          const chunksSnap = await getDocs(
+            query(collection(db, 'app_catalog', 'generic', 'chunks'), orderBy('index'))
+          );
+          const recipes: Recipe[] = [];
+          chunksSnap.forEach((chunkDoc) => {
+            const chunkRecipes = chunkDoc.data()?.recipes;
+            if (Array.isArray(chunkRecipes)) recipes.push(...chunkRecipes);
+          });
+          onUpdate({ recipes: tagAsGenericCloud(recipes), version, updatedAt });
+        }
+      } catch (err) {
+        console.warn('Failed to load generic catalog chunks:', err);
+        if (onError) onError(err);
       }
     },
     (err) => {
