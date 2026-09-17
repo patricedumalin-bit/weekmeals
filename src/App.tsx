@@ -1291,7 +1291,8 @@ function AppContent({
         ingredientCategories={ingredientCategories}
         pantryMap={pantryMap}
         onTogglePantryItem={handleTogglePantryItem}
-        onClearPantry={handleClearPantry}
+        onBatchSetPantry={handleBatchSetPantry}
+        recipes={recipes}
       />
 
       {/* Modal 6: Smart Auto-Planning */}
