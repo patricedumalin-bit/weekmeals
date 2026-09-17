@@ -170,66 +170,171 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     };
   };
 
-  const handleParse = () => {
+  const handleParse = async () => {
     setIsParsing(true);
     setParseError(null);
+
+    const userApiKey = localStorage.getItem('gemini_api_key');
 
     try {
       if (activeTab === 'text') {
         if (!pastedText.trim()) throw new Error('Veuillez coller le texte de votre recette.');
         const parsed = parseRecipeText(pastedText);
         setParsedRecipe(parsed);
-      } else if (activeTab === 'url') {
+        return;
+      }
+
+      // Check if API key is present for advanced features (URL / Photo)
+      if (!userApiKey) {
+        throw new Error("Pour analyser un Lien Web ou une Photo, veuillez d'abord renseigner votre Clé d'API Gemini gratuite dans les paramètres de votre Profil (icône en haut à droite).");
+      }
+
+      if (activeTab === 'url') {
         if (!recipeUrl.trim()) throw new Error('Veuillez entrer une URL valide.');
-        // Extract recipe name and mock structure from url
-        const cleanName = decodeURIComponent(recipeUrl.split('/').filter(Boolean).pop() || 'Recette Web')
-          .replace(/[-_]/g, ' ')
-          .replace(/\.html?$/i, '');
-        
-        const parsed: Partial<Recipe> = {
-          title: cleanName.charAt(0).toUpperCase() + cleanName.slice(1),
-          servings: 4,
-          prepTimeMinutes: 20,
-          cookTimeMinutes: 25,
+
+        // Simple call to a public free CORS proxy + Gemini to read web content
+        const cleanUrl = recipeUrl.trim();
+        let webText = "";
+        try {
+          const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cleanUrl)}`);
+          const proxyData = await proxyRes.json();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(proxyData.contents, 'text/html');
+          // Extract main texts to give to Gemini
+          webText = doc.body.innerText.slice(0, 12000);
+        } catch {
+          webText = `Analyser directement l'URL suivante si possible : ${cleanUrl}`;
+        }
+
+        const prompt = `Tu es un assistant culinaire expert. Analyse le contenu web suivant extrait d'un site de cuisine ou l'URL pour en extraire la recette.
+Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown de code, SANS texte autour, JUSTE le JSON) respectant scrupuleusement cette structure TypeScript :
+{
+  "title": "Nom de la recette",
+  "servings": 4,
+  "prepTimeMinutes": 15,
+  "cookTimeMinutes": 20,
+  "difficulty": "easy" ou "medium" ou "hard",
+  "description": "Brève description ou provenance",
+  "ingredients": [
+    { "name": "nom de l'ingrédient en anglais ou français courant", "quantity": 250, "unit": "g" ou "unit" ou "tbsp" ou "ml" }
+  ],
+  "instructions": [
+    "Étape 1...", "Étape 2..."
+  ]
+}
+
+Contenu Web :
+${webText}`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey}`;
+        const response = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+
+        if (!response.ok) throw new Error("Erreur de communication avec l'API Gemini. Vérifiez votre clé.");
+        const geminiData = await response.json();
+        const jsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error("L'IA n'a pas réussi à structurer la recette.");
+
+        const aiRecipe = JSON.parse(jsonText);
+
+        // Map extracted names to system ingredients
+        const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
+          const norm = normalizeExternalIngredient(i.name || '');
+          return {
+            ingredientId: norm.ingredientId,
+            quantity: Number(i.quantity) || 1,
+            unit: (i.unit || 'unit') as UnitType
+          };
+        });
+
+        setParsedRecipe({
+          title: aiRecipe.title || 'Recette Web Importée',
+          servings: Number(aiRecipe.servings) || 4,
+          prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
+          cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
           categoryId: recipeCategories[0]?.id || 'cat-meat',
-          difficulty: 'medium',
-          description: `Importé depuis : ${recipeUrl}`,
-          ingredients: [
-            { ingredientId: ingredients[0]?.id || 'ing-1', quantity: 300, unit: 'g' },
-            { ingredientId: ingredients[1]?.id || 'ing-2', quantity: 2, unit: 'unit' }
-          ],
-          instructions: [
-            'Préparer et laver soigneusement tous les ingrédients.',
-            'Suivre les étapes de cuisson indiquées sur la source web.',
-            'Dresser chaud et déguster immédiatement.'
-          ],
-          tags: ['Web', 'Importé'],
+          difficulty: aiRecipe.difficulty || 'easy',
+          description: aiRecipe.description || `Importé depuis : ${cleanUrl}`,
+          ingredients: mappedIngredients,
+          instructions: aiRecipe.instructions || ['Suivre la recette originale.'],
+          tags: ['Web', 'Gemini'],
           isCustom: true
-        };
-        setParsedRecipe(parsed);
+        });
+
       } else if (activeTab === 'photo') {
         if (!selectedImage) throw new Error('Veuillez sélectionner ou glisser une photo.');
-        const parsed: Partial<Recipe> = {
-          title: 'Recette Numérisée par Photo',
-          servings: 4,
-          prepTimeMinutes: 25,
-          cookTimeMinutes: 30,
+
+        // Split data URL to grab raw base64 data
+        const base64Data = selectedImage.split(',')[1];
+        const mimeType = selectedImage.split(';')[0].split(':')[1] || 'image/jpeg';
+
+        const prompt = `Analyse cette photo de recette de cuisine. Extrais le titre, le nombre de personnes, le temps de préparation/cuisson, la liste des ingrédients et les étapes de préparation.
+Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown de code, SANS texte autour, JUSTE le JSON) respectant scrupuleusement cette structure :
+{
+  "title": "Nom de la recette",
+  "servings": 4,
+  "prepTimeMinutes": 15,
+  "cookTimeMinutes": 20,
+  "difficulty": "easy" ou "medium" ou "hard",
+  "description": "Extrait d'un livre de cuisine ou d'une photo",
+  "ingredients": [
+    { "name": "nom de l'ingrédient", "quantity": 100, "unit": "g" ou "unit" ou "ml" }
+  ],
+  "instructions": [
+    "Étape 1...", "Étape 2..."
+  ]
+}`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${userApiKey}`;
+        const response = await fetch(geminiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { inlineData: { mimeType: mimeType, data: base64Data } }
+              ]
+            }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+
+        if (!response.ok) throw new Error("Erreur de communication avec l'API Gemini. Vérifiez votre clé.");
+        const geminiData = await response.json();
+        const jsonText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error("L'IA n'a pas pu déchiffrer l'image.");
+
+        const aiRecipe = JSON.parse(jsonText);
+
+        const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
+          const norm = normalizeExternalIngredient(i.name || '');
+          return {
+            ingredientId: norm.ingredientId,
+            quantity: Number(i.quantity) || 1,
+            unit: (i.unit || 'unit') as UnitType
+          };
+        });
+
+        setParsedRecipe({
+          title: aiRecipe.title || 'Recette Photo Importée',
+          servings: Number(aiRecipe.servings) || 4,
+          prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
+          cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
           categoryId: recipeCategories[0]?.id || 'cat-meat',
-          difficulty: 'medium',
-          description: 'Recette extraite depuis une photo/capture de livre de cuisine.',
-          ingredients: [
-            { ingredientId: ingredients[0]?.id || 'ing-1', quantity: 250, unit: 'g' },
-            { ingredientId: ingredients[2]?.id || 'ing-3', quantity: 1, unit: 'tbsp' }
-          ],
-          instructions: [
-            'Émincer finement les légumes et préchauffer votre appareil.',
-            'Cuire à feu moyen jusqu’à coloration dorée.',
-            'Assaisonner et servir chaud.'
-          ],
-          tags: ['Photo', 'Numérisé'],
+          difficulty: aiRecipe.difficulty || 'easy',
+          description: aiRecipe.description || 'Numérisé avec succès par Gemini Vision',
+          ingredients: mappedIngredients,
+          instructions: aiRecipe.instructions || ['Suivre les étapes extraites.'],
+          tags: ['Photo', 'Gemini'],
           isCustom: true
-        };
-        setParsedRecipe(parsed);
+        });
       }
     } catch (err: any) {
       setParseError(err.message || 'Erreur lors de l’analyse');
