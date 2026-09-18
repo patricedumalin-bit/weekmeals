@@ -163,6 +163,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
       instructions: validInstructions.length > 0 ? validInstructions : ['Prepare and serve warm.'],
       ingredients: validIngredients,
       tags,
+      rating: recipeToEdit?.rating || 1,
       isCustom: true
     };
 

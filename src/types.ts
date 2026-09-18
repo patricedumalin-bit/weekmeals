@@ -85,6 +85,7 @@ export interface Recipe {
   isCustom?: boolean;
   isGenericCloud?: boolean;
   cookingMode?: CookingModeType;
+  rating?: number; // 0-5 stars
   source?: string; // Attribution label, e.g. "Wikibooks Cookbook (CC BY-SA 4.0)"
   sourceUrl?: string; // Link to the original recipe page
   localizations?: Record<string, { title: string; description: string; instructions: string[] }>;

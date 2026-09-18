@@ -45,37 +45,35 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   const locale = dateLocaleMap[language] || 'en-US';
 
   return (
-    <div className="print-only hidden p-8 max-w-4xl mx-auto text-black font-sans">
-      {/* Title */}
-      <div className="border-b-2 border-black pb-4 mb-6 flex items-start justify-between">
+    <div id="printable-content" className="print-only p-4 max-w-full mx-auto text-black font-sans leading-tight bg-white">
+      {/* Title & Stats Compact */}
+      <div className="border-b-2 border-black pb-2 mb-4 flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-black tracking-tight uppercase">
+          <h1 className="text-xl font-black tracking-tight uppercase leading-none">
             {t('printTitle')}
           </h1>
-          <p className="text-sm text-gray-700 mt-1">
+          <p className="text-[10px] text-gray-700 mt-1">
             {t('generatedOn', {
               date: new Date().toLocaleDateString(locale, {
                 weekday: 'long',
-                year: 'numeric',
-                month: 'long',
+                month: 'short',
                 day: 'numeric'
               })
             })}
           </p>
         </div>
-        <div className="text-right text-xs text-gray-700">
-          <p className="font-bold">{weeklyPlan.numberOfMeals} {t('tabPlannedMeals')}</p>
-          <p>{t('defaultPersons', { count: weeklyPlan.defaultServings })}</p>
+        <div className="text-right text-[10px] text-gray-700 font-bold uppercase">
+          {weeklyPlan.numberOfMeals} Repas • {weeklyPlan.defaultServings} Pers. • {totalItemsCount} Ingr.
         </div>
       </div>
 
-      {/* Section 1: Weekly Meals Schedule */}
-      <div className="mb-8">
-        <h2 className="text-base font-bold uppercase tracking-wider border-b border-black pb-1 mb-3">
+      {/* Section 1: Weekly Meals Schedule - More Compact Grid */}
+      <div className="mb-6">
+        <h2 className="text-[11px] font-black uppercase tracking-widest border-b border-black pb-0.5 mb-2">
           {t('printMealScheduleHeader')}
         </h2>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {weeklyPlan.meals.map((meal) => {
             const assigned = (meal.recipeIds || [])
               .map(id => recipeMap.get(id))
@@ -84,22 +82,22 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             const displayLabel = translateMealLabel(meal.mealNumber, meal.label);
 
             return (
-              <div key={meal.id} className="border border-gray-300 rounded p-2.5 text-xs">
-                <div className="flex justify-between font-bold border-b border-gray-200 pb-1 mb-1.5">
-                  <span>{displayLabel}</span>
-                  <span className="text-gray-600">{meal.servings} pers.</span>
+              <div key={meal.id} className="border border-gray-200 rounded p-1.5 text-[10px] break-inside-avoid">
+                <div className="flex justify-between font-black border-b border-gray-100 pb-0.5 mb-1">
+                  <span className="truncate">{displayLabel}</span>
+                  <span className="text-gray-500">{meal.servings}p</span>
                 </div>
                 {assigned.length === 0 ? (
-                  <p className="text-gray-400 italic">{t('noRecipeAssignedPrint')}</p>
+                  <p className="text-gray-400 italic text-[9px]">{t('noRecipeAssignedPrint')}</p>
                 ) : (
                   <ul className="space-y-0.5">
                     {assigned.map((r, i) => {
                       const localized = translateRecipe(r);
                       return (
-                        <li key={i} className="flex justify-between">
-                          <span>• {localized.title}</span>
-                          <span className="text-gray-500 font-mono text-[10px]">
-                            {r.prepTimeMinutes + r.cookTimeMinutes}m
+                        <li key={i} className="flex justify-between items-start gap-1">
+                          <span className="line-clamp-1 flex-1">• {localized.title}</span>
+                          <span className="text-gray-400 font-mono text-[8px] whitespace-nowrap mt-0.5">
+                            {r.prepTimeMinutes + r.cookTimeMinutes}'
                           </span>
                         </li>
                       );
@@ -112,35 +110,32 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
         </div>
       </div>
 
-      {/* Section 2: Categorized Shopping List */}
+      {/* Section 2: Categorized Shopping List - Columns layout for extreme compactness */}
       <div>
-        <div className="flex items-center justify-between border-b border-black pb-1 mb-3">
-          <h2 className="text-base font-bold uppercase tracking-wider">
-            {t('printShoppingHeader')}
-          </h2>
-          <span className="text-xs text-gray-600 font-medium">
-            {t('totalItemsPrint', { count: totalItemsCount })}
-          </span>
-        </div>
+        <h2 className="text-[11px] font-black uppercase tracking-widest border-b border-black pb-0.5 mb-2">
+          {t('printShoppingHeader')}
+        </h2>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="columns-3 gap-4 space-y-3">
           {groupedByCategory.map((group) => {
             const catName = translateIngredientCategory(group.category.id, group.category.name);
             return (
-              <div key={group.category.id} className="break-inside-avoid">
-                <h3 className="text-xs font-black uppercase text-gray-900 border-b border-gray-400 pb-1 mb-2">
-                  {catName} ({group.totalCount})
+              <div key={group.category.id} className="break-inside-avoid inline-block w-full">
+                <h3 className="text-[9px] font-black uppercase text-gray-900 border-b border-gray-300 pb-0.5 mb-1">
+                  {catName}
                 </h3>
-                <ul className="space-y-1.5 text-xs">
+                <ul className="space-y-0.5 text-[9px]">
                   {group.items.map((item, idx) => {
                     const ingName = translateIngredient(item.ingredientId, item.ingredientName);
                     return (
-                      <li key={idx} className="flex items-center gap-2">
-                        <div className="w-3.5 h-3.5 border border-black rounded-xs shrink-0" />
-                        <span className="font-mono font-bold text-gray-900 min-w-16">
-                          {formatQuantity(item.totalQuantity)} {translateUnit(item.unit)}
-                        </span>
-                        <span className="text-gray-800">{ingName}</span>
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <div className="w-2.5 h-2.5 border border-black rounded-xs shrink-0 mt-0.5" />
+                        <div className="flex-1 leading-tight">
+                          <span className="font-bold text-gray-900 mr-1">
+                            {formatQuantity(item.totalQuantity)} {translateUnit(item.unit)}
+                          </span>
+                          <span className="text-gray-800">{ingName}</span>
+                        </div>
                       </li>
                     );
                   })}
@@ -149,6 +144,13 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             );
           })}
         </div>
+      </div>
+
+      {/* Footer Compact */}
+      <div className="mt-6 pt-2 border-t border-gray-200 text-center">
+        <p className="text-[8px] text-gray-400 italic">
+          Planifié avec WeekMeals - Vos recettes, votre semaine, votre liste.
+        </p>
       </div>
     </div>
   );

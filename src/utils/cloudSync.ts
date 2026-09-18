@@ -372,7 +372,8 @@ export function createPersonalCopyOfRecipe(genericRecipe: Recipe, suffixText: st
     isGenericCloud: false,
     ingredients: genericRecipe.ingredients.map(ing => ({ ...ing })),
     instructions: [...genericRecipe.instructions],
-    tags: [...(genericRecipe.tags || []), 'personnelle']
+    tags: [...(genericRecipe.tags || []), 'personnelle'],
+    rating: genericRecipe.rating || 1
   };
 }
 

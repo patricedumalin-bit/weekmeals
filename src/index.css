@@ -194,7 +194,7 @@ html, body {
 
 @media screen {
   .print-only {
-    display: none !important;
+    display: none;
   }
 }
 

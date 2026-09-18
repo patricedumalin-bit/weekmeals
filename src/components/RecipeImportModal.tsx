@@ -17,12 +17,15 @@ import {
 import { Recipe, Ingredient, IngredientCategory, RecipeCategory, RecipeIngredient, UnitType } from '../types';
 import { normalizeExternalIngredient } from '../utils/datasetCorrelator';
 
+import { useLanguage } from '../i18n/LanguageContext';
+
 interface RecipeImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   recipeCategories: RecipeCategory[];
   ingredients: Ingredient[];
   ingredientCategories: IngredientCategory[];
+  recipes: Recipe[];
   onSaveImportedRecipe: (recipe: Recipe) => void;
   onSaveNewIngredient?: (ingredient: Ingredient) => void;
 }
@@ -33,9 +36,11 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   recipeCategories,
   ingredients,
   ingredientCategories,
+  recipes,
   onSaveImportedRecipe,
   onSaveNewIngredient
 }) => {
+  const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   
   // Inputs
@@ -162,12 +167,13 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
       servings,
       prepTimeMinutes: prepTime,
       cookTimeMinutes: cookTime,
-      categoryId: recipeCategories[0]?.id || 'cat-meat',
+      categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
       difficulty: 'easy',
       description: `Recette importée le ${new Date().toLocaleDateString('fr-FR')}`,
       ingredients: extractedIngredients,
       instructions: extractedSteps,
       tags: ['Importé'],
+      rating: 1, // Default 1 star
       isCustom: true
     };
   };
@@ -307,12 +313,13 @@ ${webText}`;
           servings: Number(aiRecipe.servings) || 4,
           prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
           cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
-          categoryId: recipeCategories[0]?.id || 'cat-meat',
+          categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
           difficulty: aiRecipe.difficulty || 'easy',
           description: aiRecipe.description || `Importé depuis : ${cleanUrl}`,
           ingredients: mappedIngredients,
           instructions: aiRecipe.instructions || ['Suivre la recette originale.'],
           tags: ['Web', 'Groq'],
+          rating: 1,
           isCustom: true,
           localizations: aiRecipe.localizations
         });
@@ -415,12 +422,13 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
           servings: Number(aiRecipe.servings) || 4,
           prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
           cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
-          categoryId: recipeCategories[0]?.id || 'cat-meat',
+          categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
           difficulty: aiRecipe.difficulty || 'easy',
           description: aiRecipe.description || 'Numérisé avec succès par Groq Vision',
           ingredients: mappedIngredients,
           instructions: aiRecipe.instructions || ['Suivre les étapes extraites.'],
           tags: ['Photo', 'Groq'],
+          rating: 1,
           isCustom: true,
           localizations: aiRecipe.localizations
         });
@@ -435,10 +443,25 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
   const handleConfirmSave = () => {
     if (!parsedRecipe || !parsedRecipe.title) return;
 
+    // Check for duplicates by name
+    const existingRecipe = recipes.find(r =>
+      r.title.toLowerCase().trim() === parsedRecipe.title?.toLowerCase().trim()
+    );
+
+    if (existingRecipe) {
+      const confirmMsg = language === 'fr'
+        ? `Une recette nommée "${existingRecipe.title}" existe déjà. Voulez-vous quand même l'importer ?`
+        : `A recipe named "${existingRecipe.title}" already exists. Do you still want to import it?`;
+
+      if (!window.confirm(confirmMsg)) {
+        return;
+      }
+    }
+
     const newRecipe: Recipe = {
       id: `imported-${Date.now()}`,
       title: parsedRecipe.title,
-      categoryId: parsedRecipe.categoryId || recipeCategories[0]?.id || 'cat-meat',
+      categoryId: parsedRecipe.categoryId || recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
       servings: parsedRecipe.servings || 4,
       prepTimeMinutes: parsedRecipe.prepTimeMinutes || 15,
       cookTimeMinutes: parsedRecipe.cookTimeMinutes || 20,
@@ -447,6 +470,7 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
       instructions: parsedRecipe.instructions || [],
       ingredients: parsedRecipe.ingredients || [],
       tags: parsedRecipe.tags || ['Importé'],
+      rating: parsedRecipe.rating || 1,
       isCustom: true,
       localizations: parsedRecipe.localizations
     };
@@ -563,7 +587,7 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
         }
       }
 
-      let categoryId = recipeCategories[0]?.id || 'cat-meat';
+      let categoryId = recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre';
       if (meal.strCategory) {
         const catLower = meal.strCategory.toLowerCase();
         const matchedCat = recipeCategories.find(c => c.name.toLowerCase().includes(catLower) || catLower.includes(c.name.toLowerCase()));
@@ -583,6 +607,7 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
         ],
         instructions: instructions.length > 0 ? instructions : ['Suivre les étapes d\'instructions de TheMealDB.'],
         tags: ['TheMealDB', meal.strCategory, meal.strArea].filter(Boolean),
+        rating: 1,
         isCustom: true
       });
     } catch (err: any) {

@@ -20,7 +20,8 @@ import {
   Tag,
   Globe,
   User,
-  Cloud
+  Cloud,
+  Star
 } from 'lucide-react';
 import { 
   Recipe, 
@@ -111,6 +112,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   const [selectedFilterCat, setSelectedFilterCat] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [selectedCookingMode, setSelectedCookingMode] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(true);
 
   const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
   const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
@@ -369,79 +371,94 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
       {/* Sub-view 1: Recipes Browser */}
       {activeSubTab === 'recipes' && (
         <div className="space-y-4">
-          {/* Dual Database Switcher */}
-          <DatabaseSwitcher
-            currentSource={activeSource}
-            onChangeSource={handleSourceChange}
-            personalCount={personalRecipesCount}
-            genericCount={genericRecipesCount}
-            totalCount={recipes.length}
-          />
-
-          {/* Search and Category/Country/Cooking Mode Filters */}
-          <div className="space-y-2.5">
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={t('searchRecipePlaceholder')}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-[var(--accent)] transition-all"
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              {/* Dual Database Switcher */}
+              <DatabaseSwitcher
+                currentSource={activeSource}
+                onChangeSource={handleSourceChange}
+                personalCount={personalRecipesCount}
+                genericCount={genericRecipesCount}
+                totalCount={recipes.length}
               />
             </div>
-
-            {/* Category / Country / Cooking Mode dropdown filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div className="relative">
-                <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  value={selectedFilterCat}
-                  onChange={e => setSelectedFilterCat(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
-                >
-                  <option value="all">{t('allCategoriesFilter', { count: safeRecipes.length })}</option>
-                  {categoriesWithCounts.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {translateRecipeCategory(cat.id, cat.name)} ({cat.count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative">
-                <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  value={selectedCountry}
-                  onChange={e => setSelectedCountry(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
-                >
-                  <option value="all">🌍 {t('allCuisinesFilter')}</option>
-                  {availableCuisines.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.flag} {c.label} ({c.count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="relative">
-                <Clock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  value={selectedCookingMode}
-                  onChange={e => setSelectedCookingMode(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
-                >
-                  <option value="all">{t('cookingMode_all')}</option>
-                  {availableCookingModes.map(mode => (
-                    <option key={mode.id} value={mode.id}>
-                      {t(mode.labelKey as any)} ({mode.count})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="flex justify-end pb-1 sm:pb-1.5">
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border border-[var(--border-color)] bg-[var(--cell-bg)] text-slate-700 dark:text-slate-300 hover:bg-[var(--cell-bg-hover)] transition-all select-none shadow-xs shrink-0 whitespace-nowrap"
+              >
+                <span>{showFilters ? 'Masquer Filtres' : 'Afficher Filtres'}</span>
+              </button>
             </div>
           </div>
+
+          {/* Search and Category/Country/Cooking Mode Filters */}
+          {showFilters && (
+            <div className="space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder={t('searchRecipePlaceholder')}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-[var(--accent)] transition-all"
+                />
+              </div>
+
+              {/* Category / Country / Cooking Mode dropdown filters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="relative">
+                  <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedFilterCat}
+                    onChange={e => setSelectedFilterCat(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">{t('allCategoriesFilter', { count: safeRecipes.length })}</option>
+                    {categoriesWithCounts.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {translateRecipeCategory(cat.id, cat.name)} ({cat.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCountry}
+                    onChange={e => setSelectedCountry(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">🌍 {t('allCuisinesFilter')}</option>
+                    {availableCuisines.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.flag} {c.label} ({c.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="relative">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <select
+                    value={selectedCookingMode}
+                    onChange={e => setSelectedCookingMode(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-[var(--cell-bg)] border border-[var(--border-color)] text-slate-700 dark:text-slate-200 focus:outline-hidden focus:border-[var(--accent)] transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="all">{t('cookingMode_all')}</option>
+                    {availableCookingModes.map(mode => (
+                      <option key={mode.id} value={mode.id}>
+                        {t(mode.labelKey as any)} ({mode.count})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Recipes Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -469,6 +486,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                   localized.tags.some(t => t.toLowerCase().includes(query));
                 return matchesCat && matchesCountry && matchesCookingMode && matchesSearch;
               })
+              .sort((a, b) => (b.rating || 0) - (a.rating || 0))
               .map(recipe => {
                 const localized = translateRecipe(recipe);
                 const cat = recipeCategories.find(c => c.id === recipe.categoryId);
@@ -515,6 +533,29 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
                         {localized.description}
                       </p>
+
+                      {/* Rating Component */}
+                      <div className="flex items-center gap-1 mt-2.5 mb-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSaveRecipe({ ...recipe, rating: star });
+                            }}
+                            className="focus:outline-hidden transition-transform active:scale-125"
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 ${
+                                star <= (recipe.rating || 0)
+                                  ? 'text-amber-500 fill-amber-500'
+                                  : 'text-slate-300 dark:text-slate-600'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="pt-3 mt-3 border-t border-white/40 dark:border-white/5 flex items-center justify-between gap-2">

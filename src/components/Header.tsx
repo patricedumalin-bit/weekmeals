@@ -87,10 +87,6 @@ export const Header: React.FC<HeaderProps> = ({
   );
 
   const handlePrintClick = () => {
-    if (!isPremium) {
-      alert("L'impression est réservée aux utilisateurs premium.");
-      return;
-    }
     onPrint();
   };
 
@@ -442,9 +438,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="flex items-center gap-2">
                     <Printer className="w-4 h-4 text-slate-400" />
                     <span>{t('print')}</span>
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {!isPremium ? 'Premium' : ''}
                   </span>
                 </button>
 

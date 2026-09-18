@@ -15,7 +15,8 @@ import {
   Flame,
   Globe,
   User,
-  Copy
+  Copy,
+  Star
 } from 'lucide-react';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory, CustomMealIngredient, UnitType, CookingModeType, CustomMeal, DatabaseViewSource } from '../types';
 import { CategoryIcon } from './CategoryIcon';
@@ -46,6 +47,7 @@ interface RecipePickerModalProps {
   onPreviewRecipe: (recipe: Recipe) => void;
   onDeleteRecipe: (recipeId: string) => void;
   onCreateNewRecipe?: () => void;
+  onSaveRecipe?: (recipe: Recipe) => void;
 }
 
 const UNIT_OPTIONS: UnitType[] = [
@@ -71,7 +73,8 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   onSaveAsRecipe,
   onPreviewRecipe,
   onDeleteRecipe,
-  onCreateNewRecipe
+  onCreateNewRecipe,
+  onSaveRecipe
 }) => {
   const { t, translateRecipeCategory, translateMealLabel, translateRecipe, translateCookingMode, translateUnit } = useLanguage();
   if (!isOpen) return null;
@@ -97,6 +100,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCookingMode, setSelectedCookingMode] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(true);
 
   // Custom meal state (simplified: just take the first one for now)
   const [customName, setCustomName] = useState(currentCustomMeals[0]?.name || '');
@@ -201,110 +205,124 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
         </div>
 
         {/* Tab Switcher: Library vs Custom Meal */}
-        <div className="flex border-b border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 px-4 pt-2 gap-2">
-          <button
-            onClick={() => setActiveTab('library')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
-              activeTab === 'library'
-                ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 border-transparent'
-            }`}
-          >
-            <ChefHat className="w-4 h-4" />
-            <span>{t('tabRecipeLibrary')} ({recipes.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('custom')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
-              activeTab === 'custom'
-                ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
-                : 'text-slate-500 hover:text-slate-800 border-transparent'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{t('tabCustomMeal')} ({customIngs.length}/10)</span>
-          </button>
+        <div className="flex items-center justify-between border-b border-white/40 dark:border-white/5 bg-white/50 dark:bg-slate-900/50 px-4 pt-2 gap-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('library')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+                activeTab === 'library'
+                  ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 border-transparent'
+              }`}
+            >
+              <ChefHat className="w-4 h-4" />
+              <span>{t('tabRecipeLibrary')} ({recipes.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('custom')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs font-bold transition-all border-b-2 ${
+                activeTab === 'custom'
+                  ? 'bg-white dark:bg-slate-800 text-[var(--primary)] dark:text-[var(--primary)] border-[var(--primary)] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800 border-transparent'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>{t('tabCustomMeal')} ({customIngs.length}/10)</span>
+            </button>
+          </div>
+
+          {activeTab === 'library' && (
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-white/40 bg-white/40 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-700/60 transition-all select-none mb-1.5 animate-in fade-in duration-150"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>{showFilters ? 'Masquer Filtres' : 'Afficher Filtres'}</span>
+            </button>
+          )}
         </div>
 
         {activeTab === 'library' ? (
           <>
             {/* Search & Filters */}
-            <div className="p-3 sm:p-4 border-b border-white/40 dark:border-white/5 space-y-2.5 bg-white/50 dark:bg-slate-900/50">
-              {/* Dual Database Switcher */}
-              <DatabaseSwitcher
-                currentSource={activeSource}
-                onChangeSource={handleSourceChange}
-                personalCount={personalRecipesCount}
-                genericCount={genericRecipesCount}
-                totalCount={recipes.length}
-              />
-
-              {/* Search bar */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('searchRecipesPickerPlaceholder')}
-                  className="w-full pl-9 pr-4 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
+            {showFilters && (
+              <div className="p-3 sm:p-4 border-b border-white/40 dark:border-white/5 space-y-2.5 bg-white/50 dark:bg-slate-900/50 animate-in fade-in slide-in-from-top-2 duration-200">
+                {/* Dual Database Switcher */}
+                <DatabaseSwitcher
+                  currentSource={activeSource}
+                  onChangeSource={handleSourceChange}
+                  personalCount={personalRecipesCount}
+                  genericCount={genericRecipesCount}
+                  totalCount={recipes.length}
                 />
-              </div>
 
-              {/* Category / Country / Cooking Mode dropdown filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Search bar */}
                 <div className="relative">
-                  <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="all">{t('allCategoriesFilter', { count: recipes.length })}</option>
-                    {safeRecipeCategories
-                      .map((cat) => ({ ...cat, count: recipes.filter(r => r.categoryId === cat.id).length }))
-                      .filter((cat) => cat.count > 0)
-                      .map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {translateRecipeCategory(cat.id, cat.name)} ({cat.count})
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t('searchRecipesPickerPlaceholder')}
+                    className="w-full pl-9 pr-4 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
+                  />
+                </div>
+
+                {/* Category / Country / Cooking Mode dropdown filters */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="relative">
+                    <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="all">{t('allCategoriesFilter', { count: recipes.length })}</option>
+                      {safeRecipeCategories
+                        .map((cat) => ({ ...cat, count: recipes.filter(r => r.categoryId === cat.id).length }))
+                        .filter((cat) => cat.count > 0)
+                        .map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {translateRecipeCategory(cat.id, cat.name)} ({cat.count})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="relative">
+                    <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="all">🌍 {t('allCuisinesFilter')}</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.flag} {c.label} ({c.count})
                         </option>
                       ))}
-                  </select>
-                </div>
+                    </select>
+                  </div>
 
-                <div className="relative">
-                  <Globe className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <select
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="all">🌍 {t('allCuisinesFilter')}</option>
-                    {COUNTRIES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.flag} {c.label} ({c.count})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="relative">
-                  <Flame className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <select
-                    value={selectedCookingMode}
-                    onChange={(e) => setSelectedCookingMode(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
-                  >
-                    <option value="all">{t('cookingMode_all')}</option>
-                    {COOKING_MODES.map((mode) => (
-                      <option key={mode.id} value={mode.id}>
-                        {t(mode.labelKey as any)} ({mode.count})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <Flame className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <select
+                      value={selectedCookingMode}
+                      onChange={(e) => setSelectedCookingMode(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-xs font-semibold rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="all">{t('cookingMode_all')}</option>
+                      {COOKING_MODES.map((mode) => (
+                        <option key={mode.id} value={mode.id}>
+                          {t(mode.labelKey as any)} ({mode.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Recipe Cards List */}
             <div className="overflow-y-auto p-4 sm:p-5 flex-1">
@@ -329,7 +347,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {filteredRecipes.map((recipe) => {
+                  {[...filteredRecipes].sort((a, b) => (b.rating || 0) - (a.rating || 0)).map((recipe) => {
                     const isSelected = currentRecipeIds.includes(recipe.id);
                     const localized = translateRecipe(recipe);
                     const category = recipeCategories.find(c => c.id === recipe.categoryId);
@@ -390,7 +408,32 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                             </p>
                           )}
                           
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">
+                          {/* Rating Component */}
+                          <div className="flex items-center gap-1 mt-2 mb-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onSaveRecipe) {
+                                    onSaveRecipe({ ...recipe, rating: star });
+                                  }
+                                }}
+                                className="focus:outline-hidden transition-transform active:scale-125 text-left"
+                              >
+                                <Star
+                                  className={`w-3.5 h-3.5 ${
+                                    star <= (recipe.rating || 0)
+                                      ? 'text-amber-500 fill-amber-500'
+                                      : 'text-slate-300 dark:text-slate-600'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
                             {t('ingredientsCountShort', { count: recipe.ingredients.length })} • {t('basePersons', { count: recipe.servings })}
                           </p>
                         </div>

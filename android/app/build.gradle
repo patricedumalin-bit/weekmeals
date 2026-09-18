@@ -22,6 +22,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        pickFirst 'META-INF/*'
+        exclude 'META-INF/androidx.cursoradapter_cursoradapter.version'
+    }
 }
 
 repositories {
