@@ -83,6 +83,11 @@ export function normalizeExternalIngredient(rawName: string): { ingredientId: st
   }
 
   // 2. Fallback dynamic ID generator to ensure no recipe breakdown
-  const fallbackId = `ing-${clean.replace(/[^a-z0-9]/g, '-')}`;
+  const noAccents = clean.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let slug = noAccents.replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  if (!slug) {
+    slug = Math.random().toString(36).substring(2, 7);
+  }
+  const fallbackId = `ing-${slug}`;
   return { ingredientId: fallbackId, cleanName: rawName };
 }

@@ -466,7 +466,6 @@ function AppContent({
   const isPremium = userData?.subscriptionStatus === 'premium';
   
   const themeBg = {
-    pro: 'bg-[#F8F9FA]',
     nature: 'bg-[#FBF8F3]',
     minimalist: 'bg-[#FFFFFF]',
     creative: 'bg-[#F5F3FF]',
@@ -593,16 +592,16 @@ function AppContent({
     const isDark = html.classList.contains('dark') || (body && body.classList.contains('dark'));
     const themeColors = isDark ? {
       default: { bg: '#0F172A', primary: '#F1F5F9', accent: '#3B82F6' },
-      pro: { bg: '#111827', primary: '#F3F4F6', accent: '#60A5FA' },
       nature: { bg: '#141E17', primary: '#E8F5E9', accent: '#FF8A65' },
       minimalist: { bg: '#18181B', primary: '#FAF5FF', accent: '#F59E0B' },
-      creative: { bg: '#1E1B4B', primary: '#EEF2FF', accent: '#A78BFA' }
+      creative: { bg: '#1E1B4B', primary: '#EEF2FF', accent: '#A78BFA' },
+      girly: { bg: '#3D051B', primary: '#FDF2F8', accent: '#F472B6' }
     } : {
       default: { bg: '#E2E8F0', primary: '#1E293B', accent: '#2563EB' },
-      pro: { bg: '#CBD5E1', primary: '#1E293B', accent: '#2563EB' },
       nature: { bg: '#E5DCC6', primary: '#1C3A27', accent: '#C85A32' },
       minimalist: { bg: '#E4E4E7', primary: '#18181B', accent: '#D4AF37' },
-      creative: { bg: '#DDD6FE', primary: '#2E1065', accent: '#7C3AED' }
+      creative: { bg: '#DDD6FE', primary: '#2E1065', accent: '#7C3AED' },
+      girly: { bg: '#FFF5F7', primary: '#831843', accent: '#DB2777' }
     };
 
     const colors = themeColors[theme as keyof typeof themeColors] || themeColors.default;
@@ -662,20 +661,23 @@ function AppContent({
   };
 
   const handleSaveRecipe = async (recipe: Recipe) => {
-    const exists = recipes.some(r => r.id === recipe.id);
-    if (!exists && !(await canAddRecipe())) {
+    const isNew = !recipes.some(r => r.id === recipe.id);
+    if (isNew && !(await canAddRecipe())) {
       alert("Limite de 20 recettes atteinte. Passez en premium pour ajouter plus de recettes.");
       return;
     }
     
-    const updated = exists
-      ? recipes.map(r => (r.id === recipe.id ? recipe : r))
-      : [recipe, ...recipes];
-    setRecipes(updated);
-    saveRecipes(updated);
-    scheduleCloudSync(undefined, undefined, undefined, updated);
+    setRecipes(prev => {
+      const exists = prev.some(r => r.id === recipe.id);
+      const updated = exists
+        ? prev.map(r => (r.id === recipe.id ? recipe : r))
+        : [recipe, ...prev];
+      saveRecipes(updated);
+      scheduleCloudSync(undefined, undefined, undefined, updated);
+      return updated;
+    });
 
-    if (!exists && userData?.subscriptionStatus !== 'premium') {
+    if (isNew && userData?.subscriptionStatus !== 'premium') {
       if (user.uid === 'local-guest') {
         setUserData((prev: any) => ({ ...prev, recipeCount: (prev.recipeCount || 0) + 1 }));
         return;
@@ -707,12 +709,14 @@ function AppContent({
   };
 
   const handleSaveRecipeCategory = (cat: RecipeCategory) => {
-    const exists = recipeCategories.some(c => c.id === cat.id);
-    const updated = exists
-      ? recipeCategories.map(c => (c.id === cat.id ? cat : c))
-      : [...recipeCategories, cat];
-    setRecipeCategories(updated);
-    saveRecipeCategories(updated);
+    setRecipeCategories(prev => {
+      const exists = prev.some(c => c.id === cat.id);
+      const updated = exists
+        ? prev.map(c => (c.id === cat.id ? cat : c))
+        : [...prev, cat];
+      saveRecipeCategories(updated);
+      return updated;
+    });
   };
 
   const handleDeleteRecipeCategory = (catId: string) => {
@@ -722,13 +726,15 @@ function AppContent({
   };
 
   const handleSaveIngredient = (ing: Ingredient) => {
-    const exists = ingredients.some(i => i.id === ing.id);
-    const updated = exists
-      ? ingredients.map(i => (i.id === ing.id ? ing : i))
-      : [ing, ...ingredients];
-    setIngredients(updated);
-    saveIngredients(updated);
-    scheduleCloudSync(undefined, undefined, undefined, undefined, updated);
+    setIngredients(prev => {
+      const exists = prev.some(i => i.id === ing.id);
+      const updated = exists
+        ? prev.map(i => (i.id === ing.id ? ing : i))
+        : [ing, ...prev];
+      saveIngredients(updated);
+      scheduleCloudSync(undefined, undefined, undefined, undefined, updated);
+      return updated;
+    });
   };
 
   const handleDeleteIngredient = (ingId: string) => {
@@ -738,12 +744,14 @@ function AppContent({
   };
 
   const handleSaveIngredientCategory = (cat: IngredientCategory) => {
-    const exists = ingredientCategories.some(c => c.id === cat.id);
-    const updated = exists
-      ? ingredientCategories.map(c => (c.id === cat.id ? cat : c))
-      : [...ingredientCategories, cat];
-    setIngredientCategories(updated);
-    saveIngredientCategories(updated);
+    setIngredientCategories(prev => {
+      const exists = prev.some(c => c.id === cat.id);
+      const updated = exists
+        ? prev.map(c => (c.id === cat.id ? cat : c))
+        : [...prev, cat];
+      saveIngredientCategories(updated);
+      return updated;
+    });
   };
 
   const handleDeleteIngredientCategory = (catId: string) => {

@@ -258,7 +258,6 @@ export const Header: React.FC<HeaderProps> = ({
             {(Object.keys(themes) as Theme[]).map((theme) => {
               const themeNames: Record<string, string> = {
                 default: 'Océan',
-                pro: 'Gourmet',
                 nature: 'Nature',
                 minimalist: 'Zen',
                 creative: 'Creative',
@@ -390,7 +389,6 @@ export const Header: React.FC<HeaderProps> = ({
                   {(Object.keys(themes) as Theme[]).map((theme) => {
                     const themeNames: Record<string, string> = {
                       default: 'Océan',
-                      pro: 'Gourmet',
                       nature: 'Nature',
                       minimalist: 'Zen',
                       creative: 'Creative',

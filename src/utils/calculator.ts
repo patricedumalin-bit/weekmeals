@@ -200,7 +200,7 @@ export function calculateShoppingList(
 
       const excludedForThisRecipe = new Set<string>([
         ...(excludedMap[rIdx] || []),
-        ...(excludedMap[recipeId as any] || [])
+        ...(excludedMap[recipeId] || [])
       ]);
 
       const recipeServings = recipe.servings || 4;

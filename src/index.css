@@ -25,17 +25,6 @@ html, body {
   --cell-bg-hover: rgba(186, 230, 253, 0.8);
 }
 
-.theme-pro {
-  --bg: #FFFBF0;
-  --primary: #451A03;
-  --accent: #B45309;
-  --hover: #FDE68A;
-  --card-bg: rgba(255, 255, 255, 0.92);
-  --border-color: rgba(180, 83, 9, 0.2);
-  --cell-bg: rgba(254, 243, 199, 0.5);
-  --cell-bg-hover: rgba(253, 230, 138, 0.7);
-}
-
 .theme-nature {
   --bg: #E5DCC6;
   --primary: #1C3A27;
@@ -95,19 +84,6 @@ html, body {
   --cell-bg-hover: rgba(51, 65, 85, 0.85);
 }
 
-.dark .theme-pro,
-.theme-pro.dark,
-.theme-pro [data-theme="dark"] {
-  --bg: #111827;
-  --primary: #F3F4F6;
-  --accent: #60A5FA;
-  --hover: #2563EB;
-  --card-bg: rgba(31, 41, 55, 0.8);
-  --border-color: rgba(255, 255, 255, 0.1);
-  --cell-bg: rgba(17, 24, 39, 0.7);
-  --cell-bg-hover: rgba(55, 65, 81, 0.85);
-}
-
 .dark .theme-nature,
 .theme-nature.dark,
 .theme-nature [data-theme="dark"] {
@@ -145,6 +121,19 @@ html, body {
   --border-color: rgba(255, 255, 255, 0.08);
   --cell-bg: rgba(17, 12, 54, 0.75);
   --cell-bg-hover: rgba(67, 56, 202, 0.85);
+}
+
+.dark .theme-girly,
+.theme-girly.dark,
+.theme-girly [data-theme="dark"] {
+  --bg: #3D051B;
+  --primary: #FDF2F8;
+  --accent: #F472B6;
+  --hover: #831843;
+  --card-bg: rgba(76, 5, 33, 0.8);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --cell-bg: rgba(61, 5, 27, 0.7);
+  --cell-bg-hover: rgba(131, 24, 67, 0.85);
 }
 
 @layer utilities {

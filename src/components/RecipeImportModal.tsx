@@ -275,11 +275,17 @@ ${webText}`;
         const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
           const norm = normalizeExternalIngredient(i.name || '');
 
-          // If it's a completely new ingredient dynamic ID and callback exists, save it globally
-          const exists = ingredients.some(existing => existing.id === norm.ingredientId);
-          if (!exists && onSaveNewIngredient) {
+          // Check if there is an existing ingredient with either the exact ID OR the exact same name to prevent duplicates
+          const matchedExisting = ingredients.find(existing =>
+            existing.id === norm.ingredientId ||
+            existing.name.toLowerCase().trim() === (i.name || norm.cleanName).toLowerCase().trim()
+          );
+
+          const finalIngredientId = matchedExisting ? matchedExisting.id : norm.ingredientId;
+
+          if (!matchedExisting && onSaveNewIngredient) {
             onSaveNewIngredient({
-              id: norm.ingredientId,
+              id: finalIngredientId,
               name: i.name || norm.cleanName,
               categoryId: 'cat-produce', // Fallback default category
               defaultUnit: (i.unit || 'unit') as UnitType,
@@ -289,7 +295,7 @@ ${webText}`;
           }
 
           return {
-            ingredientId: norm.ingredientId,
+            ingredientId: finalIngredientId,
             quantity: Number(i.quantity) || 1,
             unit: (i.unit || 'unit') as UnitType,
             notes: i.name || norm.cleanName
@@ -376,20 +382,28 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
         const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
           const norm = normalizeExternalIngredient(i.name || '');
 
-          const exists = ingredients.some(existing => existing.id === norm.ingredientId);
-          if (!exists && onSaveNewIngredient) {
+          const matchedExisting = ingredients.find(existing =>
+            existing.id === norm.ingredientId ||
+            existing.name.toLowerCase().trim() === (i.name || norm.cleanName).toLowerCase().trim()
+          );
+
+          const finalIngredientId = matchedExisting ? matchedExisting.id : norm.ingredientId;
+
+          if (!matchedExisting && onSaveNewIngredient) {
+            const rawName = i.name || norm.cleanName;
+            const normalizedName = rawName.replace(/œ/g, 'oe').replace(/Œ/g, 'Oe');
             onSaveNewIngredient({
-              id: norm.ingredientId,
-              name: i.name || norm.cleanName,
+              id: finalIngredientId,
+              name: normalizedName,
               categoryId: 'cat-produce',
               defaultUnit: (i.unit || 'unit') as UnitType,
               notes: 'Ingrédient photo importé par IA',
-              localizations: i.localizations || { fr: i.name }
+              localizations: i.localizations || { fr: normalizedName }
             });
           }
 
           return {
-            ingredientId: norm.ingredientId,
+            ingredientId: finalIngredientId,
             quantity: Number(i.quantity) || 1,
             unit: (i.unit || 'unit') as UnitType,
             notes: i.name || norm.cleanName

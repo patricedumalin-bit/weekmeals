@@ -1478,6 +1478,25 @@ export function getLocalizedIngredientName(
   if (translations && translations['en']) {
     return translations['en'];
   }
-  return fallbackName;
+
+  // Clean up technical IDs if they are displayed as fallback names
+  let targetName = fallbackName || ingredientId;
+
+  // Normalize French character composition for complex letters like Œ / œ
+  if (targetName) {
+    targetName = targetName.replace(/œ/g, 'oe').replace(/Œ/g, 'Oe');
+  }
+
+  if (targetName && (targetName.startsWith('ing-') || targetName.startsWith('imported-'))) {
+    const clean = targetName
+      .replace(/^(ing-|imported-\d+-|imported-)/, '')
+      .replace(/-/g, ' ')
+      .trim();
+    if (clean) {
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+    }
+  }
+
+  return targetName;
 }
 

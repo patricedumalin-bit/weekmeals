@@ -428,7 +428,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   />
                   <span className="capitalize text-[11px]">
                     {themeKey === 'default' ? 'Océan' :
-                     themeKey === 'pro' ? 'Gourmet' :
                      themeKey === 'minimalist' ? 'Zen' :
                      themeKey === 'girly' ? 'Sakura' :
                      themeKey}

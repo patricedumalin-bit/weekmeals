@@ -1,4 +1,4 @@
-export type Theme = 'default' | 'pro' | 'nature' | 'minimalist' | 'creative' | 'girly';
+export type Theme = 'default' | 'nature' | 'minimalist' | 'creative' | 'girly';
 
 export interface ThemeColors {
   primary: string;
@@ -9,7 +9,6 @@ export interface ThemeColors {
 
 export const themes: Record<Theme, ThemeColors> = {
   default: { primary: '#0C4A6E', accent: '#0284C7', bg: '#F0F9FF', hover: '#BAE6FD' },
-  pro: { primary: '#451A03', accent: '#B45309', bg: '#FFFBF0', hover: '#FDE68A' },
   nature: { primary: '#1C3A27', accent: '#C85A32', bg: '#FBF8F3', hover: '#A3B18A' },
   minimalist: { primary: '#18181B', accent: '#D4AF37', bg: '#FFFFFF', hover: '#F4F4F5' },
   creative: { primary: '#2E1065', accent: '#7C3AED', bg: '#F5F3FF', hover: '#F97316' },
