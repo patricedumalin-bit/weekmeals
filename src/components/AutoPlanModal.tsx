@@ -49,6 +49,7 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
   const [preferredMode, setPreferredMode] = useState<CookingModeType | 'all'>('all');
   const [dietaryStyle, setDietaryStyle] = useState<'all' | 'protein' | 'balanced' | 'vegetarian' | 'quick'>('all');
   const [noDuplicates, setNoDuplicates] = useState<boolean>(true);
+  const [isFilterCollapsed, setIsFilterCollapsed] = useState<boolean>(false);
 
   const [previewRecipes, setPreviewRecipes] = useState<Recipe[]>([]);
 
@@ -62,6 +63,7 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
     };
     const generated = generateSmartWeeklyPlan(safeRecipes, options);
     setPreviewRecipes(generated);
+    setIsFilterCollapsed(true);
   };
 
   // Generate on open
@@ -132,130 +134,159 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
         </div>
 
         {/* Form & Controls */}
-        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 space-y-4">
-          
-          {/* Meal count */}
-          <div>
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">
-              Nombre de repas à planifier :
-            </label>
-            <div className="flex items-center gap-2 flex-wrap">
-              {[3, 5, 7, 10, 14].map(count => (
+        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/40 transition-all duration-300">
+          {!isFilterCollapsed ? (
+            <div className="p-4 sm:p-6 space-y-4 animate-in slide-in-from-top-2 duration-300">
+              {/* Meal count */}
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 block">
+                  Nombre de repas à planifier :
+                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[3, 5, 7, 10, 14].map(count => (
+                    <button
+                      key={count}
+                      type="button"
+                      onClick={() => {
+                        setMealCount(count);
+                        setTimeout(handleGenerate, 10);
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                        mealCount === count
+                          ? 'bg-amber-500 text-slate-950 font-bold shadow-sm shadow-amber-500/20'
+                          : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      {count} repas
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Filters Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+
+                {/* Max Prep Time */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Temps de prépa max :</span>
+                  </label>
+                  <select
+                    value={maxPrepTime === null ? 'all' : maxPrepTime.toString()}
+                    onChange={(e) => {
+                      setMaxPrepTime(e.target.value === 'all' ? null : parseInt(e.target.value, 10));
+                      setTimeout(handleGenerate, 10);
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="all">Indifférent (tout temps)</option>
+                    <option value="15">≤ 15 min (Ultra-rapide)</option>
+                    <option value="25">≤ 25 min (Express)</option>
+                    <option value="35">≤ 35 min (Standard)</option>
+                    <option value="45">≤ 45 min</option>
+                  </select>
+                </div>
+
+                {/* Dietary Style */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
+                    <Leaf className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Style diététique :</span>
+                  </label>
+                  <select
+                    value={dietaryStyle}
+                    onChange={(e) => {
+                      setDietaryStyle(e.target.value as any);
+                      setTimeout(handleGenerate, 10);
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="all">Tous styles (Varié)</option>
+                    <option value="protein">Riche en protéines</option>
+                    <option value="vegetarian">100% Végétarien</option>
+                    <option value="quick">Le plus rapide d'abord</option>
+                  </select>
+                </div>
+
+                {/* Cooking mode */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
+                    <ChefHat className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Mode de cuisson :</span>
+                  </label>
+                  <select
+                    value={preferredMode}
+                    onChange={(e) => {
+                      setPreferredMode(e.target.value as any);
+                      setTimeout(handleGenerate, 10);
+                    }}
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="all">Tous les modes</option>
+                    <option value="four">Four / Gratin</option>
+                    <option value="poele">Poêle / Sauté</option>
+                    <option value="sans-cuisson">Sans cuisson / Salade</option>
+                    <option value="cookeo">Cookeo / Multicuiseur</option>
+                    <option value="robot">Thermomix / Robot</option>
+                    <option value="cocotte">Cocotte / Mijoté</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Duplicates checkbox & Regenerate button */}
+              <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
+                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
+                  <input
+                    type="checkbox"
+                    checked={noDuplicates}
+                    onChange={(e) => {
+                      setNoDuplicates(e.target.checked);
+                      setTimeout(handleGenerate, 10);
+                    }}
+                    className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
+                  />
+                  <span>Garantir aucune répétition (pas de doublon)</span>
+                </label>
+
                 <button
-                  key={count}
                   type="button"
-                  onClick={() => {
-                    setMealCount(count);
-                    setTimeout(handleGenerate, 10);
-                  }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    mealCount === count
-                      ? 'bg-amber-500 text-slate-950 font-bold shadow-sm shadow-amber-500/20'
-                      : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                  }`}
+                  onClick={handleGenerate}
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition-all"
                 >
-                  {count} repas
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Régénérer une combinaison</span>
                 </button>
-              ))}
+              </div>
             </div>
-          </div>
-
-          {/* Quick Filters Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            
-            {/* Max Prep Time */}
-            <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Temps de prépa max :</span>
-              </label>
-              <select
-                value={maxPrepTime === null ? 'all' : maxPrepTime.toString()}
-                onChange={(e) => {
-                  setMaxPrepTime(e.target.value === 'all' ? null : parseInt(e.target.value, 10));
-                  setTimeout(handleGenerate, 10);
-                }}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="all">Indifférent (tout temps)</option>
-                <option value="15">≤ 15 min (Ultra-rapide)</option>
-                <option value="25">≤ 25 min (Express)</option>
-                <option value="35">≤ 35 min (Standard)</option>
-                <option value="45">≤ 45 min</option>
-              </select>
+          ) : (
+            <div className="px-4 py-3 flex items-center justify-between animate-in fade-in duration-300">
+              <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-slate-400 overflow-hidden">
+                <span className="bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-lg border border-amber-500/20 whitespace-nowrap">
+                  {mealCount} repas
+                </span>
+                <span className="hidden sm:inline opacity-50">•</span>
+                <span className="truncate hidden sm:inline">
+                  {dietaryStyle === 'all' ? 'Varié' : dietaryStyle} • {preferredMode === 'all' ? 'Tous modes' : preferredMode}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFilterCollapsed(false)}
+                  className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 underline underline-offset-4 px-2 py-1"
+                >
+                  Modifier les filtres
+                </button>
+                <button
+                  onClick={handleGenerate}
+                  className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-colors"
+                  title="Générer à nouveau"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-
-            {/* Dietary Style */}
-            <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
-                <Leaf className="w-3.5 h-3.5 text-slate-400" />
-                <span>Style diététique :</span>
-              </label>
-              <select
-                value={dietaryStyle}
-                onChange={(e) => {
-                  setDietaryStyle(e.target.value as any);
-                  setTimeout(handleGenerate, 10);
-                }}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="all">Tous styles (Varié)</option>
-                <option value="protein">Riche en protéines</option>
-                <option value="vegetarian">100% Végétarien</option>
-                <option value="quick">Le plus rapide d'abord</option>
-              </select>
-            </div>
-
-            {/* Cooking mode */}
-            <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5 flex items-center gap-1">
-                <ChefHat className="w-3.5 h-3.5 text-slate-400" />
-                <span>Mode de cuisson :</span>
-              </label>
-              <select
-                value={preferredMode}
-                onChange={(e) => {
-                  setPreferredMode(e.target.value as any);
-                  setTimeout(handleGenerate, 10);
-                }}
-                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="all">Tous les modes</option>
-                <option value="four">Four / Gratin</option>
-                <option value="poele">Poêle / Sauté</option>
-                <option value="sans-cuisson">Sans cuisson / Salade</option>
-                <option value="cookeo">Cookeo / Multicuiseur</option>
-                <option value="robot">Thermomix / Robot</option>
-                <option value="cocotte">Cocotte / Mijoté</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Duplicates checkbox & Regenerate button */}
-          <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
-              <input
-                type="checkbox"
-                checked={noDuplicates}
-                onChange={(e) => {
-                  setNoDuplicates(e.target.checked);
-                  setTimeout(handleGenerate, 10);
-                }}
-                className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
-              />
-              <span>Garantir aucune répétition (pas de doublon de recette)</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={handleGenerate}
-              className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition-all"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Régénérer une combinaison</span>
-            </button>
-          </div>
-
+          )}
         </div>
 
         {/* Live Preview List */}

@@ -198,36 +198,42 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     });
   };
 
-  // Auto-fill balanced random recipes across empty slots
+  // Auto-fill balanced random recipes across empty slots: 1 Starter + 1 Main + 1 Dessert
   const handleAutoSuggestMeals = () => {
     if (recipes.length === 0) return;
-    const mains = recipes.filter(r => r.categoryId.includes('poultry') || r.categoryId.includes('seafood') || r.categoryId.includes('pasta') || r.categoryId.includes('veggie') || r.categoryId.includes('quick'));
-    const sides = recipes.filter(r => r.categoryId.includes('starters') || r.categoryId.includes('sides'));
-    const desserts = recipes.filter(r => r.categoryId.includes('desserts'));
+
+    // Filter recipes into groups based on normalized category IDs
+    const starters = recipes.filter(r => r.categoryId === 'rcat-entree');
+    const mains = recipes.filter(r => ['rcat-viande', 'rcat-volaille', 'rcat-poisson', 'rcat-legume', 'rcat-pates', 'rcat-autre'].includes(r.categoryId));
+    const desserts = recipes.filter(r => r.categoryId === 'rcat-dessert');
 
     const updatedMeals = weeklyPlan.meals.map((meal) => {
-      if (meal.recipeIds && meal.recipeIds.length > 0) return meal; // Keep already chosen recipes
+      // If the slot is not empty, keep it as is
+      if (meal.recipeIds && meal.recipeIds.length > 0) return meal;
 
       const chosen: string[] = [];
-      // Pick 1 main
+
+      // 1. Pick 1 random Starter
+      if (starters.length > 0) {
+        const randomStarter = starters[Math.floor(Math.random() * starters.length)];
+        chosen.push(randomStarter.id);
+      }
+
+      // 2. Pick 1 random Main
       if (mains.length > 0) {
         const randomMain = mains[Math.floor(Math.random() * mains.length)];
         chosen.push(randomMain.id);
       }
-      // 50% chance pick side/starter
-      if (sides.length > 0 && Math.random() > 0.4) {
-        const randomSide = sides[Math.floor(Math.random() * sides.length)];
-        if (!chosen.includes(randomSide.id)) chosen.push(randomSide.id);
-      }
-      // 30% chance pick dessert
-      if (desserts.length > 0 && Math.random() > 0.6 && chosen.length < 3) {
+
+      // 3. Pick 1 random Dessert
+      if (desserts.length > 0) {
         const randomDessert = desserts[Math.floor(Math.random() * desserts.length)];
-        if (!chosen.includes(randomDessert.id)) chosen.push(randomDessert.id);
+        chosen.push(randomDessert.id);
       }
 
       return {
         ...meal,
-        recipeIds: chosen.slice(0, 3)
+        recipeIds: chosen
       };
     });
 
