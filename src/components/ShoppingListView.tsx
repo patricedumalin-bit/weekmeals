@@ -26,8 +26,9 @@ import {
   UnitType,
   AggregatedShoppingItem
 } from '../types';
-import { calculateShoppingList, formatQuantity, getUnitFamily } from '../utils/calculator';
+import { calculateShoppingList, formatQuantity, getUnitFamily, getIngredientCost } from '../utils/calculator';
 import { CategoryIcon } from './CategoryIcon';
+import { BudgetDonutChart } from './BudgetDonutChart';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface ShoppingListViewProps {
@@ -91,6 +92,37 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
     pantryMap,
     filterHidePantry
   );
+
+  // Calculer le budget total estimé de la liste de courses et par catégorie
+  let estimatedTotalBudget = 0;
+  const budgetByCategory: Record<string, { name: string; amount: number; color: string }> = {};
+
+  groupedByCategory.forEach(group => {
+    let categoryTotal = 0;
+    group.items.forEach(item => {
+      // On n'ajoute au budget que si l'article n'est pas déjà coché ou déjà en stock
+      if (!item.checked && !item.inPantry) {
+        const itemObj = ingredients.find(i => i.id === item.ingredientId);
+        const cost = getIngredientCost(
+          item.ingredientId,
+          item.totalQuantity,
+          item.unit,
+          item.categoryId,
+          itemObj?.name || item.ingredientName
+        );
+        categoryTotal += cost;
+        estimatedTotalBudget += cost;
+      }
+    });
+
+    if (categoryTotal > 0) {
+      budgetByCategory[group.category.id] = {
+        name: translateIngredientCategory(group.category.id, group.category.name),
+        amount: categoryTotal,
+        color: group.category.color
+      };
+    }
+  });
 
   const progressPercentage = totalItemsCount > 0
     ? Math.round((checkedItemsCount / totalItemsCount) * 100)
@@ -241,6 +273,58 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
               className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] transition-all duration-300 rounded-full shadow-xs"
               style={{ width: `${progressPercentage}%` }}
             />
+          </div>
+
+          {/* Budget Récapitulatif Estimé */}
+          <div className="mt-3.5 space-y-3">
+            <div className="flex flex-col md:flex-row gap-5 items-center bg-white/30 dark:bg-slate-800/30 rounded-2xl p-4 border border-white/20 dark:border-white/5">
+               {estimatedTotalBudget > 0 && (
+                  <div className="shrink-0 animate-spring-in">
+                    <BudgetDonutChart
+                      total={estimatedTotalBudget}
+                      categories={Object.values(budgetByCategory)}
+                      size={100}
+                    />
+                  </div>
+               )}
+
+               <div className="flex-1 space-y-3 w-full">
+                  <div className="px-4 py-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-between text-xs w-full">
+                    <span className="font-semibold text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+                      💰 Budget Restant Estimé en Rayon :
+                    </span>
+                    <span className="font-extrabold text-sky-600 dark:text-sky-400 font-mono text-sm">
+                      {estimatedTotalBudget === 0 ? '0.00 € (Panier Plein)' : `${estimatedTotalBudget.toFixed(2)} €`}
+                    </span>
+                  </div>
+
+                  {/* Répartition par Rayon (Amélioration Esthétique) */}
+                  {estimatedTotalBudget > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                      {Object.entries(budgetByCategory)
+                        .sort((a, b) => b[1].amount - a[1].amount)
+                        .slice(0, 6) // Show top 6 categories
+                        .map(([id, cat]) => (
+                          <div key={id} className="p-2 rounded-lg bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 truncate mr-1 uppercase">{cat.name}</span>
+                              <span className="text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300">{cat.amount.toFixed(2)}€</span>
+                            </div>
+                            <div className="w-full h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-1">
+                              <div
+                                className="h-full opacity-70"
+                                style={{
+                                  width: `${(cat.amount / estimatedTotalBudget) * 100}%`,
+                                  backgroundColor: `var(--${cat.color}, #94a3b8)`
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+               </div>
+            </div>
           </div>
         </div>
 
@@ -395,6 +479,22 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
                           {/* Summed Quantity Badge & Provenance toggle */}
                           <div className="flex items-center gap-2 shrink-0">
+                            {(() => {
+                              const itemObj = ingredients.find(i => i.id === item.ingredientId);
+                              const lineCost = getIngredientCost(
+                                item.ingredientId,
+                                item.totalQuantity,
+                                item.unit,
+                                item.categoryId,
+                                itemObj?.name || item.ingredientName
+                              );
+                              return lineCost > 0 ? (
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.checked ? 'bg-slate-100 text-slate-400' : 'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'}`}>
+                                  ~{lineCost.toFixed(2)}€
+                                </span>
+                              ) : null;
+                            })()}
+
                             <span
                               className={`text-xs font-bold px-2.5 py-1 rounded-lg border font-mono backdrop-blur-md ${
                                 item.checked

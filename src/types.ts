@@ -89,6 +89,7 @@ export interface Recipe {
   source?: string; // Attribution label, e.g. "Wikibooks Cookbook (CC BY-SA 4.0)"
   sourceUrl?: string; // Link to the original recipe page
   localizations?: Record<string, { title: string; description: string; instructions: string[] }>;
+  imageUrl?: string; // Optional cover image URL
 }
 
 export interface CustomMeal {

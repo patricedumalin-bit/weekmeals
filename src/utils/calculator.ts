@@ -599,3 +599,165 @@ export function generateSmartWeeklyPlan(
 
   return selected;
 }
+
+// -------------------------------------------------------------
+// CALCUL DE PRIX DU BUDGET DE LA RECETTE (ANTI-GASPI / PROPORTIONNEL)
+// -------------------------------------------------------------
+export function getIngredientCost(
+  ingredientId: string,
+  quantity: number,
+  unit: UnitType,
+  categoryId: string,
+  name: string = ''
+): number {
+  const cat = categoryId ? categoryId.toLowerCase() : '';
+
+  // Condiments et assaisonnements ne comptent JAMAIS dans le prix
+  if (
+    cat === 'cat-epices' ||
+    cat === 'cat-herbes' ||
+    cat === 'cat-condiments' ||
+    name.toLowerCase().includes('sel') ||
+    name.toLowerCase().includes('poivre') ||
+    name.toLowerCase().includes('assaisonnement') ||
+    name.toLowerCase().includes('condiment')
+  ) {
+    return 0;
+  }
+
+  let weightGrams = 0;
+  let isCount = false;
+
+  if (unit === 'g' || unit === 'ml') weightGrams = quantity;
+  else if (unit === 'kg' || unit === 'l') weightGrams = quantity * 1000;
+  else if (unit === 'cl') weightGrams = quantity * 10;
+  else if (unit === 'tbsp') weightGrams = quantity * 15;
+  else if (unit === 'tsp') weightGrams = quantity * 5;
+  else if (unit === 'unit' || unit === 'clove' || unit === 'slice' || unit === 'can' || unit === 'pack' || unit === 'bunch') {
+    isCount = true;
+  } else {
+    weightGrams = quantity * 50;
+  }
+
+  // Table fine des prix réels par ingrédient (ou mots-clés) pour coller au maximum à la réalité des supermarchés français
+  const lowerId = ingredientId ? ingredientId.toLowerCase() : '';
+  const lowerName = name ? name.toLowerCase() : '';
+
+  // Prix de référence par défaut par catégorie (utilisé comme base)
+  let pricePer100g = 0.40;
+  let pricePerUnit = 0.50;
+
+  if (cat === 'cat-legumes' || cat === 'cat-fruits') {
+    pricePer100g = 0.28; // ~2.80€ / kg en moyenne
+    pricePerUnit = 0.45;
+
+    // Ajustements spécifiques légumes/fruits
+    if (lowerId.includes('champignon') || lowerName.includes('champignon')) { pricePer100g = 0.65; }
+    if (lowerId.includes('avocat') || lowerName.includes('avocat')) { pricePerUnit = 1.20; }
+    if (lowerId.includes('asperge') || lowerName.includes('asperge')) { pricePer100g = 0.90; }
+    if (lowerId.includes('poivron') || lowerName.includes('poivron')) { pricePer100g = 0.45; }
+    if (lowerId.includes('citron') || lowerName.includes('citron')) { pricePerUnit = 0.40; }
+  } else if (cat === 'cat-viandes' || cat === 'cat-volailles') {
+    pricePer100g = 1.45; // ~14.50€ / kg base
+    pricePerUnit = 2.20;
+
+    // Spécificités Viandes fines vs Volailles vs Porc
+    if (lowerId.includes('boeuf') || lowerName.includes('bœuf') || lowerName.includes('beef')) {
+      pricePer100g = 1.85; // ~18.50€ / kg (paleron, steak)
+    }
+    if (lowerId.includes('agneau') || lowerName.includes('agneau')) {
+      pricePer100g = 2.20; // ~22.00€ / kg
+    }
+    if (lowerId.includes('poulet') || lowerName.includes('poulet') || lowerName.includes('dinde')) {
+      pricePer100g = 1.20; // ~12.00€ / kg
+    }
+    if (lowerId.includes('porc') || lowerId.includes('bacon') || lowerName.includes('porc') || lowerName.includes('lardons')) {
+      pricePer100g = 0.95; // ~9.50€ / kg
+    }
+  } else if (cat === 'cat-poissons' || cat === 'cat-crustaces' || cat === 'cat-fruits-de-mer') {
+    pricePer100g = 2.40; // ~24.00€ / kg base poisson frais
+    pricePerUnit = 3.50;
+
+    if (lowerId.includes('saumon') || lowerName.includes('saumon')) { pricePer100g = 2.60; }
+    if (lowerId.includes('cabillaud') || lowerName.includes('cabillaud')) { pricePer100g = 2.20; }
+    if (lowerId.includes('crevette') || lowerName.includes('crevette')) { pricePer100g = 1.90; }
+    if (lowerId.includes('thon') || lowerName.includes('thon')) { pricePer100g = 1.50; }
+  } else if (cat === 'cat-cereales' || cat === 'cat-feculents' || cat === 'cat-legumineuses') {
+    pricePer100g = 0.18; // ~1.80€ / kg (pâtes standard, riz basique)
+    pricePerUnit = 0.40;
+
+    if (lowerId.includes('riz') || lowerName.includes('riz')) { pricePer100g = 0.25; }
+    if (lowerId.includes('quinoa') || lowerName.includes('quinoa')) { pricePer100g = 0.55; }
+    if (lowerId.includes('baguette') || lowerName.includes('baguette') || lowerName.includes('pain')) { pricePerUnit = 1.10; }
+  } else if (cat === 'cat-produits-laitiers' || cat === 'cat-matieres-grasses') {
+    pricePer100g = 0.65; // ~6.50€ / kg base
+    pricePerUnit = 1.10;
+
+    if (lowerId.includes('beurre') || lowerName.includes('beurre')) { pricePer100g = 0.95; }
+    if (lowerId.includes('creme') || lowerName.includes('crème')) { pricePer100g = 0.50; }
+    if (lowerId.includes('lait') || lowerName.includes('lait')) { pricePer100g = 0.15; } // ~1.50€ le litre
+    if (lowerId.includes('parmesan') || lowerName.includes('parmesan')) { pricePer100g = 2.50; }
+    if (lowerId.includes('fromage') || lowerName.includes('gruyère') || lowerName.includes('mozzarella')) { pricePer100g = 1.10; }
+  } else if (cat === 'cat-oeufs') {
+    pricePerUnit = 0.35; // ~2.10€ la boîte de 6
+  } else if (cat === 'cat-produits-sucres' || cat === 'cat-patisserie' || cat === 'cat-aides-patisserie') {
+    pricePer100g = 0.55;
+    pricePerUnit = 0.85;
+
+    if (lowerId.includes('chocolat') || lowerName.includes('chocolat')) { pricePer100g = 1.40; }
+    if (lowerId.includes('miel') || lowerName.includes('miel')) { pricePer100g = 1.60; }
+  }
+
+  if (isCount) {
+    let multiplier = 1;
+    if (unit === 'can') multiplier = 2.2;  // Prix moyen d'une conserve garnie
+    if (unit === 'pack') multiplier = 2.8; // Pack d'ingrédients complets
+    if (unit === 'bunch') multiplier = 1.5; // Une botte (ex: radis, oignons nouveaux)
+    if (unit === 'clove') multiplier = 0.15; // Une gousse d'ail
+    if (unit === 'slice') multiplier = 0.45; // Une tranche (jambon, pain, saumon)
+    return quantity * pricePerUnit * multiplier;
+  } else {
+    return (weightGrams / 100) * pricePer100g;
+  }
+}
+
+export function calculateRecipeTotalBudget(
+  recipe: Recipe,
+  ingredients: Ingredient[],
+  excludedIngredientIds: string[] = [],
+  pantryMap: Record<string, boolean> = {},
+  scaleFactor: number = 1
+): { total: number; savings: number; itemsCost: Record<string, number> } {
+  const ingredientMap = new Map<string, Ingredient>((ingredients || []).map(i => [i.id, i]));
+  let total = 0;
+  let savings = 0;
+  const itemsCost: Record<string, number> = {};
+
+  if (!recipe || !recipe.ingredients) return { total: 0, savings: 0, itemsCost };
+
+  for (const item of recipe.ingredients) {
+    const isExcluded = excludedIngredientIds.includes(item.ingredientId);
+    const isInPantry = !!pantryMap[item.ingredientId];
+
+    const ing = ingredientMap.get(item.ingredientId);
+    const categoryId = ing ? ing.categoryId : '';
+    const name = ing ? ing.name : '';
+    const scaledQty = item.quantity * scaleFactor;
+    const cost = getIngredientCost(item.ingredientId, scaledQty, item.unit, categoryId, name);
+
+    if (isExcluded || isInPantry) {
+      itemsCost[item.ingredientId] = 0;
+      savings += cost;
+      continue;
+    }
+
+    itemsCost[item.ingredientId] = cost;
+    total += cost;
+  }
+
+  return {
+    total: Math.round(total * 100) / 100,
+    savings: Math.round(savings * 100) / 100,
+    itemsCost
+  };
+}

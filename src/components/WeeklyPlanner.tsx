@@ -20,7 +20,9 @@ import {
 } from 'lucide-react';
 import { WeeklyPlan, MealSlot, Recipe, RecipeCategory, Ingredient, IngredientCategory, CookingModeType, CustomMealIngredient } from '../types';
 import { CategoryIcon } from './CategoryIcon';
+import { RecipeImage } from './RecipeImage';
 import { useLanguage } from '../i18n/LanguageContext';
+import { calculateRecipeTotalBudget } from '../utils/calculator';
 
 interface WeeklyPlannerProps {
   weeklyPlan: WeeklyPlan;
@@ -28,6 +30,7 @@ interface WeeklyPlannerProps {
   recipeCategories: RecipeCategory[];
   ingredients: Ingredient[];
   ingredientCategories: IngredientCategory[];
+  pantryMap?: Record<string, boolean>;
   onUpdatePlan: (newPlan: WeeklyPlan) => void;
   onOpenRecipePicker: (mealIndex: number, slotIndex: number) => void;
   onPreviewRecipe: (recipe: Recipe, servings?: number, mealIndex?: number, recipeIndex?: number) => void;
@@ -44,6 +47,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   recipeCategories = [],
   ingredients = [],
   ingredientCategories = [],
+  pantryMap = {},
   onUpdatePlan,
   onOpenRecipePicker,
   onPreviewRecipe,
@@ -560,11 +564,30 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                     const localized = translateRecipe(recipe);
                     const category = catMap.get(recipe.categoryId);
                     const catDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
+
+                    const mealServings = meal.servings || weeklyPlan.defaultServings || 4;
+                    const scaleFactor = mealServings / (recipe.servings || 4);
+                    const excludedIds = meal.excludedIngredients?.[rIdx] || [];
+                    const { total: recipePrice } = calculateRecipeTotalBudget(recipe, ingredients, excludedIds, pantryMap, scaleFactor);
+
                     return (
                       <div
                         key={recipe.id}
-                        className="p-3 rounded-xl border border-[var(--accent)]/20 backdrop-blur-md bg-[var(--accent)]/5 dark:bg-[var(--accent)]/20 flex flex-col justify-between gap-2 relative group shadow-2xs"
+                        className="p-3 rounded-xl border border-[var(--accent)]/20 backdrop-blur-md bg-[var(--accent)]/5 dark:bg-[var(--accent)]/20 flex flex-col justify-between gap-2 relative group shadow-2xs animate-spring-in hover:shadow-md transition-all tap-bounce"
                       >
+                        <div className="relative -m-3 mb-1 h-24 overflow-hidden rounded-t-xl shrink-0">
+                           <RecipeImage title={localized.title} categoryId={recipe.categoryId} imageUrl={recipe.imageUrl} className="w-full h-full" />
+                           <div className="absolute top-2 right-2 flex gap-1">
+                              <button
+                                onClick={() => handleRemoveRecipeFromMeal(mealIdx, rIdx)}
+                                className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/80 text-slate-400 hover:text-rose-600 transition-colors backdrop-blur-sm shadow-sm"
+                                title={t('removeRecipe')}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                           </div>
+                        </div>
+
                         <div>
                           <div className="flex items-center justify-between gap-1 mb-1">
                             {category && (
@@ -573,26 +596,21 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                                 {catDisplayName}
                               </span>
                             )}
-                            <button
-                              onClick={() => handleRemoveRecipeFromMeal(mealIdx, rIdx)}
-                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
-                              title={t('removeRecipe')}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
                           </div>
 
                           <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 line-clamp-2">
                             {localized.title}
                           </h4>
 
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
                             <span className="flex items-center gap-0.5">
                               <Clock className="w-3 h-3 text-slate-400" />
                               {recipe.prepTimeMinutes + recipe.cookTimeMinutes}m
                             </span>
                             <span>•</span>
                             <span>{t('ingredientsCountShort', { count: recipe.ingredients.length })}</span>
+                            <span>•</span>
+                            <span className="font-semibold text-sky-600 dark:text-sky-400">{recipePrice === 0 ? 'Gratuit' : `${recipePrice.toFixed(2)}€`}</span>
                           </p>
 
                           {(() => {

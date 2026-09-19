@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Ingredient, IngredientCategory, Recipe } from '../types';
 import { CategoryIcon } from './CategoryIcon';
-import { matchRecipesWithPantry } from '../utils/calculator';
+import { matchRecipesWithPantry, getIngredientCost } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface PantryModalProps {
@@ -188,39 +188,63 @@ export const PantryModal: React.FC<PantryModalProps> = ({
               </div>
 
               {/* Grid of Ingredients */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {filteredIngredients.map(ing => {
                   const isInStock = !!pantryMap[ing.id];
                   const category = ingredientCategories.find(c => c.id === ing.categoryId);
+
+                  // Calculer le prix indicatif pour 100g ou 1 unité
+                  const defaultQty = ing.defaultUnit === 'g' || ing.defaultUnit === 'ml' ? 100 : 1;
+                  const unitCost = getIngredientCost(ing.id, defaultQty, ing.defaultUnit, ing.categoryId, ing.name);
+                  const isCondiment = unitCost === 0;
 
                   return (
                     <button
                       key={ing.id}
                       type="button"
                       onClick={() => onTogglePantryItem(ing.id)}
-                      className={`text-left p-3 rounded-2xl border transition-all flex items-center justify-between gap-2 select-none ${
+                      className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 select-none ${
                         isInStock
-                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/50 dark:border-emerald-500/40 shadow-sm shadow-emerald-500/5'
+                          ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-sm'
                           : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
-                      <div className="min-w-0 flex-1">
-                        <p className={`text-xs sm:text-sm font-medium truncate ${
-                          isInStock ? 'text-emerald-900 dark:text-emerald-100 font-semibold' : 'text-slate-800 dark:text-slate-200'
+                      <div className="flex items-start justify-between gap-2 w-full">
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-bold truncate ${
+                            isInStock ? 'text-emerald-900 dark:text-emerald-300' : 'text-slate-800 dark:text-slate-200'
+                          }`}>
+                            {translateIngredient(ing.id, ing.name)}
+                          </p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate">
+                            {category ? translateIngredientCategory(category.id, category.name) : ''}
+                          </p>
+                        </div>
+
+                        <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
+                          isInStock
+                            ? 'bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500'
+                            : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                         }`}>
-                          {translateIngredient(ing.id, ing.name)}
-                        </p>
-                        <p className="text-[10px] text-slate-400 truncate">
-                          {category ? translateIngredientCategory(category.id, category.name) : ''}
-                        </p>
+                          {isInStock && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                        </div>
                       </div>
 
-                      <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
-                        isInStock
-                          ? 'bg-emerald-600 dark:bg-emerald-500 text-white border-emerald-600 dark:border-emerald-500'
-                          : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
-                      }`}>
-                        {isInStock && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                      {/* Fiche d'informations produit enrichie (Prix & Unité) */}
+                      <div className="flex items-center justify-between w-full pt-1.5 border-t border-slate-200/60 dark:border-slate-700/50 text-[11px]">
+                        <span className="text-slate-400 dark:text-slate-500">
+                          Unité : <span className="font-semibold text-slate-600 dark:text-slate-300">{ing.defaultUnit}</span>
+                        </span>
+
+                        <span className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold ${
+                          isInStock
+                            ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                            : isCondiment
+                            ? 'bg-purple-500/10 text-purple-700 dark:text-purple-400'
+                            : 'bg-slate-200/80 dark:bg-slate-700/80 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          {isCondiment ? 'Gratuit / Épice' : `${unitCost.toFixed(2)}€ / ${defaultQty}${ing.defaultUnit}`}
+                        </span>
                       </div>
                     </button>
                   );

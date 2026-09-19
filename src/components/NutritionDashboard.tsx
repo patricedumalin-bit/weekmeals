@@ -12,7 +12,7 @@ import {
   Heart
 } from 'lucide-react';
 import { WeeklyPlan, Recipe, Ingredient, NutritionInfo } from '../types';
-import { estimateRecipeNutrition } from '../utils/calculator';
+import { estimateRecipeNutrition, calculateRecipeTotalBudget } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface NutritionDashboardProps {
@@ -21,6 +21,7 @@ interface NutritionDashboardProps {
   weeklyPlan?: WeeklyPlan | null;
   recipes: Recipe[];
   ingredients: Ingredient[];
+  pantryMap?: Record<string, boolean>;
 }
 
 export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
@@ -28,7 +29,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   onClose,
   weeklyPlan,
   recipes = [],
-  ingredients = []
+  ingredients = [],
+  pantryMap = {}
 }) => {
   const { translateRecipe } = useLanguage();
 
@@ -39,29 +41,40 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
 
   // Calculate nutrition for each meal in the plan
-  const mealNutritionList: { mealLabel: string; recipeTitle: string; nutrition: NutritionInfo }[] = [];
+  const mealNutritionList: { mealLabel: string; recipeTitle: string; nutrition: NutritionInfo; price: number }[] = [];
 
   let totalCalories = 0;
   let totalProtein = 0;
   let totalCarbs = 0;
   let totalFat = 0;
   let plannedMealsCount = 0;
+  let accumulatedWeeklyCost = 0;
+  let accumulatedWeeklySavings = 0;
 
   for (const meal of (weeklyPlan?.meals || [])) {
+    const mealServings = meal.servings || weeklyPlan?.defaultServings || 4;
     if (meal.recipeIds && meal.recipeIds.length > 0) {
-      for (const rId of meal.recipeIds) {
+      for (let rIdx = 0; rIdx < meal.recipeIds.length; rIdx++) {
+        const rId = meal.recipeIds[rIdx];
         const rec = recipeMap.get(rId);
         if (rec) {
           const nut = estimateRecipeNutrition(rec, safeIngredients);
+          const excludedIds = meal.excludedIngredients?.[rIdx] || [];
+          const scaleFactor = mealServings / (rec.servings || 4);
+          const { total: recPrice, savings: recSavings } = calculateRecipeTotalBudget(rec, safeIngredients, excludedIds, pantryMap, scaleFactor);
+
           mealNutritionList.push({
             mealLabel: meal.label || `Repas ${meal.mealNumber}`,
             recipeTitle: translateRecipe(rec).title,
-            nutrition: nut
+            nutrition: nut,
+            price: recPrice
           });
           totalCalories += nut.calories;
           totalProtein += nut.protein;
           totalCarbs += nut.carbs;
           totalFat += nut.fat;
+          accumulatedWeeklyCost += recPrice;
+          accumulatedWeeklySavings += recSavings;
           plannedMealsCount++;
         }
       }
@@ -121,49 +134,73 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
             </div>
           ) : (
             <>
-              {/* Macro Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
+              {/* Macro & Budget Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-                    <span className="text-xs font-semibold">Calories</span>
-                    <Flame className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">Calories</span>
+                    <Flame className="w-3.5 h-3.5" />
                   </div>
-                  <div className="mt-3">
-                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgCalories}</span>
-                    <span className="text-xs text-slate-500 ml-1">kcal / plat</span>
+                  <div className="mt-2">
+                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCalories}</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">kcal / plat</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex flex-col justify-between">
+                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-                    <span className="text-xs font-semibold">Protéines</span>
-                    <Dna className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">Protéines</span>
+                    <Dna className="w-3.5 h-3.5" />
                   </div>
-                  <div className="mt-3">
-                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgProtein}g</span>
-                    <span className="text-xs text-slate-500 ml-1">({pPercent}%)</span>
+                  <div className="mt-2">
+                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgProtein}g</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">({pPercent}%)</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
+                <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-                    <span className="text-xs font-semibold">Glucides</span>
-                    <Wheat className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">Glucides</span>
+                    <Wheat className="w-3.5 h-3.5" />
                   </div>
-                  <div className="mt-3">
-                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgCarbs}g</span>
-                    <span className="text-xs text-slate-500 ml-1">({cPercent}%)</span>
+                  <div className="mt-2">
+                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCarbs}g</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">({cPercent}%)</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
                   <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span className="text-xs font-semibold">Lipides</span>
-                    <Droplet className="w-4 h-4" />
+                    <span className="text-[11px] font-semibold">Lipides</span>
+                    <Droplet className="w-3.5 h-3.5" />
                   </div>
-                  <div className="mt-3">
-                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{avgFat}g</span>
-                    <span className="text-xs text-slate-500 ml-1">({fPercent}%)</span>
+                  <div className="mt-2">
+                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgFat}g</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">({fPercent}%)</p>
+                  </div>
+                </div>
+
+                {/* Nouvelle fiche d'information financière globale ajoutée */}
+                <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-sky-600 dark:text-sky-400">
+                    <span className="text-[11px] font-semibold">Budget Total</span>
+                    <span className="text-xs">🪙</span>
+                  </div>
+                  <div className="mt-2">
+                    <span className="text-xl font-extrabold text-sky-600 dark:text-sky-400 font-mono">{accumulatedWeeklyCost.toFixed(2)}€</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">À prévoir</p>
+                  </div>
+                </div>
+
+                {/* Score d'Économie Générée (Amélioration Informative) */}
+                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[11px] font-semibold text-emerald-700">Économies restes</span>
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="mt-2">
+                    <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">+{accumulatedWeeklySavings.toFixed(2)}€</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Grâce à votre frigo</p>
                   </div>
                 </div>
               </div>
@@ -208,6 +245,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0 text-slate-600 dark:text-slate-400 font-mono">
+                        <span className="text-sky-600 dark:text-sky-400 font-bold bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 rounded border border-sky-100 dark:border-sky-900/30">{item.price === 0 ? 'Gratuit' : `${item.price.toFixed(2)}€`}</span>
                         <span className="text-amber-600 dark:text-amber-400 font-bold">{item.nutrition.calories} kcal</span>
                         <span>{item.nutrition.protein}g P</span>
                         <span>{item.nutrition.carbs}g G</span>

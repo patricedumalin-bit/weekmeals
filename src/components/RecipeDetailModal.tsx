@@ -13,7 +13,9 @@ import {
 } from 'lucide-react';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
-import { formatQuantity, estimateRecipeNutrition, getDietaryBadges } from '../utils/calculator';
+import { formatQuantity, estimateRecipeNutrition, getDietaryBadges, calculateRecipeTotalBudget } from '../utils/calculator';
+import { NutritionRings } from './NutritionRings';
+import { RecipeImage } from './RecipeImage';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface RecipeDetailModalProps {
@@ -25,6 +27,7 @@ interface RecipeDetailModalProps {
   mealIndex?: number;
   recipeIndex?: number;
   excludedIngredientIds?: string[];
+  pantryMap?: Record<string, boolean>;
   onToggleExcludeIngredient?: (mealIndex: number, recipeIndex: number, ingredientId: string) => void;
   onClose: () => void;
   onSelectForMeal?: (recipeId: string) => void;
@@ -40,6 +43,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   mealIndex,
   recipeIndex,
   excludedIngredientIds = [],
+  pantryMap = {},
   onToggleExcludeIngredient,
   onClose,
   onSelectForMeal,
@@ -65,6 +69,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const badges = getDietaryBadges(recipe, nutrition);
 
   const scaleFactor = currentServings / (recipe.servings || 4);
+  const { total: recipePrice, itemsCost } = calculateRecipeTotalBudget(recipe, safeIngredients, excludedIngredientIds, pantryMap, scaleFactor);
   const categoryDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
   const difficultyDisplayName = translateDifficulty(recipe.difficulty);
 
@@ -105,6 +110,12 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Recipe Image Banner (Amélioration Visuelle) */}
+        <div className="h-48 sm:h-56 relative overflow-hidden shrink-0 animate-in fade-in duration-500">
+           <RecipeImage title={localized.title} categoryId={recipe.categoryId} imageUrl={recipe.imageUrl} className="w-full h-full" />
+           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
         </div>
 
         {/* Recipe Meta Banner & Servings Scaler */}
@@ -149,14 +160,27 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           </div>
 
           {/* Nutrition strip */}
-          <div className="w-full pt-2 mt-1 border-t border-[var(--primary)]/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-            <span className="font-semibold text-amber-600 dark:text-amber-400">🔥 {nutrition.calories} kcal / pers.</span>
+          <div className="w-full pt-2 mt-1 border-t border-[var(--primary)]/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0">
+                 <NutritionRings
+                   proteinPct={Math.min(100, (nutrition.protein / 50) * 100)}
+                   carbsPct={Math.min(100, (nutrition.carbs / 100) * 100)}
+                   fatPct={Math.min(100, (nutrition.fat / 30) * 100)}
+                   size={40}
+                 />
+              </div>
+              <div>
+                <span className="font-semibold text-amber-600 dark:text-amber-400 block">🔥 {nutrition.calories} kcal / pers.</span>
+                <span className="font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-900/30 text-[10px]">
+                  💰 Budget : {recipePrice === 0 ? 'Gratuit' : `${recipePrice.toFixed(2)} €`}
+                </span>
+              </div>
+            </div>
             <span className="text-[11px] text-slate-500 flex items-center gap-2 font-mono">
-              <span>{nutrition.protein}g prot.</span>
-              <span>•</span>
-              <span>{nutrition.carbs}g gluc.</span>
-              <span>•</span>
-              <span>{nutrition.fat}g lip.</span>
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />{nutrition.protein}g</span>
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />{nutrition.carbs}g</span>
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{nutrition.fat}g</span>
             </span>
           </div>
         </div>
@@ -191,6 +215,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 const unitDisplayName = translateUnit(item.unit);
                 const ingredientDisplayName = translateIngredient(item.ingredientId, ing?.name);
                 const isExcluded = excludedIngredientIds.includes(item.ingredientId);
+                const itemCost = itemsCost[item.ingredientId] ?? 0;
 
                 return (
                   <div
@@ -210,6 +235,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${isExcluded ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30 line-through' : 'bg-white/80 dark:bg-slate-900/80 text-[var(--primary)] dark:text-[var(--primary)] border-white/50 dark:border-white/10'}`}>
                         {formatQuantity(scaledQty)} {unitDisplayName}
+                        {itemCost > 0 ? ` • ${itemCost.toFixed(2)}€` : pantryMap[item.ingredientId] ? ' • Frigo' : ''}
                       </span>
                       {mealIndex !== undefined && recipeIndex !== undefined && onToggleExcludeIngredient && (
                         <button

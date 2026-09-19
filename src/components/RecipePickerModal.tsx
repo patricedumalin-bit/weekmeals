@@ -40,6 +40,7 @@ interface RecipePickerModalProps {
   databaseSource?: DatabaseViewSource;
   onChangeDatabaseSource?: (source: DatabaseViewSource) => void;
   onCopyGenericToPersonal?: (recipe: Recipe) => void;
+  pantryMap?: Record<string, boolean>;
   onClose: () => void;
   onToggleRecipe: (recipeId: string) => void;
   onSaveCustomMeals: (mealIndex: number, customMeals: CustomMeal[]) => void;
@@ -67,6 +68,7 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   databaseSource = 'all',
   onChangeDatabaseSource,
   onCopyGenericToPersonal,
+  pantryMap = {},
   onClose,
   onToggleRecipe,
   onSaveCustomMeals,
@@ -347,13 +349,28 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[...filteredRecipes].sort((a, b) => (b.rating || 0) - (a.rating || 0)).map((recipe) => {
+                  {[...filteredRecipes].sort((a, b) => {
+                    // Calculer le taux anti-gaspi pour le tri prioritaire
+                    const aTotal = a.ingredients?.length || 1;
+                    const bTotal = b.ingredients?.length || 1;
+                    const aAvail = a.ingredients?.filter(i => pantryMap[i.ingredientId]).length || 0;
+                    const bAvail = b.ingredients?.filter(i => pantryMap[i.ingredientId]).length || 0;
+                    const aPct = aAvail / aTotal;
+                    const bPct = bAvail / bTotal;
+                    if (bPct !== aPct) return bPct - aPct; // Plus haut taux d'ingrédients du frigo d'abord !
+                    return (b.rating || 0) - (a.rating || 0);
+                  }).map((recipe) => {
                     const isSelected = currentRecipeIds.includes(recipe.id);
                     const localized = translateRecipe(recipe);
                     const category = recipeCategories.find(c => c.id === recipe.categoryId);
                     const catDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
                     const mode = inferCookingMode(recipe);
                     const disableAdd = !isSelected && maxReached;
+
+                    // Compter les ingrédients disponibles dans le frigo
+                    const totalIngs = recipe.ingredients?.length || 0;
+                    const availableInPantry = recipe.ingredients?.filter(i => pantryMap[i.ingredientId]).length || 0;
+                    const antiWastePct = totalIngs > 0 ? Math.round((availableInPantry / totalIngs) * 100) : 0;
 
                     return (
                       <div
@@ -378,6 +395,17 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                                 <Flame className="w-3 h-3" />
                                 {translateCookingMode(mode)}
                               </span>
+
+                              {/* Badge Anti-Gaspi dynamique intelligent si au moins un ingrédient est dispo */}
+                              {antiWastePct > 0 && (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                  antiWastePct === 100
+                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                                }`}>
+                                  💡 {antiWastePct}% Frigo
+                                </span>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-1.5">

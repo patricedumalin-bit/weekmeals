@@ -1364,6 +1364,7 @@ function AppContent({
             recipeCategories={recipeCategories}
             ingredients={ingredients}
             ingredientCategories={ingredientCategories}
+            pantryMap={pantryMap}
             onUpdatePlan={handleUpdateWeeklyPlan}
             isPremium={userData?.subscriptionStatus === 'premium'}
             onOpenRecipePicker={(mealIdx, slotIdx) => {
@@ -1482,6 +1483,7 @@ function AppContent({
               ? weeklyPlan.meals[previewRecipeState.mealIndex]?.excludedIngredients?.[previewRecipeState.recipeIndex] || []
               : undefined
           }
+          pantryMap={pantryMap}
           onToggleExcludeIngredient={handleToggleExcludeIngredient}
           onClose={() => setPreviewRecipeState(null)}
           onStartCookingMode={(recipe, servings) => {
@@ -1512,6 +1514,7 @@ function AppContent({
           databaseSource={databaseSource}
           onChangeDatabaseSource={setDatabaseSource}
           onCopyGenericToPersonal={handleCopyGenericToPersonal}
+          pantryMap={pantryMap}
           onClose={() => setRecipePickerTarget(null)}
           onToggleRecipe={handleTogglePickerRecipe}
           onSaveCustomMeals={handleSaveCustomMeals}
@@ -1619,6 +1622,7 @@ function AppContent({
         weeklyPlan={weeklyPlan}
         recipes={recipes}
         ingredients={ingredients}
+        pantryMap={pantryMap}
       />
     </div>
   );
