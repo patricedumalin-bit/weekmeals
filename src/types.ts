@@ -159,6 +159,12 @@ export interface UserProfileData {
   subscriptionStatus?: 'free' | 'premium';
   recipeCount?: number;
   mealCount?: number;
+  stats?: {
+    totalSavingsEur: number;
+    ingredientsSavedCount: number;
+    mealsCookedCount: number;
+  };
+  familyCode?: string;
   lastSyncedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -214,4 +220,16 @@ export interface RecipeMatchResult {
   missingIngredients: Ingredient[];
   matchPercentage: number;
 }
+
+export interface WeeklyHistoryItem {
+  id: string;
+  weekNumber: number;
+  year: number;
+  totalCost: number;
+  totalSavings: number;
+  mealsCount: number;
+  nutritionAvg: NutritionInfo;
+  date: string;
+}
+
 

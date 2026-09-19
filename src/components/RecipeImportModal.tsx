@@ -43,6 +43,9 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   onSaveNewIngredient
 }) => {
   const { language } = useLanguage();
+
+  if (!isOpen) return null;
+
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
 
@@ -695,24 +698,38 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
         </div>
 
         {/* Footer */}
-        {parsedRecipe && (
-          <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
-            <button
-              onClick={() => setParsedRecipe(null)}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400"
-            >
-              Modifier la source
-            </button>
+        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+          {parsedRecipe ? (
+            <>
+              <button
+                onClick={() => setParsedRecipe(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400"
+              >
+                Modifier la source
+              </button>
 
-            <button
-              onClick={handleConfirmSave}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
-            >
-              <Check className="w-4 h-4" />
-              <span>Enregistrer dans ma Base Cloud</span>
-            </button>
-          </div>
-        )}
+              <button
+                onClick={handleConfirmSave}
+                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
+              >
+                <Check className="w-4 h-4" />
+                <span>Enregistrer dans ma Base Cloud</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                Choisissez une source ci-dessus
+              </p>
+              <button
+                onClick={onClose}
+                className="px-6 py-2.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold transition-all shadow-lg"
+              >
+                Fermer
+              </button>
+            </>
+          )}
+        </div>
 
       </div>
     </div>

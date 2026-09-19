@@ -30,6 +30,8 @@ const LANGUAGE_STORAGE_KEY = 'meal_app_language_v1';
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+console.log("LanguageProvider mounting...");
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(() => {
     try {

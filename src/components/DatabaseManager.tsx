@@ -23,7 +23,9 @@ import {
   Cloud,
   Star,
   Filter,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -106,6 +108,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   onOpenRecipeImport
 }) => {
   const { t, translateUnit, translateRecipeCategory, translateIngredientCategory, translateRecipe, translateIngredient } = useLanguage();
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const safeRecipes = Array.isArray(recipes) ? recipes : [];
   const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
   const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
@@ -127,6 +130,16 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
   const availableCuisines = getAvailableCuisines(safeRecipes);
   const availableCookingModes = getAvailableCookingModes(safeRecipes);
+
+  const categoriesWithCounts = useMemo(() => {
+    return safeRecipeCategories
+      .map(cat => ({
+        ...cat,
+        count: safeRecipes.filter(r => r.categoryId === cat.id).length
+      }))
+      .filter(cat => cat.count > 0);
+  }, [safeRecipeCategories, safeRecipes]);
+
   // Virtualization Refs
   const recipesParentRef = useRef<HTMLDivElement>(null);
   const ingredientsParentRef = useRef<HTMLDivElement>(null);
@@ -296,72 +309,86 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     <div className="space-y-6 pb-20">
       {/* Top Banner */}
       <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5 transition-all duration-300">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
-              <Database className="w-3.5 h-3.5" />
-              <span>{t('dbEngineTag')}</span>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
+                  <Database className="w-3.5 h-3.5" />
+                  <span>{t('dbEngineTag')}</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  {t('dbManagementTitle')}
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all sm:hidden"
+              >
+                {isHeaderCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+              </button>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              {t('dbManagementTitle')}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              {t('dbManagementSubtitle')}
-            </p>
+            {!isHeaderCollapsed && (
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                {t('dbManagementSubtitle')}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {activeSubTab === 'recipes' && (
-              <>
-                {onOpenRecipeImport && (
-                  <button
-                    type="button"
-                    onClick={onOpenRecipeImport}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-xs"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                    <span>Importer</span>
-                  </button>
-                )}
+          {!isHeaderCollapsed && (
+            <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-2 duration-300">
+              {activeSubTab === 'recipes' && (
+                <>
+                  {onOpenRecipeImport && (
+                    <button
+                      type="button"
+                      onClick={onOpenRecipeImport}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-xs"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span>Importer</span>
+                    </button>
+                  )}
 
+                  <button
+                    onClick={() => onOpenRecipeEditor(null)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('newRecipe')}</span>
+                  </button>
+                </>
+              )}
+
+              {activeSubTab === 'ingredients' && (
                 <button
-                  onClick={() => onOpenRecipeEditor(null)}
+                  onClick={() => {
+                    setIngToEdit(null);
+                    setIngName('');
+                    setShowAddIngModal(true);
+                  }}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>{t('newRecipe')}</span>
+                  <span>{t('newIngredient')}</span>
                 </button>
-              </>
-            )}
+              )}
 
-            {activeSubTab === 'ingredients' && (
-              <button
-                onClick={() => {
-                  setIngToEdit(null);
-                  setIngName('');
-                  setShowAddIngModal(true);
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('newIngredient')}</span>
-              </button>
-            )}
-
-            {(activeSubTab === 'recipeCats' || activeSubTab === 'ingredientCats') && (
-              <button
-                onClick={() => {
-                  setCatName('');
-                  setCatDesc('');
-                  setShowAddCatModal(activeSubTab === 'recipeCats' ? 'recipe' : 'ingredient');
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('newCategory')}</span>
-              </button>
-            )}
-          </div>
+              {(activeSubTab === 'recipeCats' || activeSubTab === 'ingredientCats') && (
+                <button
+                  onClick={() => {
+                    setCatName('');
+                    setCatDesc('');
+                    setShowAddCatModal(activeSubTab === 'recipeCats' ? 'recipe' : 'ingredient');
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('newCategory')}</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Sub-tab Navigation */}

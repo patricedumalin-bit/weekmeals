@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  X, 
-  Plus, 
-  Trash2, 
-  Save, 
-  ChefHat, 
+import {
+  X,
+  Plus,
+  Trash2,
+  Save,
+  ChefHat,
   Clock, 
   Users, 
   Layers,
-  AlertCircle
+  AlertCircle,
+  Minus
 } from 'lucide-react';
 import { 
   Recipe, 
@@ -34,6 +35,38 @@ interface RecipeEditorModalProps {
 const UNIT_OPTIONS: UnitType[] = [
   'g', 'kg', 'ml', 'cl', 'l', 'tbsp', 'tsp', 'unit', 'clove', 'pinch', 'can', 'pack', 'bunch', 'slice'
 ];
+
+const Stepper: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  className?: string;
+}> = ({ value, onChange, min = 0, max = 9999, step = 1, unit = '', className = '' }) => (
+  <div className={`flex items-center gap-1 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-white/50 dark:border-white/10 p-1 ${className}`}>
+    <button
+      type="button"
+      onClick={() => onChange(Number((value - step).toFixed(2)))}
+      disabled={value <= min}
+      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 transition-all shadow-xs"
+    >
+      <Minus className="w-3.5 h-3.5" />
+    </button>
+    <div className="flex-1 text-center min-w-[50px]">
+      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}{unit}</span>
+    </div>
+    <button
+      type="button"
+      onClick={() => onChange(Number((value + step).toFixed(2)))}
+      disabled={value >= max}
+      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 transition-all shadow-xs"
+    >
+      <Plus className="w-3.5 h-3.5" />
+    </button>
+  </div>
+);
 
 export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
   isOpen,
@@ -247,17 +280,12 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('baseServingsLabel')}
                 </label>
-                <div className="relative">
-                  <Users className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={servings}
-                    onChange={e => setServings(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="w-full pl-9 pr-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
-                  />
-                </div>
+                <Stepper
+                  value={servings}
+                  onChange={setServings}
+                  min={1} max={24}
+                  unit={` ${t('persons')}`}
+                />
               </div>
             </div>
 
@@ -266,12 +294,11 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('prepMinsLabel')}
                 </label>
-                <input
-                  type="number"
-                  min={0}
+                <Stepper
                   value={prepTimeMinutes}
-                  onChange={e => setPrepTimeMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
+                  onChange={setPrepTimeMinutes}
+                  min={0} step={5}
+                  unit=" min"
                 />
               </div>
 
@@ -279,12 +306,11 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('cookMinsLabel')}
                 </label>
-                <input
-                  type="number"
-                  min={0}
+                <Stepper
                   value={cookTimeMinutes}
-                  onChange={e => setCookTimeMinutes(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
+                  onChange={setCookTimeMinutes}
+                  min={0} step={5}
+                  unit=" min"
                 />
               </div>
 
@@ -373,15 +399,14 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                   </select>
 
                   {/* Quantity input */}
-                  <input
-                    type="number"
-                    min={0.1}
-                    step="any"
-                    value={item.quantity}
-                    onChange={e => handleUpdateIngredientRow(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                    placeholder="Qty"
-                    className="w-20 px-2.5 py-1.5 text-xs rounded-lg backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 font-mono"
-                  />
+                  <div className="w-32">
+                    <Stepper
+                      value={item.quantity}
+                      onChange={(v) => handleUpdateIngredientRow(idx, 'quantity', v)}
+                      min={0.1}
+                      step={item.unit === 'unit' || item.unit === 'clove' || item.unit === 'pinch' || item.unit === 'can' || item.unit === 'pack' || item.unit === 'slice' ? 1 : 10}
+                    />
+                  </div>
 
                   {/* Unit select */}
                   <select

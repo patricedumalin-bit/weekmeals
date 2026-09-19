@@ -9,13 +9,14 @@ import {
   Layers,
   Flame,
   Minus,
-  Plus
+  Plus,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { formatQuantity, estimateRecipeNutrition, getDietaryBadges, calculateRecipeTotalBudget } from '../utils/calculator';
 import { NutritionRings } from './NutritionRings';
-import { RecipeImage } from './RecipeImage';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface RecipeDetailModalProps {
@@ -59,6 +60,7 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const [currentServings, setCurrentServings] = useState<number>(
     initialServings || recipe.servings || 4
   );
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
 
   const localized = translateRecipe(recipe);
   const category = safeRecipeCategories.find(c => c.id === recipe.categoryId);
@@ -98,92 +100,101 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">
               {localized.title}
             </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors"
+            >
+              {isHeaderCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {!isHeaderCollapsed && (
+          <div className="animate-in fade-in slide-in-from-top-2 duration-300">
             {localized.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {localized.description}
-              </p>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Recipe Image Banner (Amélioration Visuelle) */}
-        <div className="h-48 sm:h-56 relative overflow-hidden shrink-0 animate-in fade-in duration-500">
-           <RecipeImage title={localized.title} categoryId={recipe.categoryId} imageUrl={recipe.imageUrl} className="w-full h-full" />
-           <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-        </div>
-
-        {/* Recipe Meta Banner & Servings Scaler */}
-        <div className="px-5 py-3 backdrop-blur-md bg-[var(--primary)]/10 border-b border-[var(--primary)]/20 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
-              {t('prepTime', { mins: recipe.prepTimeMinutes })}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-[var(--accent)]" />
-              {t('cookTime', { mins: recipe.cookTimeMinutes })}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <ChefHat className="w-4 h-4 text-slate-500" />
-              {t('totalTime', { mins: recipe.prepTimeMinutes + recipe.cookTimeMinutes })}
-            </span>
-          </div>
-
-          {/* Interactive Servings Slider / Controls */}
-          <div className="flex items-center gap-2 backdrop-blur-md bg-white/70 dark:bg-slate-800/70 px-3 py-1 rounded-xl shadow-2xs border border-white/50 dark:border-white/10">
-            <Users className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
-            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              {t('peopleCount', { count: currentServings })}
-            </span>
-            <div className="flex items-center gap-1 ml-1">
-              <button
-                disabled={currentServings <= 1}
-                onClick={() => setCurrentServings(Math.max(1, currentServings - 1))}
-                className="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-white/40 dark:border-white/5"
-              >
-                <Minus className="w-3 h-3" />
-              </button>
-              <button
-                disabled={currentServings >= 24}
-                onClick={() => setCurrentServings(currentServings + 1)}
-                className="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-white/40 dark:border-white/5"
-              >
-                <Plus className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          {/* Nutrition strip */}
-          <div className="w-full pt-2 mt-1 border-t border-[var(--primary)]/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <div className="shrink-0">
-                 <NutritionRings
-                   proteinPct={Math.min(100, (nutrition.protein / 50) * 100)}
-                   carbsPct={Math.min(100, (nutrition.carbs / 100) * 100)}
-                   fatPct={Math.min(100, (nutrition.fat / 30) * 100)}
-                   size={40}
-                 />
+              <div className="px-5 py-2 bg-white/20 dark:bg-slate-800/20 border-b border-white/40 dark:border-white/5">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {localized.description}
+                </p>
               </div>
-              <div>
-                <span className="font-semibold text-amber-600 dark:text-amber-400 block">🔥 {nutrition.calories} kcal / pers.</span>
-                <span className="font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-900/30 text-[10px]">
-                  💰 Budget : {recipePrice === 0 ? 'Gratuit' : `${recipePrice.toFixed(2)} €`}
+            )}
+
+            {/* Recipe Meta Banner & Servings Scaler */}
+            <div className="px-5 py-3 backdrop-blur-md bg-[var(--primary)]/10 border-b border-[var(--primary)]/20 flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
+                  {t('prepTime', { mins: recipe.prepTimeMinutes })}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-[var(--accent)]" />
+                  {t('cookTime', { mins: recipe.cookTimeMinutes })}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <ChefHat className="w-4 h-4 text-slate-500" />
+                  {t('totalTime', { mins: recipe.prepTimeMinutes + recipe.cookTimeMinutes })}
+                </span>
+              </div>
+
+              {/* Interactive Servings Slider / Controls */}
+              <div className="flex items-center gap-2 backdrop-blur-md bg-white/70 dark:bg-slate-800/70 px-3 py-1 rounded-xl shadow-2xs border border-white/50 dark:border-white/10">
+                <Users className="w-4 h-4 text-[var(--primary)] dark:text-[var(--primary)]" />
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {t('peopleCount', { count: currentServings })}
+                </span>
+                <div className="flex items-center gap-1 ml-1">
+                  <button
+                    disabled={currentServings <= 1}
+                    onClick={() => setCurrentServings(Math.max(1, currentServings - 1))}
+                    className="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-white/40 dark:border-white/5"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <button
+                    disabled={currentServings >= 24}
+                    onClick={() => setCurrentServings(currentServings + 1)}
+                    className="w-5 h-5 rounded-md bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 disabled:opacity-30 border border-white/40 dark:border-white/5"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Nutrition strip */}
+              <div className="w-full pt-2 mt-1 border-t border-[var(--primary)]/10 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="shrink-0">
+                    <NutritionRings
+                      proteinPct={Math.min(100, (nutrition.protein / 50) * 100)}
+                      carbsPct={Math.min(100, (nutrition.carbs / 100) * 100)}
+                      fatPct={Math.min(100, (nutrition.fat / 30) * 100)}
+                      size={40}
+                    />
+                  </div>
+                  <div>
+                    <span className="font-semibold text-amber-600 dark:text-amber-400 block">🔥 {nutrition.calories} kcal / pers.</span>
+                    <span className="font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md border border-sky-200 dark:border-sky-900/30 text-[10px]">
+                      💰 Budget : {recipePrice === 0 ? 'Gratuit' : `${recipePrice.toFixed(2)} €`}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[11px] text-slate-500 flex items-center gap-2 font-mono">
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />{nutrition.protein}g</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />{nutrition.carbs}g</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{nutrition.fat}g</span>
                 </span>
               </div>
             </div>
-            <span className="text-[11px] text-slate-500 flex items-center gap-2 font-mono">
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />{nutrition.protein}g</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" />{nutrition.carbs}g</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{nutrition.fat}g</span>
-            </span>
           </div>
-        </div>
+        )}
 
         {/* Scrollable Content: Ingredients + Instructions */}
         <div className="overflow-y-auto p-5 space-y-6 flex-1">

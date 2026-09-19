@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { 
-  X, 
-  Search, 
+import {
+  X,
+  Search,
   Clock, 
   Users, 
   Check, 
@@ -17,7 +17,8 @@ import {
   User,
   Copy,
   Star,
-  Tag
+  Tag,
+  Minus
 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory, CustomMealIngredient, UnitType, CookingModeType, CustomMeal, DatabaseViewSource } from '../types';
@@ -57,6 +58,38 @@ interface RecipePickerModalProps {
 const UNIT_OPTIONS: UnitType[] = [
   'unit', 'g', 'kg', 'ml', 'cl', 'l', 'tbsp', 'tsp', 'clove', 'pinch', 'can', 'pack', 'bunch', 'slice'
 ];
+
+const Stepper: React.FC<{
+  value: number;
+  onChange: (val: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  className?: string;
+}> = ({ value, onChange, min = 0, max = 9999, step = 1, unit = '', className = '' }) => (
+  <div className={`flex items-center gap-1 bg-white/60 dark:bg-slate-800/60 rounded-xl border border-white/50 dark:border-white/10 p-1 ${className}`}>
+    <button
+      type="button"
+      onClick={() => onChange(Number((value - step).toFixed(2)))}
+      disabled={value <= min}
+      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 transition-all shadow-xs"
+    >
+      <Minus className="w-3.5 h-3.5" />
+    </button>
+    <div className="flex-1 text-center min-w-[40px]">
+      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{value}{unit}</span>
+    </div>
+    <button
+      type="button"
+      onClick={() => onChange(Number((value + step).toFixed(2)))}
+      disabled={value >= max}
+      className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 transition-all shadow-xs"
+    >
+      <Plus className="w-3.5 h-3.5" />
+    </button>
+  </div>
+);
 
 export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   isOpen,
@@ -516,14 +549,14 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
                           <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex-1 truncate">
                             {ingObj?.name || 'Ingrédient'}
                           </span>
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="0.5"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateCustomIng(idx, 'quantity', parseFloat(e.target.value) || 1)}
-                            className="w-16 px-2 py-1 text-xs rounded-lg bg-white dark:bg-slate-800 border text-center font-mono"
-                          />
+                          <div className="w-24">
+                            <Stepper
+                              value={item.quantity}
+                              onChange={(v) => handleUpdateCustomIng(idx, 'quantity', v)}
+                              min={0.1}
+                              step={item.unit === 'unit' || item.unit === 'clove' || item.unit === 'pinch' || item.unit === 'can' || item.unit === 'pack' || item.unit === 'slice' ? 1 : 10}
+                            />
+                          </div>
                           <select
                             value={item.unit}
                             onChange={(e) => handleUpdateCustomIng(idx, 'unit', e.target.value as UnitType)}

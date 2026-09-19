@@ -20,6 +20,7 @@ import {
 import { Recipe } from '../types';
 
 export function useInitialization() {
+  console.log("useInitialization hook called");
   const { user, setUserData, setSyncStatus, setLastSyncedAt } = useAuthStore();
   const {
     recipes,
@@ -34,6 +35,7 @@ export function useInitialization() {
     setCheckedMap,
     setCustomItems,
     setPantryMap,
+    setPantryAddedDates,
     setIsLoaded,
     isLoaded
   } = useDataStore();
@@ -54,10 +56,14 @@ export function useInitialization() {
       setCheckedMap(loaded.checkedMap);
       setCustomItems(loaded.customItems);
       setPantryMap(loaded.pantryMap || {});
+      const storedDates = localStorage.getItem('meal_pantry_dates');
+      if (storedDates) {
+        try { setPantryAddedDates(JSON.parse(storedDates)); } catch (e) {}
+      }
       setIsLoaded(true);
     });
     return () => { cancelled = true; };
-  }, [setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setCheckedMap, setCustomItems, setPantryMap, setIsLoaded]);
+  }, [setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setCheckedMap, setCustomItems, setPantryMap, setPantryAddedDates, setIsLoaded]);
 
   // 2. Generic Catalog Sync
   useEffect(() => {

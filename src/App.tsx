@@ -19,8 +19,9 @@ import { PlannedMealsList } from './components/PlannedMealsList';
 import { ShoppingListView } from './components/ShoppingListView';
 import { DatabaseManager } from './components/DatabaseManager';
 import { ModalManager } from './components/ModalManager';
+import { Sparkles, Plus, ChefHat } from 'lucide-react';
 import { PrintableSheet } from './components/PrintableSheet';
-import { LanguageProvider } from './i18n/LanguageContext';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import Auth from './components/Auth';
 import { calculateShoppingList } from './utils/calculator';
 import { generateFullGenericDatabase, resetToDefaults, clearDatabase } from './utils/storage';
@@ -51,6 +52,17 @@ function AppContent({
     databaseSource, setDatabaseSource,
     isSeedingGeneric, setIsSeedingGeneric
   } = useAppStore();
+
+  // Reset modal states on first mount to ensure clean start
+  useEffect(() => {
+    setIsRecipeImportModalOpen(false);
+    setIsProfileModalOpen(false);
+    setIsPantryModalOpen(false);
+    setIsAutoPlanModalOpen(false);
+    setIsNutritionDashboardOpen(false);
+    setRecipePickerTarget(null);
+    setPreviewRecipeState(null);
+  }, []);
 
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan,
@@ -254,7 +266,51 @@ function AppContent({
         shoppingItemsCount={totalItemsCount} checkedShoppingCount={checkedItemsCount}
       />
 
-      <ModalManager onSignOut={onSignOut} onSwitchToAuth={onSwitchToAuth} />
+      {/* FAB - Floating Action Button for Mobile Ergonomics */}
+      <div className="fixed bottom-24 right-6 z-40 sm:hidden flex flex-col gap-3 pointer-events-none">
+        {activeTab === 'planner' && (
+          <button
+            onClick={() => setIsAutoPlanModalOpen(true)}
+            className="w-14 h-14 rounded-full bg-amber-500 text-slate-900 shadow-lg flex items-center justify-center animate-bounce-subtle pointer-events-auto active:scale-95 transition-transform"
+            title="Auto-Plan"
+          >
+            <Sparkles className="w-6 h-6" />
+          </button>
+        )}
+        {activeTab === 'shopping' && (
+          <button
+            onClick={() => setIsAddCustomShoppingModalOpen(true)}
+            className="w-14 h-14 rounded-full bg-[var(--primary)] text-white shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
+            title="Ajouter un article"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        )}
+        {activeTab === 'database' && (
+          <div className="flex flex-col gap-3 items-end">
+            <button
+              onClick={() => setIsRecipeImportModalOpen(true)}
+              className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
+              title="Importer une recette"
+            >
+              <Sparkles className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setRecipeEditorState({ isOpen: true, recipeToEdit: null })}
+              className="w-14 h-14 rounded-full bg-[var(--primary)] text-white shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
+              title="Nouvelle recette"
+            >
+              <Plus className="w-6 h-6" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      <ModalManager
+        onSignOut={onSignOut}
+        onSwitchToAuth={onSwitchToAuth}
+        onSaveIngredient={saveIngredient}
+      />
     </div>
   );
 }

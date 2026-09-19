@@ -34,3 +34,19 @@ export const RecipeSchema = z.object({
 });
 
 export type AIRecipeResponse = z.infer<typeof RecipeSchema>;
+
+export const ReceiptItemSchema = z.object({
+  name: z.string(),
+  quantity: z.preprocess((val) => {
+    if (typeof val === 'string') return parseFloat(val.replace(',', '.')) || 1;
+    if (typeof val === 'number') return val;
+    return 1;
+  }, z.number().default(1)),
+  unit: UnitTypeSchema,
+});
+
+export const ReceiptSchema = z.object({
+  items: z.array(ReceiptItemSchema),
+});
+
+export type AIReceiptResponse = z.infer<typeof ReceiptSchema>;

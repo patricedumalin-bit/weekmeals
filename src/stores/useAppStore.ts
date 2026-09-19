@@ -51,6 +51,9 @@ interface AppState {
   isNutritionDashboardOpen: boolean;
   setIsNutritionDashboardOpen: (isOpen: boolean) => void;
 
+  isAddCustomShoppingModalOpen: boolean;
+  setIsAddCustomShoppingModalOpen: (isOpen: boolean) => void;
+
   databaseSource: 'all' | 'personal' | 'generic';
   setDatabaseSource: (source: 'all' | 'personal' | 'generic') => void;
 
@@ -94,6 +97,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   isNutritionDashboardOpen: false,
   setIsNutritionDashboardOpen: (isOpen) => set({ isNutritionDashboardOpen: isOpen }),
+
+  isAddCustomShoppingModalOpen: false,
+  setIsAddCustomShoppingModalOpen: (isOpen) => set({ isAddCustomShoppingModalOpen: isOpen }),
 
   databaseSource: 'all',
   setDatabaseSource: (source) => set({ databaseSource: source }),

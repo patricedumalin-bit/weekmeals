@@ -9,11 +9,18 @@ import {
   PieChart as PieIcon,
   CheckCircle2,
   TrendingUp,
-  Heart
+  Heart,
+  Euro,
+  Scale,
+  Calendar,
+  ChevronRight,
+  Lightbulb,
+  History
 } from 'lucide-react';
-import { WeeklyPlan, Recipe, Ingredient, NutritionInfo } from '../types';
+import { WeeklyPlan, Recipe, Ingredient, NutritionInfo, WeeklyHistoryItem } from '../types';
 import { estimateRecipeNutrition, calculateRecipeTotalBudget } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useDataStore } from '../stores/useDataStore';
 
 interface NutritionDashboardProps {
   isOpen: boolean;
@@ -32,7 +39,9 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   ingredients = [],
   pantryMap = {}
 }) => {
-  const { translateRecipe } = useLanguage();
+  const { translateRecipe, t } = useLanguage();
+  const { weeklyHistory, archiveWeeklyPlan } = useDataStore();
+  const [activeTab, setActiveTab] = React.useState<'nutrition' | 'budget' | 'evolution'>('nutrition');
 
   if (!isOpen) return null;
 
@@ -41,7 +50,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
 
   // Calculate nutrition for each meal in the plan
-  const mealNutritionList: { mealLabel: string; recipeTitle: string; nutrition: NutritionInfo; price: number }[] = [];
+  const mealNutritionList: { mealLabel: string; recipeTitle: string; nutrition: NutritionInfo; price: number; savings: number }[] = [];
 
   let totalCalories = 0;
   let totalProtein = 0;
@@ -67,7 +76,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
             mealLabel: meal.label || `Repas ${meal.mealNumber}`,
             recipeTitle: translateRecipe(rec).title,
             nutrition: nut,
-            price: recPrice
+            price: recPrice,
+            savings: recSavings
           });
           totalCalories += nut.calories;
           totalProtein += nut.protein;
@@ -85,6 +95,23 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   const avgProtein = plannedMealsCount > 0 ? Math.round((totalProtein / plannedMealsCount) * 10) / 10 : 0;
   const avgCarbs = plannedMealsCount > 0 ? Math.round((totalCarbs / plannedMealsCount) * 10) / 10 : 0;
   const avgFat = plannedMealsCount > 0 ? Math.round((totalFat / plannedMealsCount) * 10) / 10 : 0;
+
+  const handleArchiveWeek = () => {
+    if (plannedMealsCount === 0) return;
+    const summary: WeeklyHistoryItem = {
+      id: `week-${Date.now()}`,
+      weekNumber: 1, // Simplified
+      year: new Date().getFullYear(),
+      totalCost: accumulatedWeeklyCost,
+      totalSavings: accumulatedWeeklySavings,
+      mealsCount: plannedMealsCount,
+      nutritionAvg: { calories: avgCalories, protein: avgProtein, carbs: avgCarbs, fat: avgFat },
+      date: new Date().toISOString()
+    };
+    archiveWeeklyPlan(summary);
+    alert("Semaine archivée avec succès !");
+  };
+
 
   // Macro calorie contributions (approx: 4 kcal/g protein & carbs, 9 kcal/g fat)
   const proteinCals = avgProtein * 4;
@@ -104,14 +131,14 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
         <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/20">
-              <Heart className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                Bilan Nutritionnel de la Semaine
+                Tableau de Bord & Analyses
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                Moyennes calculées par portion sur vos repas planifiés.
+                Suivez votre budget, votre nutrition et votre impact.
               </p>
             </div>
           </div>
@@ -123,138 +150,174 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
           </button>
         </div>
 
+        {/* Tab switcher */}
+        <div className="px-4 sm:px-6 pt-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-4 bg-white dark:bg-slate-900">
+          <button
+            onClick={() => setActiveTab('nutrition')}
+            className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 ${activeTab === 'nutrition' ? 'border-rose-500 text-rose-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            Nutrition
+          </button>
+          <button
+            onClick={() => setActiveTab('budget')}
+            className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === 'budget' ? 'border-sky-500 text-sky-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            Budget & Impact
+          </button>
+          <button
+            onClick={() => setActiveTab('evolution')}
+            className={`px-4 py-2 text-sm font-semibold transition-all border-b-2 flex items-center gap-1.5 ${activeTab === 'evolution' ? 'border-amber-500 text-amber-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+          >
+            Évolution Annuelle
+          </button>
+        </div>
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
           
-          {plannedMealsCount === 0 ? (
+          {plannedMealsCount === 0 && activeTab !== 'evolution' ? (
             <div className="text-center py-12 text-slate-400">
-              <Heart className="w-12 h-12 mx-auto mb-3 opacity-30 text-rose-500" />
-              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Aucun repas planifié cette semaine</p>
-              <p className="text-xs text-slate-400 mt-1">Ajoutez des recettes à votre planning pour afficher l'analyse nutritionnelle.</p>
+              <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-30 text-slate-500" />
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Aucune donnée pour cette semaine</p>
+              <p className="text-xs text-slate-400 mt-1">Ajoutez des recettes à votre planning pour générer le rapport.</p>
             </div>
           ) : (
             <>
-              {/* Macro & Budget Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-                    <span className="text-[11px] font-semibold">Calories</span>
-                    <Flame className="w-3.5 h-3.5" />
+              {activeTab === 'nutrition' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-[11px] font-semibold text-amber-600">Calories / plat</span>
+                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCalories}</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                      <span className="text-[11px] font-semibold text-rose-600">Protéines</span>
+                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgProtein}g</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20">
+                      <span className="text-[11px] font-semibold text-blue-600">Glucides</span>
+                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCarbs}g</div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                      <span className="text-[11px] font-semibold text-emerald-600">Lipides</span>
+                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgFat}g</div>
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCalories}</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">kcal / plat</p>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Répartition Hebdomadaire</h3>
+                    <div className="space-y-2">
+                      {mealNutritionList.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-slate-200 dark:border-slate-700 last:border-0">
+                          <span className="truncate flex-1 font-medium">{item.recipeTitle}</span>
+                          <span className="font-mono text-amber-600">{item.nutrition.calories} kcal</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
+              )}
 
-                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
-                    <span className="text-[11px] font-semibold">Protéines</span>
-                    <Dna className="w-3.5 h-3.5" />
+              {activeTab === 'budget' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-5 rounded-3xl bg-sky-500/10 border border-sky-500/20 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-sky-700 uppercase">Budget Estimé Semaine</span>
+                        <Euro className="w-5 h-5 text-sky-600" />
+                      </div>
+                      <div className="text-3xl font-black text-sky-700 dark:text-sky-400">{accumulatedWeeklyCost.toFixed(2)} €</div>
+                      <p className="text-[10px] text-sky-600/70 mt-1">Coût des ingrédients à acheter</p>
+                    </div>
+
+                    <div className="p-5 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-emerald-700 uppercase">Économies (Stock)</span>
+                        <Sparkles className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400">+{accumulatedWeeklySavings.toFixed(2)} €</div>
+                      <p className="text-[10px] text-emerald-600/70 mt-1">Valeur des produits déjà en votre possession</p>
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgProtein}g</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">({pPercent}%)</p>
+
+                  <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white space-y-4 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Lightbulb className="w-24 h-24" />
+                    </div>
+                    <h3 className="text-sm font-bold flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-amber-400" />
+                      Conseils d'Amélioration du Budget
+                    </h3>
+                    <ul className="space-y-3">
+                      {accumulatedWeeklyCost > 80 && (
+                        <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
+                          <span className="text-amber-400">💡</span>
+                          <span>Votre budget est élevé. Privilégiez 1 ou 2 repas végétariens de plus pour économiser environ 15€ cette semaine.</span>
+                        </li>
+                      )}
+                      {accumulatedWeeklySavings < 10 && (
+                        <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
+                          <span className="text-emerald-400">🌱</span>
+                          <span>Vous utilisez peu votre stock. Essayez de vider vos placards avant de racheter des féculents ou conserves.</span>
+                        </li>
+                      )}
+                      <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
+                        <span className="text-blue-400">🛒</span>
+                        <span>Faire vos courses au Drive avec notre scan PDF évite les achats compulsifs en rayon (gain estimé : 12% sur le ticket).</span>
+                      </li>
+                    </ul>
                   </div>
+
+                  <button
+                    onClick={handleArchiveWeek}
+                    className="w-full py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    Valider et Archiver cette Semaine
+                  </button>
                 </div>
+              )}
 
-                <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-                    <span className="text-[11px] font-semibold">Glucides</span>
-                    <Wheat className="w-3.5 h-3.5" />
+              {activeTab === 'evolution' && (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Historique & Projection Annuelle</h3>
+                    <History className="w-4 h-4 text-slate-400" />
                   </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCarbs}g</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">({cPercent}%)</p>
-                  </div>
-                </div>
 
-                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span className="text-[11px] font-semibold">Lipides</span>
-                    <Droplet className="w-3.5 h-3.5" />
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgFat}g</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">({fPercent}%)</p>
-                  </div>
-                </div>
-
-                {/* Nouvelle fiche d'information financière globale ajoutée */}
-                <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-sky-600 dark:text-sky-400">
-                    <span className="text-[11px] font-semibold">Budget Total</span>
-                    <span className="text-xs">🪙</span>
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-extrabold text-sky-600 dark:text-sky-400 font-mono">{accumulatedWeeklyCost.toFixed(2)}€</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">À prévoir</p>
-                  </div>
-                </div>
-
-                {/* Score d'Économie Générée (Amélioration Informative) */}
-                <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-                    <span className="text-[11px] font-semibold text-emerald-700">Économies restes</span>
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-                  </div>
-                  <div className="mt-2">
-                    <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">+{accumulatedWeeklySavings.toFixed(2)}€</span>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Grâce à votre frigo</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Macro Bar */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <span>Répartition des Macronutriments</span>
-                  <span className="text-slate-400 font-normal">Recommandation : 15-25% P / 45-55% G / 25-35% L</span>
-                </div>
-
-                <div className="h-3 w-full rounded-full overflow-hidden flex">
-                  <div style={{ width: `${pPercent}%` }} className="bg-rose-500 transition-all" title={`Protéines: ${pPercent}%`} />
-                  <div style={{ width: `${cPercent}%` }} className="bg-blue-500 transition-all" title={`Glucides: ${cPercent}%`} />
-                  <div style={{ width: `${fPercent}%` }} className="bg-emerald-500 transition-all" title={`Lipides: ${fPercent}%`} />
-                </div>
-
-                <div className="flex items-center justify-around text-[11px] pt-1 text-slate-500">
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> Protéines ({pPercent}%)</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Glucides ({cPercent}%)</span>
-                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Lipides ({fPercent}%)</span>
-                </div>
-              </div>
-
-              {/* Detailed meal list */}
-              <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Détail par repas de la semaine :
-                </h3>
-
-                <div className="space-y-2">
-                  {mealNutritionList.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-slate-900 dark:text-slate-100 truncate">
-                          {item.recipeTitle}
-                        </p>
-                        <p className="text-[10px] text-slate-400">{item.mealLabel}</p>
+                  {weeklyHistory.length === 0 ? (
+                    <div className="py-10 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                      <p className="text-xs text-slate-500">Aucun historique archivé. Validez votre première semaine dans l'onglet Budget !</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Projection Card */}
+                      <div className="p-5 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-center">
+                         <span className="text-xs font-bold text-amber-700 uppercase">Économies Annuelles Projetées</span>
+                         <div className="text-4xl font-black text-amber-600 mt-1">
+                           {((weeklyHistory.reduce((s, h) => s + h.totalSavings, 0) / weeklyHistory.length) * 52).toFixed(0)} € / an
+                         </div>
+                         <p className="text-[10px] text-amber-700/60 mt-2 italic">Basé sur vos {weeklyHistory.length} dernières semaines archivées.</p>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0 text-slate-600 dark:text-slate-400 font-mono">
-                        <span className="text-sky-600 dark:text-sky-400 font-bold bg-sky-50 dark:bg-sky-950/40 px-1.5 py-0.2 rounded border border-sky-100 dark:border-sky-900/30">{item.price === 0 ? 'Gratuit' : `${item.price.toFixed(2)}€`}</span>
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">{item.nutrition.calories} kcal</span>
-                        <span>{item.nutrition.protein}g P</span>
-                        <span>{item.nutrition.carbs}g G</span>
-                        <span>{item.nutrition.fat}g L</span>
+                      <div className="space-y-2">
+                        {weeklyHistory.map((item, idx) => (
+                          <div key={item.id} className="flex items-center justify-between p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-xs">
+                             <div>
+                               <div className="text-xs font-bold">Semaine du {new Date(item.date).toLocaleDateString()}</div>
+                               <div className="text-[10px] text-slate-500">{item.mealsCount} repas planifiés</div>
+                             </div>
+                             <div className="text-right">
+                               <div className="text-sm font-bold text-sky-600">{item.totalCost.toFixed(2)} €</div>
+                               <div className="text-[10px] font-bold text-emerald-600">+{item.totalSavings.toFixed(2)} € éco.</div>
+                             </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
+              )}
             </>
           )}
 
@@ -269,6 +332,7 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
             Fermer
           </button>
         </div>
+
 
       </div>
     </div>

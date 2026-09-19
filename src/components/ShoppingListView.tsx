@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ShoppingCart, 
   Printer, 
@@ -30,6 +30,7 @@ import { calculateShoppingList, formatQuantity, getUnitFamily, getIngredientCost
 import { CategoryIcon } from './CategoryIcon';
 import { BudgetDonutChart } from './BudgetDonutChart';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useAppStore } from '../stores/useAppStore';
 
 interface ShoppingListViewProps {
   weeklyPlan: WeeklyPlan;
@@ -69,11 +70,16 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   const { t, translateUnit, translateIngredientCategory, translateMealLabel, translateIngredient, translateRecipe } = useLanguage();
   if (!weeklyPlan) return null;
   const [searchQuery, setSearchQuery] = useState('');
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [expandedSources, setExpandedSources] = useState<Record<string, boolean>>({});
-  const [showAddCustomModal, setShowAddCustomModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [filterHideChecked, setFilterHideChecked] = useState(false);
   const [filterHidePantry, setFilterHidePantry] = useState(false);
+
+  const { isAddCustomShoppingModalOpen, setIsAddCustomShoppingModalOpen } = useAppStore();
+
+  // Swipe gesture state
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   // Custom Item Form State
   const [customName, setCustomName] = useState('');
@@ -154,6 +160,24 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, itemKey: string, currentlyChecked: boolean) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    const threshold = 60; // swipe length in pixels
+
+    if (Math.abs(diff) > threshold) {
+      // Right swipe (diff > 0) or Left swipe (diff < 0)
+      // For ergonomics, swipe right usually means check
+      handleItemCheck(itemKey, currentlyChecked);
+    }
+    setTouchStartX(null);
+  };
+
   const handleCreateCustom = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customName.trim()) return;
@@ -169,7 +193,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
     setCustomName('');
     setCustomQty(1);
-    setShowAddCustomModal(false);
+    setIsAddCustomShoppingModalOpen(false);
   };
 
   const handleCopyList = () => {
@@ -195,141 +219,159 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
     <div className="space-y-6 pb-20">
       {/* Top Banner / Shopping Dashboard */}
       <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-3xl p-5 sm:p-6 shadow-lg shadow-slate-900/5 transition-all duration-300">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
-              <ShoppingCart className="w-3.5 h-3.5" />
-              <span>{t('shoppingTag')}</span>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold backdrop-blur-md bg-[var(--accent)]/10 text-[var(--primary)] dark:text-[var(--accent)] border border-[var(--accent)]/20 mb-1.5">
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  <span>{t('shoppingTag')}</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  {t('shoppingTitle')}
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 transition-all sm:hidden"
+              >
+                {isHeaderCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+              </button>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-              {t('shoppingTitle')}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              {t('shoppingSubtitle')}
-            </p>
+
+            {!isHeaderCollapsed && (
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                {t('shoppingSubtitle')}
+              </p>
+            )}
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setShowAddCustomModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/20 border border-[var(--accent)]/25 transition-colors shadow-2xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t('addCustomItem')}</span>
-            </button>
+          {!isHeaderCollapsed && (
+            <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-2 duration-300">
+              <button
+                onClick={() => setIsAddCustomShoppingModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/20 border border-[var(--accent)]/25 transition-colors shadow-2xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('addCustomItem')}</span>
+              </button>
 
-            <button
-              onClick={handleCopyList}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-[var(--primary)]" />
-                  <span>{t('copied')}</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="w-4 h-4" />
-                  <span>{t('share')}</span>
-                </>
-              )}
-            </button>
+              <button
+                onClick={handleCopyList}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-[var(--primary)]" />
+                    <span>{t('copied')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-4 h-4" />
+                    <span>{t('share')}</span>
+                  </>
+                )}
+              </button>
 
-            <button
-              onClick={onPrint}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
-            >
-              <Printer className="w-4 h-4" />
-              <span>{t('printList')}</span>
-            </button>
-          </div>
+              <button
+                onClick={onPrint}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
+              >
+                <Printer className="w-4 h-4" />
+                <span>{t('printList')}</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Progress Bar & Status */}
-        <div className="mt-5 pt-4 border-t border-white/40 dark:border-white/5">
-          <div className="flex items-center justify-between text-xs font-semibold mb-2">
-            <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <span>{t('shoppingProgress')}</span>
-              <span className="text-[var(--primary)] dark:text-[var(--accent)] font-bold">
-                {t('itemsGathered', { checked: checkedItemsCount, total: totalItemsCount })}
+        {!isHeaderCollapsed && (
+          <div className="mt-5 pt-4 border-t border-white/40 dark:border-white/5 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between text-xs font-semibold mb-2">
+              <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <span>{t('shoppingProgress')}</span>
+                <span className="text-[var(--primary)] dark:text-[var(--accent)] font-bold">
+                  {t('itemsGathered', { checked: checkedItemsCount, total: totalItemsCount })}
+                </span>
               </span>
-            </span>
-            <div className="flex items-center gap-3">
-              {checkedItemsCount > 0 && (
-                <button
-                  onClick={onResetChecked}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center gap-1 text-[11px]"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  {t('uncheckAll')}
-                </button>
-              )}
-              <span className="text-[var(--primary)] dark:text-[var(--accent)] font-extrabold font-mono">
-                {progressPercentage}%
-              </span>
+              <div className="flex items-center gap-3">
+                {checkedItemsCount > 0 && (
+                  <button
+                    onClick={onResetChecked}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 flex items-center gap-1 text-[11px]"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {t('uncheckAll')}
+                  </button>
+                )}
+                <span className="text-[var(--primary)] dark:text-[var(--accent)] font-extrabold font-mono">
+                  {progressPercentage}%
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className="w-full h-2.5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 overflow-hidden p-0.5 border border-white/40 dark:border-white/5">
-            <div
-              className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] transition-all duration-300 rounded-full shadow-xs"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
+            <div className="w-full h-2.5 rounded-full bg-slate-200/60 dark:bg-slate-800/80 overflow-hidden p-0.5 border border-white/40 dark:border-white/5">
+              <div
+                className="h-full bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] transition-all duration-300 rounded-full shadow-xs"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
 
-          {/* Budget Récapitulatif Estimé */}
-          <div className="mt-3.5 space-y-3">
-            <div className="flex flex-col md:flex-row gap-5 items-center bg-white/30 dark:bg-slate-800/30 rounded-2xl p-4 border border-white/20 dark:border-white/5">
-               {estimatedTotalBudget > 0 && (
-                  <div className="shrink-0 animate-spring-in">
-                    <BudgetDonutChart
-                      total={estimatedTotalBudget}
-                      categories={Object.values(budgetByCategory)}
-                      size={100}
-                    />
-                  </div>
-               )}
-
-               <div className="flex-1 space-y-3 w-full">
-                  <div className="px-4 py-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-between text-xs w-full">
-                    <span className="font-semibold text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
-                      💰 Budget Restant Estimé en Rayon :
-                    </span>
-                    <span className="font-extrabold text-sky-600 dark:text-sky-400 font-mono text-sm">
-                      {estimatedTotalBudget === 0 ? '0.00 € (Panier Plein)' : `${estimatedTotalBudget.toFixed(2)} €`}
-                    </span>
-                  </div>
-
-                  {/* Répartition par Rayon (Amélioration Esthétique) */}
-                  {estimatedTotalBudget > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                      {Object.entries(budgetByCategory)
-                        .sort((a, b) => b[1].amount - a[1].amount)
-                        .slice(0, 6) // Show top 6 categories
-                        .map(([id, cat]) => (
-                          <div key={id} className="p-2 rounded-lg bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-0.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-slate-500 truncate mr-1 uppercase">{cat.name}</span>
-                              <span className="text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300">{cat.amount.toFixed(2)}€</span>
-                            </div>
-                            <div className="w-full h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-1">
-                              <div
-                                className="h-full opacity-70"
-                                style={{
-                                  width: `${(cat.amount / estimatedTotalBudget) * 100}%`,
-                                  backgroundColor: `var(--${cat.color}, #94a3b8)`
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
+            {/* Budget Récapitulatif Estimé */}
+            <div className="mt-3.5 space-y-3">
+              <div className="flex flex-col md:flex-row gap-5 items-center bg-white/30 dark:bg-slate-800/30 rounded-2xl p-4 border border-white/20 dark:border-white/5">
+                 {estimatedTotalBudget > 0 && (
+                    <div className="shrink-0 animate-spring-in">
+                      <BudgetDonutChart
+                        total={estimatedTotalBudget}
+                        categories={Object.values(budgetByCategory)}
+                        size={100}
+                      />
                     </div>
-                  )}
-               </div>
+                 )}
+
+                 <div className="flex-1 space-y-3 w-full">
+                    <div className="px-4 py-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-between text-xs w-full">
+                      <span className="font-semibold text-sky-800 dark:text-sky-300 flex items-center gap-1.5">
+                        💰 Budget Restant Estimé en Rayon :
+                      </span>
+                      <span className="font-extrabold text-sky-600 dark:text-sky-400 font-mono text-sm">
+                        {estimatedTotalBudget === 0 ? '0.00 € (Panier Plein)' : `${estimatedTotalBudget.toFixed(2)} €`}
+                      </span>
+                    </div>
+
+                    {/* Répartition par Rayon (Amélioration Esthétique) */}
+                    {estimatedTotalBudget > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                        {Object.entries(budgetByCategory)
+                          .sort((a, b) => b[1].amount - a[1].amount)
+                          .slice(0, 6) // Show top 6 categories
+                          .map(([id, cat]) => (
+                            <div key={id} className="p-2 rounded-lg bg-white/40 dark:bg-slate-800/40 border border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-bold text-slate-500 truncate mr-1 uppercase">{cat.name}</span>
+                                <span className="text-[9px] font-mono font-bold text-slate-700 dark:text-slate-300">{cat.amount.toFixed(2)}€</span>
+                              </div>
+                              <div className="w-full h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mt-1">
+                                <div
+                                  className="h-full opacity-70"
+                                  style={{
+                                    width: `${(cat.amount / estimatedTotalBudget) * 100}%`,
+                                    backgroundColor: `var(--${cat.color}, #94a3b8)`
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                 </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Search & Filter within shopping list */}
         <div className="mt-4 pt-3 border-t border-white/40 dark:border-white/5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -385,7 +427,6 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             <span>{filterHideChecked ? t('showingPendingOnly') : t('hideChecked')}</span>
           </button>
         </div>
-      </div>
 
       {/* Categorized Lists */}
       {groupedByCategory.length === 0 ? (
@@ -449,7 +490,9 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                     return (
                       <div
                         key={itemKey}
-                        className={`p-3 sm:px-4 transition-colors ${
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={(e) => handleTouchEnd(e, itemKey, item.checked)}
+                        className={`p-3 sm:px-4 transition-colors select-none ${
                           item.checked
                             ? 'bg-[var(--cell-bg)]/20 text-slate-400 opacity-60'
                             : 'hover:bg-[var(--cell-bg-hover)]/40'
@@ -570,7 +613,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
       )}
 
       {/* Add Custom Item Modal */}
-      {showAddCustomModal && (
+      {isAddCustomShoppingModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
           <div className="backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 border border-white/40 dark:border-white/10 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
@@ -578,14 +621,44 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 {t('addCustomItem')}
               </h3>
               <button
-                onClick={() => setShowAddCustomModal(false)}
+                onClick={() => setIsAddCustomShoppingModalOpen(false)}
                 className="text-slate-400 hover:text-slate-700"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleCreateCustom} className="space-y-3">
+            <div className="space-y-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Suggestions rapides</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { name: 'Lait', cat: 'cat-produits-laitiers', unit: 'l', qty: 1 },
+                  { name: 'Œufs', cat: 'cat-oeufs', unit: 'unit', qty: 6 },
+                  { name: 'Pain', cat: 'cat-cereales', unit: 'unit', qty: 1 },
+                  { name: 'Beurre', cat: 'cat-matieres-grasses', unit: 'g', qty: 250 },
+                  { name: 'Pommes', cat: 'cat-fruits', unit: 'unit', qty: 4 },
+                  { name: 'Pâtes', cat: 'cat-cereales', unit: 'g', qty: 500 },
+                  { name: 'Riz', cat: 'cat-cereales', unit: 'g', qty: 500 },
+                  { name: 'Eau', cat: 'cat-produits-laitiers', unit: 'l', qty: 6 },
+                ].map((sug) => (
+                  <button
+                    key={sug.name}
+                    type="button"
+                    onClick={() => {
+                      setCustomName(sug.name);
+                      setCustomCatId(sug.cat);
+                      setCustomUnit(sug.unit as UnitType);
+                      setCustomQty(sug.qty);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-[var(--primary)]/10 hover:text-[var(--primary)] border border-transparent hover:border-[var(--primary)]/20 transition-all"
+                  >
+                    + {sug.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateCustom} className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   {t('itemName')}
@@ -596,7 +669,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                   placeholder={t('itemNamePlaceholder')}
                   value={customName}
                   onChange={e => setCustomName(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
+                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)]"
                 />
               </div>
 
@@ -652,7 +725,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddCustomModal(false)}
+                  onClick={() => setIsAddCustomShoppingModalOpen(false)}
                   className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400"
                 >
                   {t('cancel')}

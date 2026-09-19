@@ -10,12 +10,21 @@ import {
   AlertCircle,
   Clock,
   ArrowRight,
-  Filter
+  Filter,
+  Camera,
+  Loader2,
+  FileText,
+  FileDown,
+  Barcode,
+  BarcodeIcon
 } from 'lucide-react';
-import { Ingredient, IngredientCategory, Recipe } from '../types';
+import { Ingredient, IngredientCategory, Recipe, UnitType } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { matchRecipesWithPantry, getIngredientCost } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useAppStore } from '../stores/useAppStore';
+import { parseReceiptWithAI } from '../lib/aiService';
+import { useAuthStore } from '../stores/useAuthStore';
 
 interface PantryModalProps {
   isOpen: boolean;
@@ -25,6 +34,7 @@ interface PantryModalProps {
   pantryMap: Record<string, boolean>;
   onTogglePantryItem: (ingredientId: string) => void;
   onBatchSetPantry: (updates: Record<string, boolean>) => void;
+  onSaveIngredient?: (ing: Ingredient) => void;
   recipes: Recipe[];
   onSelectRecipeForMeal?: (recipe: Recipe) => void;
   onPreviewRecipe?: (recipe: Recipe) => void;
@@ -38,14 +48,21 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   pantryMap,
   onTogglePantryItem,
   onBatchSetPantry,
+  onSaveIngredient,
   recipes,
   onSelectRecipeForMeal,
   onPreviewRecipe
 }) => {
-  const { translateIngredient, translateIngredientCategory, translateRecipe } = useLanguage();
+  const { translateIngredient, translateIngredientCategory, translateRecipe, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'stock' | 'antiwaste'>('stock');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit: UnitType; matchedIngredientId?: string }[] | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const { user } = useAuthStore();
+  const { theme } = useAppStore();
 
   if (!isOpen) return null;
 
@@ -64,6 +81,222 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       Object.keys(pantryMap).forEach(k => { cleared[k] = false; });
       onBatchSetPantry(cleared);
     }
+  };
+
+  const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const apiKey = localStorage.getItem('ai_api_key_groq') || localStorage.getItem('ai_api_key_gemini');
+    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+
+    if (!apiKey) {
+      alert("Veuillez configurer votre clé API (Groq ou Gemini) dans votre Profil pour scanner des tickets.");
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target?.result as string;
+        const result = await parseReceiptWithAI(base64, { provider, apiKey }, file.type);
+
+        // Match with existing ingredients
+        const matched = result.items.map(item => {
+          const lowerName = item.name.toLowerCase();
+          const match = ingredients.find(ing =>
+            ing.name.toLowerCase() === lowerName ||
+            translateIngredient(ing.id, ing.name).toLowerCase() === lowerName
+          );
+          return { ...item, matchedIngredientId: match?.id };
+        });
+
+        setScanResults(matched as any);
+        setIsScanning(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      alert(err.message || "Erreur lors de l'analyse du ticket.");
+      setIsScanning(false);
+    }
+  };
+
+  const handleConfirmScan = () => {
+    if (!scanResults) return;
+    const newPantry = { ...pantryMap };
+    scanResults.forEach(res => {
+      if (res.matchedIngredientId) {
+        newPantry[res.matchedIngredientId] = true;
+      }
+    });
+    onBatchSetPantry(newPantry);
+    setScanResults(null);
+    alert(`${scanResults.filter(r => r.matchedIngredientId).length} ingrédients ajoutés à votre stock !`);
+  };
+
+  const handleAskChefAI = async () => {
+    const apiKey = localStorage.getItem('ai_api_key_groq') || localStorage.getItem('ai_api_key_gemini');
+    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+
+    if (!apiKey) {
+      alert("Configurez votre clé AI dans le Profil pour utiliser le Chef Magique.");
+      return;
+    }
+
+    const inStockNames = ingredients
+      .filter(i => pantryMap[i.id])
+      .map(i => translateIngredient(i.id, i.name));
+
+    if (inStockNames.length < 3) {
+      alert("Cochez au moins 3 ingrédients que vous avez pour que le Chef puisse vous aider !");
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const prompt = `Voici les ingrédients que j'ai dans mon frigo : ${inStockNames.join(', ')}.
+      Suggère-moi 3 idées de plats simples à réaliser avec ces éléments.
+      Pour chaque plat, donne un titre court et une phrase d'explication.
+      Retourne UNIQUEMENT un objet JSON : { "suggestions": [{ "title": "...", "desc": "..." }] }`;
+
+      // Simplified call using the parseRecipe mechanism logic but for suggestions
+      const response = await fetch(provider === 'gemini'
+        ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+        : 'https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(provider === 'groq' && { 'Authorization': `Bearer ${apiKey}` }) },
+        body: JSON.stringify(provider === 'gemini' ? {
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        } : {
+          model: 'openai/gpt-oss-120b',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      const data = await response.json();
+      const text = provider === 'gemini' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+      const result = JSON.parse(text.replace(/```json|```/g, "").trim());
+
+      alert(`👨‍🍳 Idées du Chef :\n\n${result.suggestions.map((s: any) => `• ${s.title}: ${s.desc}`).join('\n\n')}`);
+    } catch (err) {
+      alert("Le Chef est un peu occupé, réessayez dans un instant.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleLinkIngredient = (index: number, ingredientId: string) => {
+    if (!scanResults) return;
+    const updated = [...scanResults];
+    updated[index] = { ...updated[index], matchedIngredientId: ingredientId };
+    setScanResults(updated);
+  };
+
+  const handleQuickCreateIngredient = (index: number) => {
+    if (!scanResults || !onSaveIngredient) return;
+    const item = scanResults[index];
+
+    const newIng: Ingredient = {
+      id: `ing-custom-${Date.now()}`,
+      name: item.name,
+      categoryId: 'cat-produits-laitiers', // Default category, user can change later
+      defaultUnit: item.unit || 'unit'
+    };
+
+    onSaveIngredient(newIng);
+    handleLinkIngredient(index, newIng.id);
+  };
+
+  const handleSearchByBarcode = async () => {
+    const code = prompt("Saisissez ou scannez le code-barres (EAN-13) :");
+    if (!code) return;
+
+    setIsScanning(true);
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
+      const data = await response.json();
+
+      if (data.status === 1) {
+        const product = data.product;
+        const productName = product.product_name_fr || product.product_name || "Produit Inconnu";
+
+        // Suggest creating it
+        if (confirm(`Produit trouvé : ${productName}\nVoulez-vous l'ajouter à votre base ?`)) {
+          const newIng: Ingredient = {
+            id: `ing-ean-${code}`,
+            name: productName,
+            categoryId: 'cat-produits-laitiers', // OpenFoodFacts categories can be complex to map
+            defaultUnit: 'unit'
+          };
+          if (onSaveIngredient) onSaveIngredient(newIng);
+          onTogglePantryItem(newIng.id);
+          alert("Ingrédient ajouté au stock !");
+        }
+      } else {
+        alert("Produit non trouvé sur OpenFoodFacts.");
+      }
+    } catch (err) {
+      alert("Erreur lors de la recherche du code-barres.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const { pantryAddedDates } = useDataStore();
+
+  const getExpiryInfo = (ingredientId: string, categoryId: string) => {
+    const addedAt = pantryAddedDates[ingredientId];
+    if (!addedAt) return null;
+
+    const addedDate = new Date(addedAt);
+    const now = new Date();
+    const daysSinceAdded = Math.floor((now.getTime() - addedDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Durée de conservation estimée par catégorie
+    const shelfLife: Record<string, number> = {
+      'cat-viandes': 3,
+      'cat-poissons': 2,
+      'cat-volailles': 3,
+      'cat-legumes': 7,
+      'cat-fruits': 10,
+      'cat-produits-laitiers': 12,
+      'cat-oeufs': 21,
+      'cat-crustaces': 2,
+      'cat-fruits-de-mer': 2,
+      'cat-matieres-grasses': 60,
+      'cat-epicerie': 180,
+      'cat-feculents': 180,
+      'cat-cereales': 180,
+      'cat-condiments': 180,
+      'cat-herbes': 5,
+    };
+
+    const limit = shelfLife[categoryId] || 14;
+    const remaining = limit - daysSinceAdded;
+
+    if (remaining <= 0) return { label: 'Périmé ?', color: 'text-rose-600 bg-rose-50 border-rose-200', icon: 'AlertTriangle' };
+    if (remaining <= 2) return { label: 'À vérifier', color: 'text-amber-600 bg-amber-50 border-amber-200', icon: 'Clock' };
+    return null;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, ingredientId: string) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    const threshold = 60;
+
+    if (Math.abs(diff) > threshold) {
+      // Horizontal swipe to toggle stock (natural gesture)
+      onTogglePantryItem(ingredientId);
+    }
+    setTouchStartX(null);
   };
 
   return (
@@ -90,13 +323,115 @@ export const PantryModal: React.FC<PantryModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <label className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              isScanning ? 'bg-slate-200 text-slate-400' : 'bg-amber-500 hover:bg-amber-400 text-slate-900 shadow-md shadow-amber-500/20'
+            }`}>
+              {isScanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              <span>{isScanning ? 'Analyse...' : 'Scanner Ticket/Facture'}</span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleScanReceipt}
+                className="hidden"
+                disabled={isScanning}
+              />
+            </label>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
+
+        {/* Scan Results Banner */}
+        {scanResults && (
+          <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 border border-blue-500/30 animate-in slide-in-from-top duration-300">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                <FileText className="w-5 h-5" />
+                <h3 className="font-bold">Résultats du scan ({scanResults.length} produits)</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setScanResults(null)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleConfirmScan}
+                  className="px-4 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                >
+                  Valider l'inventaire
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+              {scanResults.map((res, i) => (
+                <div
+                  key={i}
+                  className={`p-1.5 rounded-xl text-[11px] font-medium border flex items-center gap-2 transition-all ${
+                    res.matchedIngredientId
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30'
+                      : 'bg-rose-50/50 text-rose-600 border-rose-200 dark:bg-rose-950/20 dark:border-rose-900/50'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 ${res.matchedIngredientId ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                    {res.matchedIngredientId ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                  </div>
+
+                  <div className="flex flex-col">
+                    <span className="font-bold">{res.name} <span className="opacity-60">x{res.quantity}</span></span>
+                    {!res.matchedIngredientId && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <select
+                          className="bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900 rounded-md text-[9px] px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-rose-500 flex-1"
+                          onChange={(e) => handleLinkIngredient(i, e.target.value)}
+                          value=""
+                        >
+                          <option value="">Lier à...</option>
+                          {ingredients
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map(ing => (
+                              <option key={ing.id} value={ing.id}>{translateIngredient(ing.id, ing.name)}</option>
+                            ))
+                          }
+                        </select>
+                        <button
+                          onClick={() => handleQuickCreateIngredient(i)}
+                          className="p-1 rounded-md bg-emerald-500 text-white hover:bg-emerald-600"
+                          title="Créer cet ingrédient"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                    {res.matchedIngredientId && (
+                      <span className="text-[9px] opacity-70">Lier à : {translateIngredient(res.matchedIngredientId, ingredients.find(ig => ig.id === res.matchedIngredientId)?.name)}</span>
+                    )}
+                  </div>
+
+                  {res.matchedIngredientId && (
+                    <button
+                      onClick={() => handleLinkIngredient(i, undefined as any)}
+                      className="p-1 hover:bg-black/5 rounded"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {!scanResults.some(r => r.matchedIngredientId) && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 font-medium italic">
+                ⚠️ Aucun ingrédient n'a été reconnu dans votre base. Vous devrez peut-être les cocher manuellement.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Tab switcher */}
         <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 flex-wrap bg-white dark:bg-slate-900">
@@ -122,6 +457,13 @@ export const PantryModal: React.FC<PantryModalProps> = ({
               <Sparkles className="w-4 h-4 text-amber-500" />
               <span>Anti-Gaspillage ({antiWasteMatches.filter(m => m.matchPercentage > 0).length})</span>
             </button>
+            <button
+              onClick={handleAskChefAI}
+              className="px-4 py-2 rounded-t-xl text-sm font-bold flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all"
+            >
+              <ChefHat className="w-4 h-4" />
+              <span>Chef Magique IA</span>
+            </button>
           </div>
 
           {activeTab === 'stock' && inStockCount > 0 && (
@@ -132,6 +474,18 @@ export const PantryModal: React.FC<PantryModalProps> = ({
               Tout désélectionner
             </button>
           )}
+        </div>
+
+        {/* Search & Category Filter */}
+        <div className="px-4 sm:px-6 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+           <button
+             onClick={handleSearchByBarcode}
+             className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all shadow-sm"
+           >
+             <Barcode className="w-4 h-4" />
+             <span>Scanner Code-Barres</span>
+           </button>
+           <p className="text-[10px] text-slate-400 italic flex-1 text-right">Utilise OpenFoodFacts pour identifier vos produits</p>
         </div>
 
         {/* Content Body */}
@@ -203,6 +557,8 @@ export const PantryModal: React.FC<PantryModalProps> = ({
                       key={ing.id}
                       type="button"
                       onClick={() => onTogglePantryItem(ing.id)}
+                      onTouchStart={handleTouchStart}
+                      onTouchEnd={(e) => handleTouchEnd(e, ing.id)}
                       className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-2.5 select-none ${
                         isInStock
                           ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 text-emerald-950 dark:text-emerald-100 shadow-sm'
@@ -216,9 +572,19 @@ export const PantryModal: React.FC<PantryModalProps> = ({
                           }`}>
                             {translateIngredient(ing.id, ing.name)}
                           </p>
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate">
-                            {category ? translateIngredientCategory(category.id, category.name) : ''}
-                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium truncate">
+                              {category ? translateIngredientCategory(category.id, category.name) : ''}
+                            </p>
+                            {isInStock && (() => {
+                              const expiry = getExpiryInfo(ing.id, ing.categoryId);
+                              return expiry ? (
+                                <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-bold border ${expiry.color}`}>
+                                  {expiry.label}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
 
                         <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 border transition-all ${

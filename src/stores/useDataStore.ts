@@ -27,6 +27,9 @@ interface DataState {
   checkedMap: Record<string, boolean>;
   customItems: CustomShoppingItem[];
   pantryMap: Record<string, boolean>;
+  pantryAddedDates: Record<string, string>;
+  totalSavingsEur: number;
+  weeklyHistory: WeeklyHistoryItem[];
   isLoaded: boolean;
 
   // Actions
@@ -38,6 +41,9 @@ interface DataState {
   setCheckedMap: (map: Record<string, boolean>) => void;
   setCustomItems: (items: CustomShoppingItem[]) => void;
   setPantryMap: (map: Record<string, boolean>) => void;
+  setPantryAddedDates: (map: Record<string, string>) => void;
+  addSavings: (amount: number) => void;
+  archiveWeeklyPlan: (summary: WeeklyHistoryItem) => void;
   setIsLoaded: (isLoaded: boolean) => void;
 
   // Business Logic Actions (from App.tsx)
@@ -70,6 +76,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   checkedMap: {},
   customItems: [],
   pantryMap: {},
+  pantryAddedDates: {},
+  totalSavingsEur: Number(localStorage.getItem('meal_total_savings') || 0),
+  weeklyHistory: JSON.parse(localStorage.getItem('meal_weekly_history') || '[]'),
   isLoaded: false,
 
   setRecipes: (recipes) => set({ recipes }),
@@ -80,6 +89,17 @@ export const useDataStore = create<DataState>((set, get) => ({
   setCheckedMap: (checkedMap) => set({ checkedMap }),
   setCustomItems: (customItems) => set({ customItems }),
   setPantryMap: (pantryMap) => set({ pantryMap }),
+  setPantryAddedDates: (pantryAddedDates) => set({ pantryAddedDates }),
+  addSavings: (amount) => {
+    const newVal = get().totalSavingsEur + amount;
+    set({ totalSavingsEur: newVal });
+    localStorage.setItem('meal_total_savings', newVal.toString());
+  },
+  archiveWeeklyPlan: (summary) => {
+    const history = [summary, ...get().weeklyHistory].slice(0, 52); // Keep 1 year
+    set({ weeklyHistory: history });
+    localStorage.setItem('meal_weekly_history', JSON.stringify(history));
+  },
   setIsLoaded: (isLoaded) => set({ isLoaded }),
 
   updateWeeklyPlan: (newPlan) => {
@@ -182,19 +202,40 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   togglePantryItem: (ingredientId) => {
-    const updated = { ...get().pantryMap, [ingredientId]: !get().pantryMap[ingredientId] };
-    set({ pantryMap: updated });
-    savePantryMap(updated);
+    const isNowInStock = !get().pantryMap[ingredientId];
+    const updatedPantry = { ...get().pantryMap, [ingredientId]: isNowInStock };
+    const updatedDates = { ...get().pantryAddedDates };
+
+    if (isNowInStock) {
+      updatedDates[ingredientId] = new Date().toISOString();
+    } else {
+      delete updatedDates[ingredientId];
+    }
+
+    set({ pantryMap: updatedPantry, pantryAddedDates: updatedDates });
+    savePantryMap(updatedPantry);
+    localStorage.setItem('meal_pantry_dates', JSON.stringify(updatedDates));
   },
 
   batchSetPantry: (updates) => {
-    set({ pantryMap: updates });
+    const currentDates = { ...get().pantryAddedDates };
+    const newDates: Record<string, string> = {};
+
+    Object.entries(updates).forEach(([id, inStock]) => {
+      if (inStock) {
+        newDates[id] = currentDates[id] || new Date().toISOString();
+      }
+    });
+
+    set({ pantryMap: updates, pantryAddedDates: newDates });
     savePantryMap(updates);
+    localStorage.setItem('meal_pantry_dates', JSON.stringify(newDates));
   },
 
   clearPantry: () => {
-    set({ pantryMap: {} });
+    set({ pantryMap: {}, pantryAddedDates: {} });
     savePantryMap({});
+    localStorage.removeItem('meal_pantry_dates');
   },
 
   importDatabase: (data) => {

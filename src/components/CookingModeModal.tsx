@@ -17,11 +17,14 @@ import {
   CheckCircle2,
   Clock,
   ChefHat,
-  ListFilter
+  ListFilter,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { Recipe, Ingredient, IngredientCategory, UnitType } from '../types';
 import { formatQuantity } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useDataStore } from '../stores/useDataStore';
 
 interface CookingModeModalProps {
   recipe: Recipe | null;
@@ -64,6 +67,7 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
   onClose
 }) => {
   const { translateRecipe, translateIngredient, translateUnit } = useLanguage();
+  const { pantryMap, batchSetPantry, addSavings } = useDataStore();
 
   if (!recipe) return null;
 
@@ -78,6 +82,9 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
   const [showIngredientsDrawer, setShowIngredientsDrawer] = useState<boolean>(false);
   const [wakeLockActive, setWakeLockActive] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isListening, setIsListening] = useState<boolean>(false);
+  const [voiceSupported, setVoiceListeningSupported] = useState<boolean>(false);
+  const recognitionRef = useRef<any>(null);
 
   // Timer state
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number>(0);
@@ -106,6 +113,48 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
       }
     };
   }, []);
+
+  // Voice Commands Setup
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setVoiceListeningSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.lang = 'fr-FR';
+
+      recognition.onresult = (event: any) => {
+        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        console.log('Voice Command:', command);
+
+        if (command.includes('suivant') || command.includes('suivante')) {
+          setCurrentStepIndex(prev => Math.min(steps.length - 1, prev + 1));
+        } else if (command.includes('précédent') || command.includes('précédente')) {
+          setCurrentStepIndex(prev => Math.max(0, prev - 1));
+        } else if (command.includes('ingrédient') || command.includes('liste')) {
+          setShowIngredientsDrawer(true);
+        } else if (command.includes('fermer') || command.includes('masquer')) {
+          setShowIngredientsDrawer(false);
+        }
+      };
+
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => { if (isListening) recognition.start(); };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (recognitionRef.current) {
+      if (isListening) {
+        try { recognitionRef.current.start(); } catch (e) {}
+      } else {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+    }
+  }, [isListening]);
 
   // Timer Tick
   useEffect(() => {
@@ -252,6 +301,21 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
             </span>
           </button>
 
+          {/* Voice Command Toggle */}
+          {voiceSupported && (
+            <button
+              onClick={() => setIsListening(!isListening)}
+              className={`p-2 rounded-xl transition-all ${
+                isListening
+                  ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/20'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+              title={isListening ? "Désactiver la voix" : "Activer la commande vocale (Dites 'Suivant')"}
+            >
+              {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+            </button>
+          )}
+
           {/* Fullscreen Toggle */}
           <button
             onClick={toggleFullscreen}
@@ -354,7 +418,26 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
               <button
                 onClick={() => {
                   playAlarmSound();
-                  alert('Félicitations ! Votre plat est prêt à être dégusté ! 🍽️ Bon appétit !');
+
+                  // Sortie de placard automatique
+                  const recipeIngredientIds = recipe.ingredients.map(i => i.ingredientId);
+                  const inPantryUsed = recipeIngredientIds.filter(id => pantryMap[id]);
+
+                  if (inPantryUsed.length > 0) {
+                    if (confirm(`Bravo ! Voulez-vous retirer les ${inPantryUsed.length} ingrédients utilisés de votre stock (placard/frigo) ?`)) {
+                      const newPantry = { ...pantryMap };
+                      inPantryUsed.forEach(id => {
+                        newPantry[id] = false;
+                      });
+                      batchSetPantry(newPantry);
+
+                      // Calcul des économies (estimation : 1.5€ par ingrédient sauvé)
+                      addSavings(inPantryUsed.length * 1.5);
+                    }
+                  } else {
+                    alert('Félicitations ! Votre plat est prêt à être dégusté ! 🍽️ Bon appétit !');
+                  }
+
                   onClose();
                 }}
                 className="px-6 py-3 rounded-2xl text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20"
