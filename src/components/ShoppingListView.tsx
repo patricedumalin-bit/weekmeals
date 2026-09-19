@@ -82,47 +82,50 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   const [customUnit, setCustomUnit] = useState<UnitType>('unit');
 
   // Compute calculated shopping list
-  const { groupedByCategory, totalItemsCount, checkedItemsCount, pantryItemsCount } = calculateShoppingList(
-    weeklyPlan,
-    recipes,
-    ingredients,
-    ingredientCategories,
-    checkedMap,
-    customItems,
-    pantryMap,
-    filterHidePantry
-  );
+  const shoppingListData = useMemo(() => {
+    return calculateShoppingList(
+      weeklyPlan,
+      recipes,
+      ingredients,
+      ingredientCategories,
+      checkedMap,
+      customItems,
+      pantryMap,
+      filterHidePantry
+    );
+  }, [weeklyPlan, recipes, ingredients, ingredientCategories, checkedMap, customItems, pantryMap, filterHidePantry]);
+
+  const { groupedByCategory, totalItemsCount, checkedItemsCount, pantryItemsCount } = shoppingListData;
 
   // Calculer le budget total estimé de la liste de courses et par catégorie
-  let estimatedTotalBudget = 0;
-  const budgetByCategory: Record<string, { name: string; amount: number; color: string }> = {};
+  const budgetData = useMemo(() => {
+    let estimatedTotalBudget = 0;
+    const budgetByCategory: Record<string, { name: string; amount: number; color: string }> = {};
 
-  groupedByCategory.forEach(group => {
-    let categoryTotal = 0;
-    group.items.forEach(item => {
-      // On n'ajoute au budget que si l'article n'est pas déjà coché ou déjà en stock
-      if (!item.checked && !item.inPantry) {
-        const itemObj = ingredients.find(i => i.id === item.ingredientId);
-        const cost = getIngredientCost(
-          item.ingredientId,
-          item.totalQuantity,
-          item.unit,
-          item.categoryId,
-          itemObj?.name || item.ingredientName
-        );
+    groupedByCategory.forEach(group => {
+      const catName = translateIngredientCategory(group.category.id, group.category.name);
+      const catColor = group.category.color || 'var(--primary)';
+
+      let categoryTotal = 0;
+      group.items.forEach(item => {
+        const cost = getIngredientCost(item.ingredientId, item.totalQuantity, item.unit);
         categoryTotal += cost;
-        estimatedTotalBudget += cost;
+      });
+
+      if (categoryTotal > 0) {
+        budgetByCategory[group.category.id] = {
+          name: catName,
+          amount: categoryTotal,
+          color: catColor
+        };
+        estimatedTotalBudget += categoryTotal;
       }
     });
 
-    if (categoryTotal > 0) {
-      budgetByCategory[group.category.id] = {
-        name: translateIngredientCategory(group.category.id, group.category.name),
-        amount: categoryTotal,
-        color: group.category.color
-      };
-    }
-  });
+    return { estimatedTotalBudget, budgetByCategory };
+  }, [groupedByCategory, translateIngredientCategory]);
+
+  const { estimatedTotalBudget, budgetByCategory } = budgetData;
 
   const progressPercentage = totalItemsCount > 0
     ? Math.round((checkedItemsCount / totalItemsCount) * 100)

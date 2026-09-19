@@ -1,4 +1,11 @@
-import { 
+import {
+  get,
+  set,
+  del,
+  clear,
+  update
+} from 'idb-keyval';
+import {
   IngredientCategory, 
   Ingredient, 
   RecipeCategory, 
@@ -17,13 +24,9 @@ const STORAGE_KEYS = {
   SHOPPING_CHECKED: 'meal_app_shopping_checked_v2',
   CUSTOM_SHOPPING: 'meal_app_custom_shopping_v2',
   PANTRY: 'meal_app_pantry_v1',
+  MIGRATED: 'meal_app_migrated_to_idb'
 };
 
-// The default recipe/ingredient catalog (~2600 recipes, ~1200 ingredients) is one
-// of the heaviest parts of the app. It is dynamically imported (instead of a
-// top-level static import) so its dedicated build chunk is only downloaded once
-// actually needed, letting the initial app shell render/interact sooner.
-// The import is cached so repeated calls don't re-fetch the chunk.
 let initialDataPromise: Promise<typeof import('../data/initialData')> | null = null;
 function loadInitialDataModule() {
   if (!initialDataPromise) {
@@ -32,7 +35,37 @@ function loadInitialDataModule() {
   return initialDataPromise;
 }
 
+/**
+ * Migrates data from localStorage to IndexedDB if not already done.
+ */
+async function migrateFromLocalStorage() {
+  const isMigrated = localStorage.getItem(STORAGE_KEYS.MIGRATED);
+  if (isMigrated === 'true') return;
+
+  console.log('Migrating data from localStorage to IndexedDB...');
+
+  for (const [key, storageKey] of Object.entries(STORAGE_KEYS)) {
+    if (storageKey === STORAGE_KEYS.MIGRATED) continue;
+
+    const localData = localStorage.getItem(storageKey);
+    if (localData) {
+      try {
+        const parsed = JSON.parse(localData);
+        await set(storageKey, parsed);
+        console.log(`Migrated ${key} successfully.`);
+      } catch (e) {
+        console.warn(`Failed to migrate ${key}:`, e);
+      }
+    }
+  }
+
+  localStorage.setItem(STORAGE_KEYS.MIGRATED, 'true');
+  console.log('Migration complete.');
+}
+
 export async function loadStoredData() {
+  await migrateFromLocalStorage();
+
   const {
     INITIAL_INGREDIENT_CATEGORIES,
     INITIAL_INGREDIENTS,
@@ -43,66 +76,46 @@ export async function loadStoredData() {
   } = await loadInitialDataModule();
 
   try {
-    const rawRecipes = localStorage.getItem(STORAGE_KEYS.RECIPES);
-    const rawRecipeCats = localStorage.getItem(STORAGE_KEYS.RECIPE_CATEGORIES);
-    const rawIngredients = localStorage.getItem(STORAGE_KEYS.INGREDIENTS);
-    const rawIngCats = localStorage.getItem(STORAGE_KEYS.INGREDIENT_CATEGORIES);
-    const rawWeeklyPlan = localStorage.getItem(STORAGE_KEYS.WEEKLY_PLAN);
-    const rawChecked = localStorage.getItem(STORAGE_KEYS.SHOPPING_CHECKED);
-    const rawCustom = localStorage.getItem(STORAGE_KEYS.CUSTOM_SHOPPING);
-    const rawPantry = localStorage.getItem(STORAGE_KEYS.PANTRY);
+    const recipesData = await get<Recipe[]>(STORAGE_KEYS.RECIPES);
+    const recipeCatsData = await get<RecipeCategory[]>(STORAGE_KEYS.RECIPE_CATEGORIES);
+    const ingredientsData = await get<Ingredient[]>(STORAGE_KEYS.INGREDIENTS);
+    const ingCatsData = await get<IngredientCategory[]>(STORAGE_KEYS.INGREDIENT_CATEGORIES);
+    const weeklyPlanData = await get<WeeklyPlan>(STORAGE_KEYS.WEEKLY_PLAN);
+    const checkedMapData = await get<Record<string, boolean>>(STORAGE_KEYS.SHOPPING_CHECKED);
+    const customItemsData = await get<CustomShoppingItem[]>(STORAGE_KEYS.CUSTOM_SHOPPING);
+    const pantryMapData = await get<Record<string, boolean>>(STORAGE_KEYS.PANTRY);
 
     let recipes: Recipe[] = INITIAL_RECIPES;
-    if (rawRecipes) {
-      try {
-        const parsed: Recipe[] = JSON.parse(rawRecipes);
-        if (parsed.length === 0) {
-          recipes = [];
-        } else {
-          // Normalise les categoryId "synonymes" (ex: 'rcat-starters') vers les
-          // 8 catégories officielles, y compris pour les recettes déjà stockées
-          // localement lors d'une session précédente.
-          const normalizedParsed = parsed.map(r => ({ ...r, categoryId: normalizeRecipeCategoryId(r.categoryId) }));
-          const merged: Recipe[] = [...normalizedParsed];
-          const existingIds = new Set(normalizedParsed.map(r => r.id));
-          for (const defaultRecipe of INITIAL_RECIPES) {
-            if (!existingIds.has(defaultRecipe.id)) {
-              merged.push(defaultRecipe);
-            }
-          }
-          recipes = merged;
+    if (recipesData) {
+      const normalizedParsed = recipesData.map(r => ({ ...r, categoryId: normalizeRecipeCategoryId(r.categoryId) }));
+      const merged: Recipe[] = [...normalizedParsed];
+      const existingIds = new Set(normalizedParsed.map(r => r.id));
+      for (const defaultRecipe of INITIAL_RECIPES) {
+        if (!existingIds.has(defaultRecipe.id)) {
+          merged.push(defaultRecipe);
         }
-      } catch (e) {
-        recipes = INITIAL_RECIPES;
       }
+      recipes = merged;
     }
 
     let ingredients: Ingredient[] = INITIAL_INGREDIENTS;
-    if (rawIngredients) {
-      try {
-        const parsedIngs: Ingredient[] = JSON.parse(rawIngredients);
-        if (parsedIngs.length === 0) {
-          ingredients = [];
-        } else {
-          const existingIngIds = new Set(parsedIngs.map(i => i.id));
-          const mergedIngs = [...parsedIngs];
-          for (const defaultIng of INITIAL_INGREDIENTS) {
-            if (!existingIngIds.has(defaultIng.id)) {
-              mergedIngs.push(defaultIng);
-            }
-          }
-          ingredients = mergedIngs;
+    if (ingredientsData) {
+      const existingIngIds = new Set(ingredientsData.map(i => i.id));
+      const mergedIngs = [...ingredientsData];
+      for (const defaultIng of INITIAL_INGREDIENTS) {
+        if (!existingIngIds.has(defaultIng.id)) {
+          mergedIngs.push(defaultIng);
         }
-      } catch (e) {
-        ingredients = INITIAL_INGREDIENTS;
       }
+      ingredients = mergedIngs;
     }
-    const recipeCategories: RecipeCategory[] = rawRecipeCats ? JSON.parse(rawRecipeCats) : INITIAL_RECIPE_CATEGORIES;
-    const ingredientCategories: IngredientCategory[] = rawIngCats ? JSON.parse(rawIngCats) : INITIAL_INGREDIENT_CATEGORIES;
-    const weeklyPlan: WeeklyPlan = rawWeeklyPlan ? JSON.parse(rawWeeklyPlan) : INITIAL_WEEKLY_PLAN;
-    const checkedMap: Record<string, boolean> = rawChecked ? JSON.parse(rawChecked) : {};
-    const customItems: CustomShoppingItem[] = rawCustom ? JSON.parse(rawCustom) : [];
-    const pantryMap: Record<string, boolean> = rawPantry ? JSON.parse(rawPantry) : INITIAL_PANTRY;
+
+    const recipeCategories = recipeCatsData || INITIAL_RECIPE_CATEGORIES;
+    const ingredientCategories = ingCatsData || INITIAL_INGREDIENT_CATEGORIES;
+    const weeklyPlan = weeklyPlanData || INITIAL_WEEKLY_PLAN;
+    const checkedMap = checkedMapData || {};
+    const customItems = customItemsData || [];
+    const pantryMap = pantryMapData || INITIAL_PANTRY;
 
     return {
       recipes,
@@ -115,7 +128,7 @@ export async function loadStoredData() {
       pantryMap
     };
   } catch (error) {
-    console.error('Error loading data from localStorage:', error);
+    console.error('Error loading data from IndexedDB:', error);
     return {
       recipes: INITIAL_RECIPES,
       recipeCategories: INITIAL_RECIPE_CATEGORIES,
@@ -129,47 +142,47 @@ export async function loadStoredData() {
   }
 }
 
-export function savePantryMap(pantryMap: Record<string, boolean>) {
-  localStorage.setItem(STORAGE_KEYS.PANTRY, JSON.stringify(pantryMap));
+export async function savePantryMap(pantryMap: Record<string, boolean>) {
+  await set(STORAGE_KEYS.PANTRY, pantryMap);
 }
 
-export function saveRecipes(recipes: Recipe[]) {
-  localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify(recipes));
+export async function saveRecipes(recipes: Recipe[]) {
+  await set(STORAGE_KEYS.RECIPES, recipes);
 }
 
-export function saveRecipeCategories(categories: RecipeCategory[]) {
-  localStorage.setItem(STORAGE_KEYS.RECIPE_CATEGORIES, JSON.stringify(categories));
+export async function saveRecipeCategories(categories: RecipeCategory[]) {
+  await set(STORAGE_KEYS.RECIPE_CATEGORIES, categories);
 }
 
-export function saveIngredients(ingredients: Ingredient[]) {
-  localStorage.setItem(STORAGE_KEYS.INGREDIENTS, JSON.stringify(ingredients));
+export async function saveIngredients(ingredients: Ingredient[]) {
+  await set(STORAGE_KEYS.INGREDIENTS, ingredients);
 }
 
-export function saveIngredientCategories(categories: IngredientCategory[]) {
-  localStorage.setItem(STORAGE_KEYS.INGREDIENT_CATEGORIES, JSON.stringify(categories));
+export async function saveIngredientCategories(categories: IngredientCategory[]) {
+  await set(STORAGE_KEYS.INGREDIENT_CATEGORIES, categories);
 }
 
-export function saveWeeklyPlan(plan: WeeklyPlan) {
-  localStorage.setItem(STORAGE_KEYS.WEEKLY_PLAN, JSON.stringify(plan));
+export async function saveWeeklyPlan(plan: WeeklyPlan) {
+  await set(STORAGE_KEYS.WEEKLY_PLAN, plan);
 }
 
-export function saveCheckedMap(checkedMap: Record<string, boolean>) {
-  localStorage.setItem(STORAGE_KEYS.SHOPPING_CHECKED, JSON.stringify(checkedMap));
+export async function saveCheckedMap(checkedMap: Record<string, boolean>) {
+  await set(STORAGE_KEYS.SHOPPING_CHECKED, checkedMap);
 }
 
-export function saveCustomShoppingItems(items: CustomShoppingItem[]) {
-  localStorage.setItem(STORAGE_KEYS.CUSTOM_SHOPPING, JSON.stringify(items));
+export async function saveCustomShoppingItems(items: CustomShoppingItem[]) {
+  await set(STORAGE_KEYS.CUSTOM_SHOPPING, items);
 }
 
-export function resetToDefaults() {
-  localStorage.removeItem(STORAGE_KEYS.RECIPES);
-  localStorage.removeItem(STORAGE_KEYS.RECIPE_CATEGORIES);
-  localStorage.removeItem(STORAGE_KEYS.INGREDIENTS);
-  localStorage.removeItem(STORAGE_KEYS.INGREDIENT_CATEGORIES);
-  localStorage.removeItem(STORAGE_KEYS.WEEKLY_PLAN);
-  localStorage.removeItem(STORAGE_KEYS.SHOPPING_CHECKED);
-  localStorage.removeItem(STORAGE_KEYS.CUSTOM_SHOPPING);
-  localStorage.removeItem(STORAGE_KEYS.PANTRY);
+export async function resetToDefaults() {
+  await del(STORAGE_KEYS.RECIPES);
+  await del(STORAGE_KEYS.RECIPE_CATEGORIES);
+  await del(STORAGE_KEYS.INGREDIENTS);
+  await del(STORAGE_KEYS.INGREDIENT_CATEGORIES);
+  await del(STORAGE_KEYS.WEEKLY_PLAN);
+  await del(STORAGE_KEYS.SHOPPING_CHECKED);
+  await del(STORAGE_KEYS.CUSTOM_SHOPPING);
+  await del(STORAGE_KEYS.PANTRY);
 }
 
 export async function generateFullGenericDatabase() {
@@ -182,14 +195,17 @@ export async function generateFullGenericDatabase() {
     INITIAL_PANTRY
   } = await loadInitialDataModule();
 
-  saveRecipes(INITIAL_RECIPES);
-  saveRecipeCategories(INITIAL_RECIPE_CATEGORIES);
-  saveIngredients(INITIAL_INGREDIENTS);
-  saveIngredientCategories(INITIAL_INGREDIENT_CATEGORIES);
-  saveWeeklyPlan(INITIAL_WEEKLY_PLAN);
-  savePantryMap(INITIAL_PANTRY);
-  saveCheckedMap({});
-  saveCustomShoppingItems([]);
+  await Promise.all([
+    saveRecipes(INITIAL_RECIPES),
+    saveRecipeCategories(INITIAL_RECIPE_CATEGORIES),
+    saveIngredients(INITIAL_INGREDIENTS),
+    saveIngredientCategories(INITIAL_INGREDIENT_CATEGORIES),
+    saveWeeklyPlan(INITIAL_WEEKLY_PLAN),
+    savePantryMap(INITIAL_PANTRY),
+    saveCheckedMap({}),
+    saveCustomShoppingItems([])
+  ]);
+
   return {
     recipes: INITIAL_RECIPES,
     recipeCategories: INITIAL_RECIPE_CATEGORIES,
@@ -202,16 +218,16 @@ export async function generateFullGenericDatabase() {
   };
 }
 
-export function clearDatabase() {
-  console.log('Clearing database in localStorage...');
-  localStorage.setItem(STORAGE_KEYS.RECIPES, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.RECIPE_CATEGORIES, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.INGREDIENTS, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.INGREDIENT_CATEGORIES, JSON.stringify([]));
-  localStorage.setItem(STORAGE_KEYS.WEEKLY_PLAN, JSON.stringify({ meals: [] }));
-  localStorage.setItem(STORAGE_KEYS.SHOPPING_CHECKED, JSON.stringify({}));
-  localStorage.setItem(STORAGE_KEYS.CUSTOM_SHOPPING, JSON.stringify([]));
-  console.log('Database cleared.');
+export async function clearDatabase() {
+  await Promise.all([
+    set(STORAGE_KEYS.RECIPES, []),
+    set(STORAGE_KEYS.RECIPE_CATEGORIES, []),
+    set(STORAGE_KEYS.INGREDIENTS, []),
+    set(STORAGE_KEYS.INGREDIENT_CATEGORIES, []),
+    set(STORAGE_KEYS.WEEKLY_PLAN, { meals: [] }),
+    set(STORAGE_KEYS.SHOPPING_CHECKED, {}),
+    set(STORAGE_KEYS.CUSTOM_SHOPPING, [])
+  ]);
 }
 
 export function exportDatabaseJson(data: {

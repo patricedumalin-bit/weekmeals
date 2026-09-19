@@ -58,17 +58,18 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   onOpenPantry
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
-  const safeRecipes = Array.isArray(recipes) ? recipes : [];
-  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
-  const recipeMap = new Map<string, Recipe>(safeRecipes.map(r => [r.id, r]));
-  const catMap = new Map<string, RecipeCategory>(safeRecipeCategories.map(c => [c.id, c]));
+  const safeRecipes = useMemo(() => Array.isArray(recipes) ? recipes : [], [recipes]);
+  const safeRecipeCategories = useMemo(() => Array.isArray(recipeCategories) ? recipeCategories : [], [recipeCategories]);
 
-  const MEAL_PRESETS = [
+  const recipeMap = useMemo(() => new Map<string, Recipe>(safeRecipes.map(r => [r.id, r])), [safeRecipes]);
+  const catMap = useMemo(() => new Map<string, RecipeCategory>(safeRecipeCategories.map(c => [c.id, c])), [safeRecipeCategories]);
+
+  const MEAL_PRESETS = useMemo(() => [
     { label: t('presetMeals', { count: 5 }), count: 5 },
     { label: t('presetMeals', { count: 7 }), count: 7 },
     { label: t('presetMeals', { count: 10 }), count: 10 },
     { label: t('presetMeals', { count: 14 }), count: 14 },
-  ];
+  ], [t]);
 
   // Change total number of meals without specifying days
   const handleSetMealCount = (newCount: number) => {

@@ -108,6 +108,13 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 sm:gap-2 truncate">
+              {syncStatus === 'offline' && (
+                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-500 font-bold animate-pulse">
+                  <CloudOff className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  <span>{language === 'fr' ? 'Hors-ligne' : 'Offline'}</span>
+                  <span className="mx-1 opacity-40">•</span>
+                </span>
+              )}
               <span>{t('mealsPlannedCount', { count: weeklyPlan?.numberOfMeals ?? 7 })}</span>
               <span>•</span>
               <span className="flex items-center gap-1">
@@ -232,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
               {initial}
             </div>
             <span className="hidden lg:inline max-w-[90px] truncate">
-              {displayName}
+              {syncStatus === 'offline' ? (language === 'fr' ? 'Mode Hors-ligne' : 'Offline Mode') : displayName}
             </span>
             <span className="relative flex h-2 w-2">
               {syncStatus === 'syncing' && (

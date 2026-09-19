@@ -30,6 +30,8 @@ interface RecipeImportModalProps {
   onSaveNewIngredient?: (ingredient: Ingredient) => void;
 }
 
+import { parseRecipeWithAI, parseRecipeImageWithAI, AIProvider } from '../lib/aiService';
+
 export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   isOpen,
   onClose,
@@ -42,7 +44,8 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
 }) => {
   const { language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
-  
+  const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
+
   // Inputs
   const [pastedText, setPastedText] = useState('');
   const [recipeUrl, setRecipeUrl] = useState('');
@@ -56,385 +59,94 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   const [parsedRecipe, setParsedRecipe] = useState<Partial<Recipe> | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
-  // Intelligent local parser for text and recipe websites
-  const parseRecipeText = (text: string): Partial<Recipe> => {
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) throw new Error('Aucun texte à analyser');
-
-    let title = lines[0].replace(/^(recette\s*:\s*|titre\s*:\s*)/i, '');
-    let servings = 4;
-    let prepTime = 15;
-    let cookTime = 20;
-    const extractedIngredients: RecipeIngredient[] = [];
-    const extractedSteps: string[] = [];
-
-    // Detect servings
-    const servingsMatch = text.match(/(\d+)\s*(?:personnes?|pers|parts?|servings?)/i);
-    if (servingsMatch && servingsMatch[1]) {
-      servings = parseInt(servingsMatch[1], 10);
-    }
-
-    // Detect times
-    const prepMatch = text.match(/(?:préparation|prep)\s*:\s*(\d+)\s*min/i);
-    if (prepMatch && prepMatch[1]) prepTime = parseInt(prepMatch[1], 10);
-
-    const cookMatch = text.match(/(?:cuisson|cook)\s*:\s*(\d+)\s*min/i);
-    if (cookMatch && cookMatch[1]) cookTime = parseInt(cookMatch[1], 10);
-
-    let mode: 'meta' | 'ingredients' | 'steps' = 'meta';
-
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i];
-      const lower = line.toLowerCase();
-
-      if (lower.includes('ingrédient') || lower.includes('ingredients')) {
-        mode = 'ingredients';
-        continue;
-      }
-      if (lower.includes('étape') || lower.includes('preparation') || lower.includes('préparation') || lower.includes('instructions') || lower.includes('recette :')) {
-        mode = 'steps';
-        continue;
-      }
-
-      if (mode === 'ingredients') {
-        // Parse line as ingredient
-        const clean = line.replace(/^[-*•\d+.]\s*/, '').trim();
-        if (clean.length > 2) {
-          // Attempt quantity and unit parsing
-          const m = clean.match(/^(\d+(?:[.,]\d+)?|\d+\/\d+)?\s*(g|kg|ml|cl|l|c\.?\s*à\s*s(?:oupe)?|c\.?\s*à\s*c(?:afé)?|tbsp|tsp|gousses?|pincée?s?|tranches?|bo[iî]tes?|paquets?|pots?)?\s*(?:de\s+|d')?\s*(.+)$/i);
-          
-          let qty = 1;
-          let unit: UnitType = 'unit';
-          let ingName = clean;
-
-          if (m) {
-            if (m[1]) qty = parseFloat(m[1].replace(',', '.')) || 1;
-            const rawUnit = (m[2] || '').toLowerCase();
-            if (rawUnit.includes('g') && !rawUnit.includes('gousse')) unit = rawUnit === 'kg' ? 'kg' : 'g';
-            else if (rawUnit.includes('ml')) unit = 'ml';
-            else if (rawUnit.includes('cl')) unit = 'cl';
-            else if (rawUnit.includes('l')) unit = 'l';
-            else if (rawUnit.includes('soup') || rawUnit.includes('tbsp') || rawUnit.includes('c.à.s')) unit = 'tbsp';
-            else if (rawUnit.includes('caf') || rawUnit.includes('tsp') || rawUnit.includes('c.à.c')) unit = 'tsp';
-            else if (rawUnit.includes('gousse')) unit = 'clove';
-            else if (rawUnit.includes('pinc')) unit = 'pinch';
-            else if (rawUnit.includes('tranch')) unit = 'slice';
-            else if (rawUnit.includes('boite') || rawUnit.includes('boîte')) unit = 'can';
-            else if (rawUnit.includes('paquet')) unit = 'pack';
-
-            if (m[3]) ingName = m[3].trim();
-          }
-
-          // Match with known ingredients or fallback
-          const matchedIng = ingredients.find(ing => 
-            ing.name.toLowerCase().includes(ingName.toLowerCase()) || 
-            ingName.toLowerCase().includes(ing.name.toLowerCase())
-          );
-
-          extractedIngredients.push({
-            ingredientId: matchedIng ? matchedIng.id : `ing-${Date.now()}-${extractedIngredients.length}`,
-            quantity: qty,
-            unit,
-            notes: !matchedIng ? ingName : undefined
-          });
-        }
-      } else if (mode === 'steps') {
-        const cleanStep = line.replace(/^\d+[\s.)-]\s*/, '').trim();
-        if (cleanStep.length > 5) {
-          extractedSteps.push(cleanStep);
-        }
-      }
-    }
-
-    // Fallback if no explicit headers found
-    if (extractedIngredients.length === 0) {
-      extractedIngredients.push({
-        ingredientId: ingredients[0]?.id || 'ing-1',
-        quantity: 200,
-        unit: 'g',
-        notes: 'Ingrédient importé'
-      });
-    }
-
-    if (extractedSteps.length === 0) {
-      extractedSteps.push(...lines.slice(1, 5));
-    }
-
-    return {
-      title,
-      servings,
-      prepTimeMinutes: prepTime,
-      cookTimeMinutes: cookTime,
-      categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
-      difficulty: 'easy',
-      description: `Recette importée le ${new Date().toLocaleDateString('fr-FR')}`,
-      ingredients: extractedIngredients,
-      instructions: extractedSteps,
-      tags: ['Importé'],
-      rating: 1, // Default 1 star
-      isCustom: true
-    };
-  };
-
   const handleParse = async () => {
     setIsParsing(true);
     setParseError(null);
 
-    const userApiKey = (localStorage.getItem('groq_api_key') || '').trim();
+    const groqKey = localStorage.getItem('groq_api_key') || '';
+    const geminiKey = localStorage.getItem('gemini_api_key') || '';
+    const activeKey = aiProvider === 'groq' ? groqKey : geminiKey;
 
     try {
-      if (activeTab === 'text') {
-        if (!pastedText.trim()) throw new Error('Veuillez coller le texte de votre recette.');
+      if (activeTab === 'text' && !groqKey && !geminiKey) {
+        // Local parser fallback for simple text if no AI keys
         const parsed = parseRecipeText(pastedText);
         setParsedRecipe(parsed);
         return;
       }
 
-      // Check if API key is present for advanced features (URL / Photo)
-      if (!userApiKey) {
-        throw new Error("Pour analyser un Lien Web ou une Photo, veuillez d'abord renseigner votre Clé d'API Groq gratuite dans les paramètres de votre Profil (icône en haut à droite).");
+      if (!activeKey) {
+        throw new Error(`Veuillez renseigner votre Clé d'API ${aiProvider === 'groq' ? 'Groq' : 'Gemini'} dans votre Profil.`);
       }
 
-      if (activeTab === 'url') {
-        if (!recipeUrl.trim()) throw new Error('Veuillez entrer une URL valide.');
+      let aiResult;
+      if (activeTab === 'text' || activeTab === 'url') {
+        let contentToParse = activeTab === 'text' ? pastedText : recipeUrl;
 
-        // Simple call to a public free CORS proxy + Groq to read web content
-        const cleanUrl = recipeUrl.trim();
-        let webText = "";
-        try {
-          const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(cleanUrl)}`);
-          const proxyData = await proxyRes.json();
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(proxyData.contents, 'text/html');
-          // Extract main texts to give to Groq
-          webText = doc.body.innerText.slice(0, 12000);
-        } catch {
-          webText = `Analyser directement l'URL suivante si possible : ${cleanUrl}`;
-        }
-
-        const prompt = `Tu es un assistant culinaire expert et traducteur multilingue professionnel. Analyse le contenu web suivant extrait d'un site de cuisine ou l'URL pour en extraire la recette.
-Tu dois obligatoirement générer les traductions de cette recette pour les langues suivantes de l'application : fr, en, de, es, pt.
-Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown de code, SANS texte autour, JUSTE le JSON) respectant scrupuleusement cette structure TypeScript :
-{
-  "title": "Nom de la recette dans la langue d'origine ou français",
-  "servings": 4,
-  "prepTimeMinutes": 15,
-  "cookTimeMinutes": 20,
-  "difficulty": "easy" ou "medium" ou "hard",
-  "description": "Brève description ou provenance",
-  "ingredients": [
-    {
-      "name": "nom de l'ingrédient en français",
-      "quantity": 250,
-      "unit": "g" ou "unit" ou "tbsp" ou "ml",
-      "localizations": {
-        "fr": "Nom en français",
-        "en": "Name in English",
-        "de": "Name auf Deutsch",
-        "es": "Nombre en español",
-        "pt": "Nome em português"
-      }
-    }
-  ],
-  "instructions": [
-    "Étape 1...", "Étape 2..."
-  ],
-  "localizations": {
-    "fr": { "title": "Titre en français", "description": "Description en français", "instructions": ["Étape 1...", "Étape 2..."] },
-    "en": { "title": "Title in English", "description": "Description in English", "instructions": ["Step 1...", "Step 2..."] },
-    "de": { "title": "Titel auf Deutsch", "description": "Beschreibung auf Deutsch", "instructions": ["Schritt 1...", "Schritt 2..."] },
-    "es": { "title": "Título en español", "description": "Descripción en español", "instructions": ["Paso 1...", "Paso 2..."] },
-    "pt": { "title": "Título em português", "description": "Descrição em português", "instructions": ["Passo 1...", "Passo 2..."] }
-  }
-}
-
-Contenu Web :
-${webText}`;
-
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userApiKey}`
-          },
-          body: JSON.stringify({
-            model: 'openai/gpt-oss-120b',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' }
-          })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(`Erreur Groq AI (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API dans votre Profil."}`);
-        }
-
-        const data = await response.json();
-        const jsonText = data.choices?.[0]?.message?.content;
-        if (!jsonText) throw new Error("L'IA n'a pas pu déchiffrer la recette depuis la page web.");
-
-        const aiRecipe = JSON.parse(jsonText);
-
-        // Map extracted names to system ingredients and save them if new
-        const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
-          const norm = normalizeExternalIngredient(i.name || '');
-
-          // Check if there is an existing ingredient with either the exact ID OR the exact same name to prevent duplicates
-          const matchedExisting = ingredients.find(existing =>
-            existing.id === norm.ingredientId ||
-            existing.name.toLowerCase().trim() === (i.name || norm.cleanName).toLowerCase().trim()
-          );
-
-          const finalIngredientId = matchedExisting ? matchedExisting.id : norm.ingredientId;
-
-          if (!matchedExisting && onSaveNewIngredient) {
-            onSaveNewIngredient({
-              id: finalIngredientId,
-              name: i.name || norm.cleanName,
-              categoryId: 'cat-produce', // Fallback default category
-              defaultUnit: (i.unit || 'unit') as UnitType,
-              notes: 'Ingrédient importé par IA',
-              localizations: i.localizations || { fr: i.name }
-            });
+        if (activeTab === 'url') {
+          try {
+            const proxyRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(recipeUrl)}`);
+            const proxyData = await proxyRes.json();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(proxyData.contents, 'text/html');
+            contentToParse = `URL: ${recipeUrl}\n\nContenu: ${doc.body.innerText.slice(0, 10000)}`;
+          } catch (e) {
+            console.warn("Proxy failed, sending URL directly to AI");
           }
+        }
 
-          return {
-            ingredientId: finalIngredientId,
-            quantity: Number(i.quantity) || 1,
-            unit: (i.unit || 'unit') as UnitType,
-            notes: i.name || norm.cleanName
-          };
-        });
-
-        setParsedRecipe({
-          title: aiRecipe.title || 'Recette Web Importée',
-          servings: Number(aiRecipe.servings) || 4,
-          prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
-          cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
-          categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
-          difficulty: aiRecipe.difficulty || 'easy',
-          description: aiRecipe.description || `Importé depuis : ${cleanUrl}`,
-          ingredients: mappedIngredients,
-          instructions: aiRecipe.instructions || ['Suivre la recette originale.'],
-          tags: ['Web', 'Groq'],
-          rating: 1,
-          isCustom: true,
-          localizations: aiRecipe.localizations
-        });
-
+        aiResult = await parseRecipeWithAI(contentToParse, { provider: aiProvider, apiKey: activeKey });
       } else if (activeTab === 'photo') {
-        if (!selectedImage) throw new Error('Veuillez sélectionner ou glisser une photo.');
+        if (!selectedImage) throw new Error('Veuillez sélectionner une photo.');
+        aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey });
+      }
 
-        const prompt = `Analyse cette photo de recette de cuisine. Extrais toutes les informations requises et traduis la recette pour toutes les langues de l'application (fr, en, de, es, pt).
-Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette structure :
-{
-  "title": "Nom de la recette",
-  "servings": 4,
-  "prepTimeMinutes": 15,
-  "cookTimeMinutes": 20,
-  "difficulty": "easy" ou "medium" ou "hard",
-  "description": "Extrait d'un livre de cuisine ou d'une photo",
-  "ingredients": [
-    {
-      "name": "nom de l'ingrédient",
-      "quantity": 100,
-      "unit": "g" ou "unit" ou "ml",
-      "localizations": { "fr": "Nom", "en": "Name", "de": "Name", "es": "Nombre", "pt": "Nome" }
-    }
-  ],
-  "instructions": ["Étape 1...", "Étape 2..."],
-  "localizations": {
-    "fr": { "title": "Titre", "description": "Description", "instructions": ["Paso..."] },
-    "en": { "title": "Title", "description": "Description", "instructions": ["Step..."] },
-    "de": { "title": "Titel", "description": "Description", "instructions": ["Schritt..."] },
-    "es": { "title": "Título", "description": "Description", "instructions": ["Paso..."] },
-    "pt": { "title": "Título", "description": "Description", "instructions": ["Passo..."] }
-  }
-}`;
-
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${userApiKey}`
-          },
-          body: JSON.stringify({
-            model: 'qwen/qwen3.8-27b',
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: prompt },
-                  { type: 'image_url', image_url: { url: selectedImage } }
-                ]
-              }
-            ],
-            response_format: { type: 'json_object' }
-          })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq."}`);
-        }
-
-        const data = await response.json();
-        const jsonText = data.choices?.[0]?.message?.content;
-        if (!jsonText) throw new Error("L'IA n'a pas pu déchiffrer l'image ou structurer les données.");
-
-        const aiRecipe = JSON.parse(jsonText);
-
-        const mappedIngredients = (aiRecipe.ingredients || []).map((i: any) => {
-          const norm = normalizeExternalIngredient(i.name || '');
-
-          const matchedExisting = ingredients.find(existing =>
-            existing.id === norm.ingredientId ||
-            existing.name.toLowerCase().trim() === (i.name || norm.cleanName).toLowerCase().trim()
+      if (aiResult) {
+        const mappedIngredients = aiResult.ingredients.map((i: any) => {
+          const norm = normalizeExternalIngredient(i.name);
+          const matchedExisting = ingredients.find(ex =>
+            ex.id === norm.ingredientId || ex.name.toLowerCase().trim() === i.name.toLowerCase().trim()
           );
 
-          const finalIngredientId = matchedExisting ? matchedExisting.id : norm.ingredientId;
+          const finalId = matchedExisting ? matchedExisting.id : norm.ingredientId;
 
           if (!matchedExisting && onSaveNewIngredient) {
-            const rawName = i.name || norm.cleanName;
-            const normalizedName = rawName.replace(/œ/g, 'oe').replace(/Œ/g, 'Oe');
             onSaveNewIngredient({
-              id: finalIngredientId,
-              name: normalizedName,
+              id: finalId,
+              name: i.name,
               categoryId: 'cat-produce',
-              defaultUnit: (i.unit || 'unit') as UnitType,
-              notes: 'Ingrédient photo importé par IA',
-              localizations: i.localizations || { fr: normalizedName }
+              defaultUnit: i.unit as UnitType,
+              notes: 'Importé par IA',
+              localizations: i.localizations
             });
           }
 
           return {
-            ingredientId: finalIngredientId,
-            quantity: Number(i.quantity) || 1,
-            unit: (i.unit || 'unit') as UnitType,
-            notes: i.name || norm.cleanName
+            ingredientId: finalId,
+            quantity: i.quantity,
+            unit: i.unit as UnitType,
+            notes: i.name
           };
         });
 
         setParsedRecipe({
-          title: aiRecipe.title || 'Recette Photo Importée',
-          servings: Number(aiRecipe.servings) || 4,
-          prepTimeMinutes: Number(aiRecipe.prepTimeMinutes) || 15,
-          cookTimeMinutes: Number(aiRecipe.cookTimeMinutes) || 20,
-          categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id || 'rcat-autre',
-          difficulty: aiRecipe.difficulty || 'easy',
-          description: aiRecipe.description || 'Numérisé avec succès par Groq Vision',
+          title: aiResult.title,
+          servings: aiResult.servings,
+          prepTimeMinutes: aiResult.prepTimeMinutes,
+          cookTimeMinutes: aiResult.cookTimeMinutes,
+          categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id,
+          difficulty: aiResult.difficulty as any,
+          description: aiResult.description,
           ingredients: mappedIngredients,
-          instructions: aiRecipe.instructions || ['Suivre les étapes extraites.'],
-          tags: ['Photo', 'Groq'],
+          instructions: aiResult.instructions,
+          tags: ['AI-Import'],
           rating: 1,
           isCustom: true,
-          localizations: aiRecipe.localizations
+          localizations: aiResult.localizations
         });
       }
     } catch (err: any) {
-      setParseError(err.message || 'Erreur lors de l’analyse');
+      setParseError(err.message || "Une erreur est survenue lors de l'analyse.");
     } finally {
       setIsParsing(false);
     }
@@ -644,51 +356,71 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
 
         {/* Source Tabs */}
         {!parsedRecipe && (
-          <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
-            <button
-              onClick={() => setActiveTab('text')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
-                activeTab === 'text'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>Texte / Copier-Coller</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('url')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
-                activeTab === 'url'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-              }`}
-            >
-              <Globe className="w-4 h-4" />
-              <span>Lien Web (URL)</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('photo')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
-                activeTab === 'photo'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              <span>Photo / Document</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('themealdb')}
-              className={`px-4 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all ${
-                activeTab === 'themealdb'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40 dark:bg-blue-950/30'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>TheMealDB</span>
-            </button>
+          <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              <button
+                onClick={() => setActiveTab('text')}
+                className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                  activeTab === 'text'
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Texte</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('url')}
+                className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                  activeTab === 'url'
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                <span>Lien Web</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('photo')}
+                className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                  activeTab === 'photo'
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Camera className="w-4 h-4" />
+                <span>Photo</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('themealdb')}
+                className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                  activeTab === 'themealdb'
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>TheMealDB</span>
+              </button>
+            </div>
+
+            {/* Provider Selector */}
+            {activeTab !== 'themealdb' && (
+              <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg mb-2 sm:mb-0">
+                <button
+                  onClick={() => setAIProvider('groq')}
+                  className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${aiProvider === 'groq' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600' : 'text-slate-500'}`}
+                >
+                  Groq
+                </button>
+                <button
+                  onClick={() => setAIProvider('gemini')}
+                  className={`px-2 py-1 rounded text-[10px] font-bold transition-all ${aiProvider === 'gemini' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600' : 'text-slate-500'}`}
+                >
+                  Gemini
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -738,10 +470,6 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         Entrez l'adresse web de la recette (ex : Marmiton, 750g, CuisineAZ, etc.).
                       </p>
-                      <div className="p-3 text-[11px] rounded-xl bg-orange-500/5 dark:bg-orange-500/10 border border-orange-500/10 dark:border-orange-500/20 text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                        <AlertCircle className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
-                        <span>Pour faire fonctionner l'import par lien, assurez-vous d'avoir renseigné votre clé API Mistral AI gratuite dans votre <strong>Profil</strong> (icône en haut à droite).</span>
-                      </div>
                       <div className="relative">
                         <Globe className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
@@ -760,10 +488,6 @@ Retourne UNIQUEMENT un objet JSON valide respectant scrupuleusement cette struct
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         Prenez en photo une page de votre livre de cuisine ou importez une capture d'écran.
                       </p>
-                      <div className="p-3 text-[11px] rounded-xl bg-orange-500/5 dark:bg-orange-500/10 border border-orange-500/10 dark:border-orange-500/20 text-slate-600 dark:text-slate-400 flex items-start gap-2">
-                        <AlertCircle className="w-3.5 h-3.5 text-orange-500 shrink-0 mt-0.5" />
-                        <span>Pour faire fonctionner l'import par photo, assurez-vous d'avoir renseigné votre clé API Mistral AI gratuite dans votre <strong>Profil</strong> (icône en haut à droite).</span>
-                      </div>
                       <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors text-center bg-slate-50/50 dark:bg-slate-800/30">
                         <input
                           type="file"

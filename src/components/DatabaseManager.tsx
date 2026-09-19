@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   Database, 
   ChefHat, 
@@ -21,9 +21,12 @@ import {
   Globe,
   User,
   Cloud,
-  Star
+  Star,
+  Filter,
+  SlidersHorizontal
 } from 'lucide-react';
-import { 
+import { useVirtualizer } from '@tanstack/react-virtual';
+import {
   Recipe, 
   RecipeCategory, 
   Ingredient, 
@@ -38,6 +41,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { DatabaseSwitcher } from './DatabaseSwitcher';
 import { inferCookingMode, getAvailableCookingModes } from '../utils/calculator';
 import { getAvailableCuisines, recipeMatchesCuisine } from '../data/cuisineData';
+import { RecipeCard } from './RecipeCard';
+import { IngredientListItem } from './IngredientListItem';
 
 interface DatabaseManagerProps {
   recipes: Recipe[];
@@ -122,9 +127,70 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
   const availableCuisines = getAvailableCuisines(safeRecipes);
   const availableCookingModes = getAvailableCookingModes(safeRecipes);
-  const categoriesWithCounts = safeRecipeCategories
-    .map(cat => ({ ...cat, count: safeRecipes.filter(r => r.categoryId === cat.id).length }))
-    .filter(cat => cat.count > 0);
+  // Virtualization Refs
+  const recipesParentRef = useRef<HTMLDivElement>(null);
+  const ingredientsParentRef = useRef<HTMLDivElement>(null);
+
+  const filteredAndSortedRecipes = useMemo(() => {
+    return recipes
+      .filter(r => {
+        const matchesSource =
+          activeSource === 'all'
+            ? true
+            : activeSource === 'personal'
+            ? Boolean(r.isCustom)
+            : !r.isCustom;
+        if (!matchesSource) return false;
+
+        const localized = translateRecipe(r);
+        const matchesCat = selectedFilterCat === 'all' || r.categoryId === selectedFilterCat;
+        const matchesCountry = recipeMatchesCuisine(r, selectedCountry);
+        const matchesCookingMode = selectedCookingMode === 'all' || inferCookingMode(r) === selectedCookingMode;
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          r.title.toLowerCase().includes(query) ||
+          localized.title.toLowerCase().includes(query) ||
+          r.description.toLowerCase().includes(query) ||
+          localized.description.toLowerCase().includes(query) ||
+          r.tags.some(t => t.toLowerCase().includes(query)) ||
+          localized.tags.some(t => t.toLowerCase().includes(query));
+        return matchesCat && matchesCountry && matchesCookingMode && matchesSearch;
+      })
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  }, [recipes, activeSource, selectedFilterCat, selectedCountry, selectedCookingMode, searchQuery, translateRecipe]);
+
+  const recipeRows = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < filteredAndSortedRecipes.length; i += 3) {
+      result.push(filteredAndSortedRecipes.slice(i, i + 3));
+    }
+    return result;
+  }, [filteredAndSortedRecipes]);
+
+  const recipeVirtualizer = useVirtualizer({
+    count: recipeRows.length,
+    getScrollElement: () => recipesParentRef.current,
+    estimateSize: () => 250,
+    overscan: 5,
+  });
+
+  const filteredIngredients = useMemo(() => {
+    return ingredients
+      .filter(i => {
+        const localizedName = translateIngredient(i.id, i.name);
+        const matchesCat = selectedFilterCat === 'all' || i.categoryId === selectedFilterCat;
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = i.name.toLowerCase().includes(query) || localizedName.toLowerCase().includes(query);
+        return matchesCat && matchesSearch;
+      });
+  }, [ingredients, selectedFilterCat, searchQuery, translateIngredient]);
+
+  const ingredientVirtualizer = useVirtualizer({
+    count: filteredIngredients.length,
+    getScrollElement: () => ingredientsParentRef.current,
+    estimateSize: () => 64,
+    overscan: 10,
+  });
 
   // Ingredient Form State
   const [showAddIngModal, setShowAddIngModal] = useState(false);
@@ -461,154 +527,48 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           )}
 
           {/* Recipes Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recipes
-              .filter(r => {
-                const matchesSource =
-                  activeSource === 'all'
-                    ? true
-                    : activeSource === 'personal'
-                    ? Boolean(r.isCustom)
-                    : !r.isCustom;
-                if (!matchesSource) return false;
-
-                const localized = translateRecipe(r);
-                const matchesCat = selectedFilterCat === 'all' || r.categoryId === selectedFilterCat;
-                const matchesCountry = recipeMatchesCuisine(r, selectedCountry);
-                const matchesCookingMode = selectedCookingMode === 'all' || inferCookingMode(r) === selectedCookingMode;
-                const query = searchQuery.toLowerCase();
-                const matchesSearch =
-                  r.title.toLowerCase().includes(query) ||
-                  localized.title.toLowerCase().includes(query) ||
-                  r.description.toLowerCase().includes(query) ||
-                  localized.description.toLowerCase().includes(query) ||
-                  r.tags.some(t => t.toLowerCase().includes(query)) ||
-                  localized.tags.some(t => t.toLowerCase().includes(query));
-                return matchesCat && matchesCountry && matchesCookingMode && matchesSearch;
-              })
-              .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-              .map(recipe => {
-                const localized = translateRecipe(recipe);
-                const cat = recipeCategories.find(c => c.id === recipe.categoryId);
+          <div
+            ref={recipesParentRef}
+            className="flex-1 overflow-y-auto h-[600px] pr-2"
+          >
+            <div
+              style={{
+                height: `${recipeVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {recipeVirtualizer.getVirtualItems().map((virtualRow) => {
+                const rowItems = recipeRows[virtualRow.index];
                 return (
                   <div
-                    key={recipe.id}
-                    className={`backdrop-blur-xl bg-[var(--card-bg)] border rounded-2xl p-4 flex flex-col justify-between shadow-md shadow-slate-900/5 transition-all duration-300 ${
-                      recipe.isCustom
-                        ? 'border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500'
-                        : 'border-[var(--border-color)] hover:border-[var(--accent)]/50'
-                    }`}
+                    key={virtualRow.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4"
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        {cat ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-700 dark:text-slate-300 border border-[var(--border-color)]">
-                            <CategoryIcon name={cat.icon} className="w-3 h-3 text-[var(--primary)]" />
-                            {translateRecipeCategory(cat.id, cat.name)}
-                          </span>
-                        ) : <span />}
-
-                        {/* Database Source Badge */}
-                        <div className="flex items-center gap-1.5">
-                          {recipe.isCustom ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                              <User className="w-2.5 h-2.5" />
-                              <span>{t('dbPersonalBadge')}</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
-                              <Globe className="w-2.5 h-2.5" />
-                              <span>{t('dbGenericBadge')}</span>
-                            </span>
-                          )}
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                            {recipe.ingredients.length} ings
-                          </span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug">
-                        {localized.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
-                        {localized.description}
-                      </p>
-
-                      {/* Rating Component */}
-                      <div className="flex items-center gap-1 mt-2.5 mb-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onSaveRecipe({ ...recipe, rating: star });
-                            }}
-                            className="focus:outline-hidden transition-transform active:scale-125"
-                          >
-                            <Star
-                              className={`w-3.5 h-3.5 ${
-                                star <= (recipe.rating || 0)
-                                  ? 'text-amber-500 fill-amber-500'
-                                  : 'text-slate-300 dark:text-slate-600'
-                              }`}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-3 mt-3 border-t border-white/40 dark:border-white/5 flex items-center justify-between gap-2">
-                      <button
-                        onClick={() => onPreviewRecipe(recipe)}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[var(--primary)]"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>{t('preview')}</span>
-                      </button>
-
-                      <div className="flex items-center gap-1.5">
-                        {/* If Generic Recipe: offer Copy to Personal DB */}
-                        {!recipe.isCustom && onCopyGenericToPersonal && (
-                          <button
-                            type="button"
-                            onClick={() => onCopyGenericToPersonal(recipe)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all shadow-2xs"
-                            title={t('copyToPersonal')}
-                          >
-                            <Copy className="w-3 h-3" />
-                            <span>{t('copyToPersonal')}</span>
-                          </button>
-                        )}
-
-                        {/* Edit button */}
-                        <button
-                          onClick={() => onOpenRecipeEditor(recipe)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--primary)] hover:bg-[var(--accent)]/10"
-                          title="Edit Recipe"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* Delete button (only for custom recipes) */}
-                        {recipe.isCustom && (
-                          <button
-                            onClick={() => {
-                              if (confirm(t('confirmDeleteRecipe', { title: localized.title }))) {
-                                onDeleteRecipe(recipe.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
-                            title="Delete Recipe"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    {rowItems.map(recipe => (
+                      <RecipeCard
+                        key={recipe.id}
+                        recipe={recipe}
+                        recipeCategories={recipeCategories}
+                        onPreview={onPreviewRecipe}
+                        onDelete={onDeleteRecipe}
+                        onCopy={onCopyGenericToPersonal}
+                        onEdit={onOpenRecipeEditor}
+                        onSave={onSaveRecipe}
+                      />
+                    ))}
                   </div>
                 );
               })}
+            </div>
           </div>
         </div>
       )}
@@ -655,66 +615,42 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             </div>
           </div>
 
-          <div className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-md shadow-slate-900/5 transition-all duration-300">
-            <div className="divide-y divide-white/40 dark:divide-white/5">
-              {ingredients
-                .filter(i => {
-                  const localizedName = translateIngredient(i.id, i.name);
-                  const matchesCat = selectedFilterCat === 'all' || i.categoryId === selectedFilterCat;
-                  const query = searchQuery.toLowerCase();
-                  const matchesSearch = i.name.toLowerCase().includes(query) || localizedName.toLowerCase().includes(query);
-                  return matchesCat && matchesSearch;
-                })
-                .map(ing => {
-                  const localizedName = translateIngredient(ing.id, ing.name);
-                  const cat = ingredientCategories.find(c => c.id === ing.categoryId);
-                  return (
-                    <div
-                      key={ing.id}
-                      className="p-3 sm:px-4 flex items-center justify-between hover:bg-[var(--cell-bg-hover)]/50 transition-colors duration-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[var(--accent)] shadow-2xs" />
-                        <div>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {localizedName}
-                          </span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {cat && (
-                              <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                                {translateIngredientCategory(cat.id, cat.name)}
-                              </span>
-                            )}
-                            <span className="text-[10px] px-1.5 py-0.2 rounded backdrop-blur-md bg-[var(--cell-bg-hover)] text-slate-600 dark:text-slate-400 border border-[var(--border-color)] font-mono">
-                              {t('defaultUnitLabel', { unit: translateUnit(ing.defaultUnit) })}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleOpenEditIng(ing)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-[var(--primary)] hover:bg-[var(--accent)]/10"
-                          title="Edit Ingredient"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(t('confirmDeleteIngredient', { name: localizedName }))) {
-                              onDeleteIngredient(ing.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
-                          title="Delete Ingredient"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+          <div
+            ref={ingredientsParentRef}
+            className="backdrop-blur-xl bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl overflow-y-auto h-[600px] shadow-md shadow-slate-900/5 transition-all duration-300"
+          >
+            <div
+              style={{
+                height: `${ingredientVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
+            >
+              {ingredientVirtualizer.getVirtualItems().map((virtualRow) => {
+                const ing = filteredIngredients[virtualRow.index];
+                const cat = ingredientCategories.find(c => c.id === ing.categoryId);
+                return (
+                  <div
+                    key={virtualRow.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="border-b border-white/40 dark:divide-white/5"
+                  >
+                    <IngredientListItem
+                      ingredient={ing}
+                      category={cat}
+                      onEdit={handleOpenEditIng}
+                      onDelete={(item) => onDeleteIngredient(item.id)}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
