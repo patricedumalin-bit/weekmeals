@@ -500,10 +500,9 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
             </div>
           </div>
         )}
-      </div>
 
         {!isHeaderCollapsed && (
-            <div className="backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/30 border border-[var(--accent)]/20 dark:border-[var(--accent)]/20 rounded-2xl p-4 lg:w-72 flex flex-col justify-between gap-3 shrink-0 shadow-2xs animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/30 border border-[var(--accent)]/20 dark:border-[var(--accent)]/20 rounded-2xl p-4 lg:w-72 flex flex-col justify-between gap-3 shrink-0 shadow-2xs animate-in fade-in slide-in-from-top-2 duration-300">
               <div>
                 <div className="flex items-center justify-between text-xs font-semibold text-[var(--primary)] dark:text-[var(--accent)] mb-1">
                   <span>{t('plannerStatus')}</span>

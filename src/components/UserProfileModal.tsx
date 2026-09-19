@@ -528,6 +528,34 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
 
+          {/* Simulation / Debug Section (Just for you) */}
+          <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-700 space-y-3">
+            <div className="flex items-center gap-2 text-slate-400">
+              <RefreshCw className="w-4 h-4" />
+              <h4 className="text-[10px] font-bold uppercase tracking-widest">Zone de Test (Développeur)</h4>
+            </div>
+            <button
+              onClick={() => {
+                onTogglePremium();
+                alert(isPremium
+                  ? "Simulation ACTIVÉE : Vous voyez maintenant l'application comme un utilisateur GRATUIT."
+                  : "Simulation DÉSACTIVÉE : Vous avez récupéré tous vos accès PREMIUM."
+                );
+              }}
+              className={`w-full py-2 rounded-lg text-xs font-bold transition-all border flex items-center justify-center gap-2 ${
+                isPremium
+                  ? 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'
+                  : 'bg-amber-500 text-slate-950 border-amber-400'
+              }`}
+            >
+              {isPremium ? (
+                <>Simuler l'Expérience Gratuite 🔒</>
+              ) : (
+                <>Rétablir la Version Full 👑</>
+              )}
+            </button>
+          </div>
+
           {/* Owner options (Premium toggle) */}
           {isOwner && (
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between">
