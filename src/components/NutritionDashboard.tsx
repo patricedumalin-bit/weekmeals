@@ -15,7 +15,8 @@ import {
   Calendar,
   ChevronRight,
   Lightbulb,
-  History
+  History,
+  Crown
 } from 'lucide-react';
 import { WeeklyPlan, Recipe, Ingredient, NutritionInfo, WeeklyHistoryItem } from '../types';
 import { estimateRecipeNutrition, calculateRecipeTotalBudget } from '../utils/calculator';
@@ -39,9 +40,13 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   ingredients = [],
   pantryMap = {}
 }) => {
-  const { translateRecipe, t } = useLanguage();
-  const { weeklyHistory, archiveWeeklyPlan } = useDataStore();
+  const { translateRecipe, t, language } = useLanguage();
+  const { weeklyHistory, archiveWeeklyPlan, clearHistory } = useDataStore();
+  const { userData } = useAuthStore();
+  const isPremium = userData?.subscriptionStatus === 'premium';
   const [activeTab, setActiveTab] = React.useState<'nutrition' | 'budget' | 'evolution'>('nutrition');
+
+  const dietaryGoal = userData?.dietaryGoal || 'balanced';
 
   if (!isOpen) return null;
 
@@ -95,6 +100,78 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
   const avgProtein = plannedMealsCount > 0 ? Math.round((totalProtein / plannedMealsCount) * 10) / 10 : 0;
   const avgCarbs = plannedMealsCount > 0 ? Math.round((totalCarbs / plannedMealsCount) * 10) / 10 : 0;
   const avgFat = plannedMealsCount > 0 ? Math.round((totalFat / plannedMealsCount) * 10) / 10 : 0;
+
+  // Recommendations & Advice Logic
+  const getNutritionAdvice = () => {
+    const advice = [];
+
+    // Balanced distribution: P: 15-25%, G: 45-55%, F: 25-35%
+    const proteinCals = avgProtein * 4;
+    const carbsCals = avgCarbs * 4;
+    const fatCals = avgFat * 9;
+    const totalCals = proteinCals + carbsCals + fatCals || 1;
+
+    const pPct = (proteinCals / totalCals) * 100;
+    const gPct = (carbsCals / totalCals) * 100;
+    const fPct = (fatCals / totalCals) * 100;
+
+    // Custom advice based on Goal
+    if (dietaryGoal === 'weight-loss') {
+      if (avgCalories > 600) {
+        advice.push({ type: 'warning', icon: '🏃', text: language === 'fr' ? "Pour perdre du poids, essayez de viser moins de 600 kcal par plat principal." : "To lose weight, try aiming for less than 600 kcal per main dish." });
+      }
+      if (gPct > 45) {
+        advice.push({ type: 'info', icon: '🥗', text: language === 'fr' ? "Réduisez un peu les glucides au profit des légumes verts pour accélérer vos résultats." : "Reduce carbs a bit in favor of green vegetables to speed up your results." });
+      }
+    } else if (dietaryGoal === 'muscle-gain') {
+      if (pPct < 25) {
+        advice.push({ type: 'warning', icon: '💪', text: language === 'fr' ? "Apport en protéines insuffisant pour la prise de muscle. Visez au moins 25%." : "Insufficient protein intake for muscle gain. Aim for at least 25%." });
+      }
+    } else if (dietaryGoal === 'low-carb') {
+      if (gPct > 30) {
+        advice.push({ type: 'alert', icon: '🥑', text: language === 'fr' ? "Attention, votre apport en glucides est trop élevé pour un régime Low-Carb." : "Watch out, your carbohydrate intake is too high for a Low-Carb diet." });
+      }
+    } else if (dietaryGoal === 'heart-health') {
+      if (fPct > 25) {
+        advice.push({ type: 'warning', icon: '❤️', text: language === 'fr' ? "Réduisez les graisses pour protéger votre santé cardiaque (max 25% des calories)." : "Reduce fats to protect your heart health (max 25% of calories)." });
+      }
+    }
+
+    if (pPct < 15 && dietaryGoal !== 'low-carb') {
+      advice.push({
+        type: 'warning',
+        icon: '🥩',
+        text: language === 'fr' ? "Apport en protéines un peu faible. Ajoutez des légumineuses ou des œufs." : "Protein intake is a bit low. Add legumes or eggs."
+      });
+    }
+
+    if (fPct > 35) {
+      advice.push({
+        type: 'info',
+        icon: '🥑',
+        text: t(language === 'fr' ? "Vos lipides sont élevés. Privilégiez les graisses insaturées (huile d'olive, oléagineux) aux graisses animales." : "Your fats are high. Favor unsaturated fats (olive oil, nuts) over animal fats.")
+      });
+    }
+
+    if (avgCalories > 800) {
+      advice.push({
+        type: 'alert',
+        icon: '⚖️',
+        text: t(language === 'fr' ? "Moyenne calorique élevée par plat. Pensez à augmenter la part de légumes verts dans vos accompagnements." : "High average calories per dish. Consider increasing the share of green vegetables in your sides.")
+      });
+    }
+
+    // Default general advice if nothing specific
+    if (advice.length < 2) {
+      advice.push({
+        type: 'success',
+        icon: '💧',
+        text: t(language === 'fr' ? "N'oubliez pas de boire 1.5L d'eau par jour pour accompagner la digestion de vos repas planifiés." : "Don't forget to drink 1.5L of water per day to support the digestion of your planned meals.")
+      });
+    }
+
+    return advice;
+  };
 
   const handleArchiveWeek = () => {
     if (plannedMealsCount === 0) return;
@@ -185,35 +262,103 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
             <>
               {activeTab === 'nutrition' && (
                 <div className="space-y-6 animate-in fade-in duration-300">
+                  {/* KPI Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                      <span className="text-[11px] font-semibold text-amber-600">Calories / plat</span>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCalories}</div>
+                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 shadow-xs">
+                      <div className="flex items-center justify-between mb-1 text-amber-600">
+                        <span className="text-[10px] font-bold uppercase">Calories</span>
+                        <Flame className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="text-xl font-black text-slate-900 dark:text-slate-100">{avgCalories}</div>
+                      <div className="text-[9px] text-slate-400">kcal / plat</div>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
-                      <span className="text-[11px] font-semibold text-rose-600">Protéines</span>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgProtein}g</div>
+                    <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 shadow-xs">
+                      <div className="flex items-center justify-between mb-1 text-rose-600">
+                        <span className="text-[10px] font-bold uppercase">Protéines</span>
+                        <Dna className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="text-xl font-black text-slate-900 dark:text-slate-100">{avgProtein}g</div>
+                      <div className="text-[9px] text-slate-400">moyenne / pers.</div>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-                      <span className="text-[11px] font-semibold text-blue-600">Glucides</span>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgCarbs}g</div>
+                    <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 shadow-xs">
+                      <div className="flex items-center justify-between mb-1 text-blue-600">
+                        <span className="text-[10px] font-bold uppercase">Glucides</span>
+                        <Wheat className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="text-xl font-black text-slate-900 dark:text-slate-100">{avgCarbs}g</div>
+                      <div className="text-[9px] text-slate-400">énergie lente</div>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                      <span className="text-[11px] font-semibold text-emerald-600">Lipides</span>
-                      <div className="text-xl font-bold text-slate-900 dark:text-slate-100">{avgFat}g</div>
+                    <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 shadow-xs">
+                      <div className="flex items-center justify-between mb-1 text-emerald-600">
+                        <span className="text-[10px] font-bold uppercase">Lipides</span>
+                        <Droplet className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="text-xl font-black text-slate-900 dark:text-slate-100">{avgFat}g</div>
+                      <div className="text-[9px] text-slate-400">bonnes graisses</div>
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Répartition Hebdomadaire</h3>
-                    <div className="space-y-2">
-                      {mealNutritionList.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-xs py-1 border-b border-slate-200 dark:border-slate-700 last:border-0">
-                          <span className="truncate flex-1 font-medium">{item.recipeTitle}</span>
-                          <span className="font-mono text-amber-600">{item.nutrition.calories} kcal</span>
+                  {/* Recommendations & Advice - PREMIUM 🔒 */}
+                  <div className={`p-5 rounded-3xl space-y-4 relative overflow-hidden transition-all ${
+                    isPremium
+                      ? 'bg-gradient-to-br from-rose-500/5 to-amber-500/5 border border-rose-500/10'
+                      : 'bg-slate-100/50 border border-slate-200 grayscale-[0.8] opacity-80'
+                  }`}>
+                    {!isPremium && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/5 backdrop-blur-[2px] z-10 p-4 text-center">
+                        <Crown className="w-8 h-8 text-amber-500 mb-2" />
+                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-tighter">Conseils IA réservés à la version Full 🔒</p>
+                      </div>
+                    )}
+                    <h3 className="text-sm font-bold flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                      <Sparkles className="w-4 h-4" />
+                      Conseils Nutritionnels Personnalisés
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {getNutritionAdvice().map((adv, i) => (
+                        <div key={i} className="p-3 rounded-xl bg-white/60 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50 flex items-start gap-3 shadow-sm">
+                          <span className="text-xl shrink-0">{adv.icon}</span>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{adv.text}</p>
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Distribution Bar */}
+                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <span>Equilibre des Macronutriments</span>
+                      <div className="flex gap-2">
+                        <span className="text-rose-500">P</span>
+                        <span className="text-blue-500">G</span>
+                        <span className="text-emerald-500">L</span>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const pC = avgProtein * 4;
+                      const cC = avgCarbs * 4;
+                      const fC = avgFat * 9;
+                      const total = pC + cC + fC || 1;
+                      const pP = Math.round((pC/total)*100);
+                      const cP = Math.round((cC/total)*100);
+                      const fP = Math.max(0, 100 - pP - cP);
+
+                      return (
+                        <div className="space-y-3">
+                          <div className="h-3 w-full rounded-full overflow-hidden flex shadow-inner bg-slate-200 dark:bg-slate-700">
+                            <div style={{ width: `${pP}%` }} className="bg-rose-500 transition-all duration-500" />
+                            <div style={{ width: `${cP}%` }} className="bg-blue-500 transition-all duration-500" />
+                            <div style={{ width: `${fP}%` }} className="bg-emerald-500 transition-all duration-500" />
+                          </div>
+                          <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500"/> Protéines {pP}%</span>
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Glucides {cP}%</span>
+                            <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"/> Lipides {fP}%</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -240,49 +385,90 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 text-white space-y-4 shadow-xl relative overflow-hidden">
+                  <div className={`p-5 rounded-3xl space-y-4 relative overflow-hidden transition-all ${
+                    isPremium
+                      ? 'bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl'
+                      : 'bg-slate-100 border border-slate-200 text-slate-400 grayscale-[0.8]'
+                  }`}>
+                    {!isPremium && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/5 backdrop-blur-[2px] z-10 p-4 text-center">
+                        <Crown className="w-8 h-8 text-amber-500 mb-2" />
+                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-tighter">Conseils Budget réservés à la version Full 🔒</p>
+                      </div>
+                    )}
                     <div className="absolute top-0 right-0 p-4 opacity-10">
                       <Lightbulb className="w-24 h-24" />
                     </div>
-                    <h3 className="text-sm font-bold flex items-center gap-2">
-                      <Lightbulb className="w-4 h-4 text-amber-400" />
+                    <h3 className={`text-sm font-bold flex items-center gap-2 ${isPremium ? 'text-white' : 'text-slate-500'}`}>
+                      <Lightbulb className={`w-4 h-4 ${isPremium ? 'text-amber-400' : 'text-slate-400'}`} />
                       Conseils d'Amélioration du Budget
                     </h3>
                     <ul className="space-y-3">
                       {accumulatedWeeklyCost > 80 && (
-                        <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
-                          <span className="text-amber-400">💡</span>
+                        <li className={`text-xs flex items-start gap-2 p-2.5 rounded-xl border ${isPremium ? 'bg-white/10 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                          <span className={isPremium ? "text-amber-400" : ""}>💡</span>
                           <span>Votre budget est élevé. Privilégiez 1 ou 2 repas végétariens de plus pour économiser environ 15€ cette semaine.</span>
                         </li>
                       )}
                       {accumulatedWeeklySavings < 10 && (
-                        <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
-                          <span className="text-emerald-400">🌱</span>
+                        <li className={`text-xs flex items-start gap-2 p-2.5 rounded-xl border ${isPremium ? 'bg-white/10 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                          <span className={isPremium ? "text-emerald-400" : ""}>🌱</span>
                           <span>Vous utilisez peu votre stock. Essayez de vider vos placards avant de racheter des féculents ou conserves.</span>
                         </li>
                       )}
-                      <li className="text-xs flex items-start gap-2 bg-white/10 p-2.5 rounded-xl border border-white/10">
-                        <span className="text-blue-400">🛒</span>
+                      <li className={`text-xs flex items-start gap-2 p-2.5 rounded-xl border ${isPremium ? 'bg-white/10 border-white/10' : 'bg-slate-50 border-slate-200'}`}>
+                        <span className={isPremium ? "text-blue-400" : ""}>🛒</span>
                         <span>Faire vos courses au Drive avec notre scan PDF évite les achats compulsifs en rayon (gain estimé : 12% sur le ticket).</span>
                       </li>
                     </ul>
                   </div>
 
                   <button
-                    onClick={handleArchiveWeek}
-                    className="w-full py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                    onClick={() => isPremium ? handleArchiveWeek() : alert("L'archivage des semaines est réservé à la version Full 🔒\nSuivez votre progression annuelle pour 9,99€/an !")}
+                    className={`w-full py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all ${
+                      isPremium
+                        ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                        : 'bg-slate-200 text-slate-400 grayscale cursor-not-allowed shadow-none'
+                    }`}
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    Valider et Archiver cette Semaine
+                    Valider et Archiver cette Semaine {!isPremium && '🔒'}
                   </button>
                 </div>
               )}
 
               {activeTab === 'evolution' && (
-                <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="space-y-6 animate-in fade-in duration-300 relative min-h-[300px]">
+                  {!isPremium && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-3xl p-6 text-center">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-400 to-orange-600 flex items-center justify-center text-white mb-4 shadow-xl shadow-orange-500/20">
+                        <Crown className="w-8 h-8" />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tighter italic">Historique Premium 🔒</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-2 max-w-xs">
+                        Débloquez l'historique complet sur 1 an et les projections d'économies annuelles en passant à la version Full.
+                      </p>
+                      <button
+                        onClick={onClose}
+                        className="mt-6 px-6 py-2 rounded-full bg-orange-600 text-white font-bold text-xs shadow-lg hover:bg-orange-500 transition-all"
+                      >
+                        Voir les offres dans mon profil
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">Historique & Projection Annuelle</h3>
-                    <History className="w-4 h-4 text-slate-400" />
+                    <div className="flex items-center gap-2">
+                      {weeklyHistory.length > 0 && (
+                        <button
+                          onClick={() => { if(confirm('Voulez-vous effacer tout l\'historique ?')) clearHistory(); }}
+                          className="text-[10px] text-rose-500 hover:underline font-bold"
+                        >
+                          Effacer l'historique
+                        </button>
+                      )}
+                      <History className="w-4 h-4 text-slate-400" />
+                    </div>
                   </div>
 
                   {weeklyHistory.length === 0 ? (

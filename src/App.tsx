@@ -71,10 +71,31 @@ function AppContent({
     addCustomShoppingItem, removeCustomShoppingItem, resetChecked,
     setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setPantryMap,
     saveRecipeCategory, deleteRecipeCategory, saveIngredient, deleteIngredient,
-    saveIngredientCategory, deleteIngredientCategory, importDatabase
+    saveIngredientCategory, deleteIngredientCategory, importDatabase,
+    toggleMealCooked, lockWeeklyPlan, resetWeeklyPlan, archiveWeeklyPlan
   } = useDataStore();
 
   const { user, userData, syncStatus, setUserData } = useAuthStore();
+
+  const handleResetAndArchive = () => {
+    if (!weeklyPlan) return;
+
+    // Use the helper from calculator.ts (already imported or available)
+    const { getWeeklyPlanSummary } = require('./utils/calculator');
+    const stats = getWeeklyPlanSummary(weeklyPlan, recipes, ingredients, pantryMap);
+
+    if (stats.mealsCount > 0) {
+      archiveWeeklyPlan({
+        id: `week-${Date.now()}`,
+        weekNumber: 1, // Simplified
+        year: new Date().getFullYear(),
+        ...stats,
+        date: new Date().toISOString()
+      });
+    }
+
+    resetWeeklyPlan();
+  };
 
   const handleCopyGenericToPersonal = async (recipe: any) => {
     const { createPersonalCopyOfRecipe } = await import('./utils/cloudSync');
@@ -201,6 +222,9 @@ function AppContent({
             weeklyPlan={weeklyPlan} recipes={recipes} recipeCategories={recipeCategories}
             ingredients={ingredients} ingredientCategories={ingredientCategories} pantryMap={pantryMap}
             onUpdatePlan={updateWeeklyPlan} isPremium={userData?.subscriptionStatus === 'premium'}
+            onToggleMealCooked={toggleMealCooked}
+            onLockPlan={lockWeeklyPlan}
+            onResetPlan={handleResetAndArchive}
             onOpenRecipePicker={(m, s) => setRecipePickerTarget({ mealIndex: m, slotIndex: s })}
             onPreviewRecipe={(r, s, mi, ri) => setPreviewRecipeState({ recipe: r, servings: s, mealIndex: mi, recipeIndex: ri })}
             onGoToShopping={() => setActiveTab('shopping')}

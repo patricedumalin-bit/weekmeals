@@ -106,6 +106,7 @@ export interface MealSlot {
   recipeIds: string[]; // Up to 3 recipes per meal
   excludedIngredients?: Record<number, string[]>; // slotIndex -> array of excluded ingredientIds
   customMeals?: CustomMeal[];
+  isCooked?: boolean;
 }
 
 export interface WeeklyPlan {
@@ -113,6 +114,7 @@ export interface WeeklyPlan {
   numberOfMeals: number; // e.g. 7
   defaultServings: number; // 4 by default
   meals: MealSlot[];
+  isLocked?: boolean;
   lastUpdated: string;
 }
 
@@ -157,6 +159,7 @@ export interface UserProfileData {
   photoURL?: string | null;
   theme?: string;
   subscriptionStatus?: 'free' | 'premium';
+  dietaryGoal?: 'balanced' | 'weight-loss' | 'muscle-gain' | 'low-carb' | 'heart-health';
   recipeCount?: number;
   mealCount?: number;
   stats?: {

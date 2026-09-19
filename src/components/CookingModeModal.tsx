@@ -304,15 +304,22 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
           {/* Voice Command Toggle */}
           {voiceSupported && (
             <button
-              onClick={() => setIsListening(!isListening)}
+              onClick={() => isPremium ? setIsListening(!isListening) : alert("La commande vocale est réservée à la version Full 🔒\nCuisinez sans les mains pour seulement 9,99€/an !")}
               className={`p-2 rounded-xl transition-all ${
                 isListening
                   ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/20'
-                  : 'bg-slate-800 text-slate-400 hover:text-white'
+                  : isPremium
+                  ? 'bg-slate-800 text-slate-400 hover:text-white'
+                  : 'bg-slate-800/50 text-slate-600 cursor-not-allowed opacity-50'
               }`}
-              title={isListening ? "Désactiver la voix" : "Activer la commande vocale (Dites 'Suivant')"}
+              title={isPremium ? (isListening ? "Désactiver la voix" : "Activer la commande vocale") : "Commande vocale (Premium 🔒)"}
             >
-              {isListening ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+              {isListening ? <Mic className="w-5 h-5" /> : (
+                <div className="relative">
+                  <MicOff className="w-5 h-5" />
+                  {!isPremium && <span className="absolute -top-1 -right-1 text-[10px]">🔒</span>}
+                </div>
+              )}
             </button>
           )}
 

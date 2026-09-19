@@ -14,17 +14,19 @@ import {
   CalendarDays, 
   ShoppingCart, 
   ShieldCheck, 
-  AlertCircle,
   Smartphone,
   Key,
   TrendingUp,
   Euro,
-  Scale
+  Scale,
+  Sparkles
 } from 'lucide-react';
 import { SyncStatus, themes, Theme } from '../types';
 import { formatSyncTime } from '../utils/cloudSync';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useDataStore } from '../stores/useDataStore';
+import { useSubscription } from '../hooks/useSubscription';
+import { FREE_LIMITS } from '../constants/subscription';
 
 interface UserProfileModalProps {
   isOpen: boolean;
@@ -43,6 +45,7 @@ interface UserProfileModalProps {
   onTogglePremium: () => void;
   onSignOut: () => void;
   onUpdateDisplayName: (newName: string) => Promise<void>;
+  onUpdateDietaryGoal?: (goal: string) => Promise<void>;
   onSwitchToAuth?: () => void;
 }
 
@@ -63,6 +66,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onTogglePremium,
   onSignOut,
   onUpdateDisplayName,
+  onUpdateDietaryGoal,
   onSwitchToAuth
 }) => {
   const { t, language } = useLanguage();
@@ -219,22 +223,43 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </p>
 
               <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-xs ${
                   isPremium 
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700' 
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-slate-900 border border-amber-300/50'
                     : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                 }`}>
-                  <Crown className="w-3 h-3 text-amber-500" />
-                  {isPremium ? 'Formule Premium' : 'Formule Gratuite (20 recettes)'}
+                  {isPremium ? <Crown className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
+                  {isPremium ? 'VERSION FULL' : 'VERSION GRATUITE'}
                 </span>
 
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                   <Smartphone className="w-3 h-3" />
-                  Android & Web Sync
+                  Cloud Sync
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Version Upgrade Banner (If Free) */}
+          {!isPremium && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-lg relative overflow-hidden group active:scale-[0.98] transition-all cursor-pointer" onClick={onTogglePremium}>
+              <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform">
+                <Crown className="w-16 h-16" />
+              </div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-5 h-5 fill-current" />
+                  <h4 className="font-black uppercase tracking-tighter text-base italic">Passer à la version Full</h4>
+                </div>
+                <p className="text-[11px] font-bold text-white/90 leading-tight">
+                  Recettes illimitées, Commande vocale, IA "Chef du Placard", Synchro familiale et zéro pub !
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 bg-white text-orange-600 px-3 py-1 rounded-full text-[11px] font-black shadow-md">
+                   S'abonner pour 9,99€ / an <ArrowRight className="w-3.5 h-3.5" />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cloud Synchronization Section */}
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
@@ -338,24 +363,27 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <span className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-none">
                   {customRecipesCount}
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 text-center">
                   {language === 'fr' ? 'Recettes créées' : 'Custom recipes'}
                 </span>
                 {!isPremium && (
-                  <span className="text-[9px] text-slate-400 font-medium">/ 20 max</span>
+                  <span className="text-[9px] text-slate-400 font-black mt-0.5">/ {FREE_LIMITS.MAX_CUSTOM_RECIPES} MAX</span>
                 )}
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col items-center">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1.5">
                   <CalendarDays className="w-4 h-4" />
                 </div>
                 <span className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-none">
                   {plannedMealsCount}
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 text-center">
                   {language === 'fr' ? 'Repas planifiés' : 'Planned meals'}
                 </span>
+                {!isPremium && (
+                  <span className="text-[9px] text-slate-400 font-black mt-0.5">/ {FREE_LIMITS.MAX_MEALS} MAX</span>
+                )}
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
@@ -370,6 +398,32 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Dietary Goals Section */}
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-2">
+              <Heart className="w-4 h-4 text-rose-500" />
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                {language === 'fr' ? 'Objectif Alimentaire' : 'Dietary Goal'}
+              </h4>
+            </div>
+            <select
+              value={userData?.dietaryGoal || 'balanced'}
+              onChange={(e) => onUpdateDietaryGoal && onUpdateDietaryGoal(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              <option value="balanced">{language === 'fr' ? 'Équilibré (Standard)' : 'Balanced (Standard)'}</option>
+              <option value="weight-loss">{language === 'fr' ? 'Perte de poids (Léger)' : 'Weight Loss (Light)'}</option>
+              <option value="muscle-gain">{language === 'fr' ? 'Prise de masse (Protéiné)' : 'Muscle Gain (Protein)'}</option>
+              <option value="low-carb">{language === 'fr' ? 'Faible en glucides (Keto-ish)' : 'Low Carb (Keto-ish)'}</option>
+              <option value="heart-health">{language === 'fr' ? 'Santé Cardiaque (Peu de gras)' : 'Heart Health (Low Fat)'}</option>
+            </select>
+            <p className="text-[10px] text-slate-500 italic leading-tight">
+              {language === 'fr'
+                ? "Cela personnalise les conseils de votre tableau de bord nutritionnel."
+                : "This customizes the advice on your nutrition dashboard."}
+            </p>
           </div>
 
           {/* Savings & Impact Dashboard (New Engagement Feature) */}

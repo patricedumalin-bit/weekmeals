@@ -15,8 +15,7 @@ import {
   Loader2,
   FileText,
   FileDown,
-  Barcode,
-  BarcodeIcon
+  Barcode
 } from 'lucide-react';
 import { Ingredient, IngredientCategory, Recipe, UnitType } from '../types';
 import { CategoryIcon } from './CategoryIcon';
@@ -459,10 +458,15 @@ export const PantryModal: React.FC<PantryModalProps> = ({
             </button>
             <button
               onClick={handleAskChefAI}
-              className="px-4 py-2 rounded-t-xl text-sm font-bold flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all"
+              className={`px-4 py-2 rounded-t-xl text-sm font-bold flex items-center gap-1.5 transition-all ${
+                isPremium
+                  ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30'
+                  : 'text-slate-400 grayscale cursor-help'
+              }`}
+              title={!isPremium ? "Fonctionnalité réservée à la version Full 🔒" : "Demander au Chef IA"}
             >
               <ChefHat className="w-4 h-4" />
-              <span>Chef Magique IA</span>
+              <span>Chef Magique IA {!isPremium && '🔒'}</span>
             </button>
           </div>
 

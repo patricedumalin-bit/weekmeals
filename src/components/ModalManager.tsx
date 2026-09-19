@@ -142,6 +142,15 @@ export const ModalManager: React.FC<{
     setUserData({ ...userData, displayName: newName });
   };
 
+  const handleUpdateDietaryGoal = async (newGoal: string) => {
+    if (!user || user.uid === 'local-guest') {
+      setUserData({ ...userData, dietaryGoal: newGoal });
+      return;
+    }
+    await setDoc(doc(db, 'users', user.uid), { dietaryGoal: newGoal }, { merge: true });
+    setUserData({ ...userData, dietaryGoal: newGoal });
+  };
+
   const handleUpdateTheme = async (newTheme: string) => {
     setTheme(newTheme);
     if (!user) return;
@@ -267,6 +276,7 @@ export const ModalManager: React.FC<{
         onTogglePremium={handleTogglePremium}
         onSignOut={onSignOut || (() => {})}
         onUpdateDisplayName={handleUpdateDisplayName}
+        onUpdateDietaryGoal={handleUpdateDietaryGoal}
         onSwitchToAuth={onSwitchToAuth}
       />
 

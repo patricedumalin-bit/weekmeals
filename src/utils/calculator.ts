@@ -761,3 +761,50 @@ export function calculateRecipeTotalBudget(
     itemsCost
   };
 }
+
+export function getWeeklyPlanSummary(
+  plan: WeeklyPlan,
+  recipes: Recipe[],
+  ingredients: Ingredient[],
+  pantryMap: Record<string, boolean>
+): { totalCost: number; totalSavings: number; mealsCount: number; nutritionAvg: NutritionInfo } {
+  let totalCost = 0;
+  let totalSavings = 0;
+  let totalCalories = 0;
+  let totalProtein = 0;
+  let totalCarbs = 0;
+  let totalFat = 0;
+  let count = 0;
+
+  const recipeMap = new Map(recipes.map(r => [r.id, r]));
+
+  for (const meal of plan.meals) {
+    const mealServings = meal.servings || plan.defaultServings || 4;
+    (meal.recipeIds || []).forEach((rId, rIdx) => {
+      const rec = recipeMap.get(rId);
+      if (rec) {
+        const { total, savings } = calculateRecipeTotalBudget(rec, ingredients, meal.excludedIngredients?.[rIdx] || [], pantryMap, mealServings / (rec.servings || 4));
+        const nut = estimateRecipeNutrition(rec, ingredients);
+        totalCost += total;
+        totalSavings += savings;
+        totalCalories += nut.calories;
+        totalProtein += nut.protein;
+        totalCarbs += nut.carbs;
+        totalFat += nut.fat;
+        count++;
+      }
+    });
+  }
+
+  return {
+    totalCost,
+    totalSavings,
+    mealsCount: count,
+    nutritionAvg: {
+      calories: count > 0 ? Math.round(totalCalories / count) : 0,
+      protein: count > 0 ? Math.round(totalProtein / count) : 0,
+      carbs: count > 0 ? Math.round(totalCarbs / count) : 0,
+      fat: count > 0 ? Math.round(totalFat / count) : 0
+    }
+  };
+}

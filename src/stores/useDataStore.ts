@@ -63,6 +63,9 @@ interface DataState {
   togglePantryItem: (ingredientId: string) => void;
   batchSetPantry: (updates: Record<string, boolean>) => void;
   clearPantry: () => void;
+  toggleMealCooked: (mealIndex: number) => void;
+  lockWeeklyPlan: (isLocked: boolean) => void;
+  resetWeeklyPlan: () => void;
   importDatabase: (data: any) => void;
 }
 
@@ -99,6 +102,10 @@ export const useDataStore = create<DataState>((set, get) => ({
     const history = [summary, ...get().weeklyHistory].slice(0, 52); // Keep 1 year
     set({ weeklyHistory: history });
     localStorage.setItem('meal_weekly_history', JSON.stringify(history));
+  },
+  clearHistory: () => {
+    set({ weeklyHistory: [] });
+    localStorage.removeItem('meal_weekly_history');
   },
   setIsLoaded: (isLoaded) => set({ isLoaded }),
 
@@ -236,6 +243,34 @@ export const useDataStore = create<DataState>((set, get) => ({
     set({ pantryMap: {}, pantryAddedDates: {} });
     savePantryMap({});
     localStorage.removeItem('meal_pantry_dates');
+  },
+
+  toggleMealCooked: (mealIndex) => {
+    const { weeklyPlan } = get();
+    if (!weeklyPlan) return;
+    const updatedMeals = [...weeklyPlan.meals];
+    updatedMeals[mealIndex] = { ...updatedMeals[mealIndex], isCooked: !updatedMeals[mealIndex].isCooked };
+    const newPlan = { ...weeklyPlan, meals: updatedMeals };
+    set({ weeklyPlan: newPlan });
+    saveWeeklyPlan(newPlan);
+  },
+
+  lockWeeklyPlan: (isLocked) => {
+    const { weeklyPlan } = get();
+    if (!weeklyPlan) return;
+    const newPlan = { ...weeklyPlan, isLocked };
+    set({ weeklyPlan: newPlan });
+    saveWeeklyPlan(newPlan);
+  },
+
+  resetWeeklyPlan: () => {
+    const { weeklyPlan } = get();
+    if (!weeklyPlan) return;
+    const resetMeals = weeklyPlan.meals.map(m => ({ ...m, recipeIds: [], customMeals: [], isCooked: false }));
+    const newPlan = { ...weeklyPlan, meals: resetMeals, isLocked: false, lastUpdated: new Date().toISOString() };
+    set({ weeklyPlan: newPlan, checkedMap: {} });
+    saveWeeklyPlan(newPlan);
+    saveCheckedMap({});
   },
 
   importDatabase: (data) => {

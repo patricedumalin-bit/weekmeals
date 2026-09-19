@@ -246,16 +246,14 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             )}
           </div>
 
-          {/* Action Bar */}
-          {!isHeaderCollapsed && (
-            <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-2 duration-300">
-              <button
-                onClick={() => setIsAddCustomShoppingModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/20 border border-[var(--accent)]/25 transition-colors shadow-2xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('addCustomItem')}</span>
-              </button>
+          <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-2 duration-300">
+            <button
+              onClick={() => setIsAddCustomShoppingModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] hover:bg-[var(--accent)]/20 border border-[var(--accent)]/25 transition-colors shadow-2xs"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('addCustomItem')}</span>
+            </button>
 
               <button
                 onClick={handleCopyList}
