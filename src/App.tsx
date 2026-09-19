@@ -20,7 +20,7 @@ import { ShoppingListView } from './components/ShoppingListView';
 import { DatabaseManager } from './components/DatabaseManager';
 import { ModalManager } from './components/ModalManager';
 import { PrintableSheet } from './components/PrintableSheet';
-import { LanguageProvider } from './i18n/LanguageContext';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import Auth from './components/Auth';
 import { calculateShoppingList } from './utils/calculator';
 import { generateFullGenericDatabase, resetToDefaults, clearDatabase } from './utils/storage';
@@ -51,6 +51,17 @@ function AppContent({
     databaseSource, setDatabaseSource,
     isSeedingGeneric, setIsSeedingGeneric
   } = useAppStore();
+
+  // Reset modal states on first mount to ensure clean start
+  useEffect(() => {
+    setIsRecipeImportModalOpen(false);
+    setIsProfileModalOpen(false);
+    setIsPantryModalOpen(false);
+    setIsAutoPlanModalOpen(false);
+    setIsNutritionDashboardOpen(false);
+    setRecipePickerTarget(null);
+    setPreviewRecipeState(null);
+  }, []);
 
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan,

@@ -20,6 +20,7 @@ import {
 import { Recipe } from '../types';
 
 export function useInitialization() {
+  console.log("useInitialization hook called");
   const { user, setUserData, setSyncStatus, setLastSyncedAt } = useAuthStore();
   const {
     recipes,

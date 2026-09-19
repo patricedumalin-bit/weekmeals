@@ -18,6 +18,7 @@ import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { saveRecipes, saveWeeklyPlan } from '../utils/storage';
 import { createPersonalCopyOfRecipe } from '../utils/cloudSync';
+import { calculateShoppingList } from '../utils/calculator';
 
 export const ModalManager: React.FC<{
   onSignOut?: () => void;
@@ -43,7 +44,8 @@ export const ModalManager: React.FC<{
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan, pantryMap, customItems, checkedMap,
     saveRecipe, deleteRecipe, updateWeeklyPlan, togglePantryItem, batchSetPantry, toggleShoppingItem, addCustomShoppingItem, removeCustomShoppingItem,
-    setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setCheckedMap, setCustomItems
+    setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setCheckedMap, setCustomItems,
+    saveIngredient
   } = useDataStore();
 
   const { user, userData, syncStatus, lastSyncedAt, setUserData } = useAuthStore();

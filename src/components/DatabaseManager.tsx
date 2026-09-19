@@ -127,6 +127,16 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
   const availableCuisines = getAvailableCuisines(safeRecipes);
   const availableCookingModes = getAvailableCookingModes(safeRecipes);
+
+  const categoriesWithCounts = useMemo(() => {
+    return safeRecipeCategories
+      .map(cat => ({
+        ...cat,
+        count: safeRecipes.filter(r => r.categoryId === cat.id).length
+      }))
+      .filter(cat => cat.count > 0);
+  }, [safeRecipeCategories, safeRecipes]);
+
   // Virtualization Refs
   const recipesParentRef = useRef<HTMLDivElement>(null);
   const ingredientsParentRef = useRef<HTMLDivElement>(null);
