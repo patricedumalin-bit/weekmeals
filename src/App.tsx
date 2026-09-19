@@ -23,7 +23,7 @@ import { Sparkles, Plus, ChefHat } from 'lucide-react';
 import { PrintableSheet } from './components/PrintableSheet';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import Auth from './components/Auth';
-import { calculateShoppingList } from './utils/calculator';
+import { calculateShoppingList, getWeeklyPlanSummary } from './utils/calculator';
 import { generateFullGenericDatabase, resetToDefaults, clearDatabase } from './utils/storage';
 import { handlePdfPrint } from './utils/pdfGenerator'; // I'll create this utility
 
@@ -80,8 +80,7 @@ function AppContent({
   const handleResetAndArchive = () => {
     if (!weeklyPlan) return;
 
-    // Use the helper from calculator.ts (already imported or available)
-    const { getWeeklyPlanSummary } = require('./utils/calculator');
+    // Use the helper from calculator.ts
     const stats = getWeeklyPlanSummary(weeklyPlan, recipes, ingredients, pantryMap);
 
     if (stats.mealsCount > 0) {
