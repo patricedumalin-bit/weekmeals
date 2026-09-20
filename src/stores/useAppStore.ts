@@ -59,6 +59,14 @@ interface AppState {
 
   isSeedingGeneric: boolean;
   setIsSeedingGeneric: (isSeeding: boolean) => void;
+
+  // System Config for AI Models
+  systemConfig: {
+    geminiModel: string;
+    groqModel: string;
+    isLoaded: boolean;
+  };
+  setSystemConfig: (config: Partial<AppState['systemConfig']>) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -106,4 +114,13 @@ export const useAppStore = create<AppState>((set) => ({
 
   isSeedingGeneric: false,
   setIsSeedingGeneric: (isSeeding) => set({ isSeedingGeneric: isSeeding }),
+
+  systemConfig: {
+    geminiModel: 'gemini-1.5-flash',
+    groqModel: 'qwen/qwen-2.5-vl-72b',
+    isLoaded: false
+  },
+  setSystemConfig: (config) => set((state) => ({
+    systemConfig: { ...state.systemConfig, ...config }
+  })),
 }));

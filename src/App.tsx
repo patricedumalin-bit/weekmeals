@@ -103,6 +103,8 @@ function AppContent({
     resetChecked();
   };
 
+  const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   // Sync theme and dark mode classes to html/body for full variable support
   useEffect(() => {
     const html = document.documentElement;
@@ -110,12 +112,13 @@ function AppContent({
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const updateClasses = () => {
-      const isDark = mediaQuery.matches;
+      const darkMatch = mediaQuery.matches;
+      setIsDark(darkMatch);
 
       [html, body].forEach(el => {
         if (!el) return;
         // Handle dark mode
-        el.classList.toggle('dark', isDark);
+        el.classList.toggle('dark', darkMatch);
 
         // Handle theme classes
         const themeClasses = Array.from(el.classList).filter(c => c.startsWith('theme-'));
@@ -162,7 +165,9 @@ function AppContent({
   };
 
   return (
-    <div className={`min-h-screen theme-${theme} text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[var(--accent)]/30 relative overflow-x-hidden`} style={{ backgroundColor: 'var(--bg)' }}>
+    <div
+      className={`min-h-screen ${isDark ? 'dark' : ''} theme-${theme} bg-[var(--bg)] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[var(--accent)]/30 relative overflow-x-hidden`}
+    >
       <Header
         activeTab={activeTab} setActiveTab={setActiveTab}
         weeklyPlan={weeklyPlan}

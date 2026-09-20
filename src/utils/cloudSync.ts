@@ -104,6 +104,23 @@ export async function fetchUserCloudData(userId: string) {
 }
 
 /**
+ * Fetches dynamic system configuration (like AI model names)
+ */
+export async function fetchSystemConfig() {
+  try {
+    const configRef = doc(db, 'system', 'config');
+    const snap = await getDoc(configRef);
+    if (snap.exists()) {
+      return snap.data() as { geminiModel: string; groqModel: string };
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not fetch system config:', err);
+    return null;
+  }
+}
+
+/**
  * Pushes user data (custom recipes, weekly plan, shopping list) to Cloud Firestore
  */
 export async function saveUserCloudData(userId: string, payload: UserCloudSyncPayload): Promise<string | null> {

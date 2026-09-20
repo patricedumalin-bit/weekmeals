@@ -14,3 +14,5 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app, "ai-studio-mealgroceryplann-2316272d-d0c9-4086-9e6e-0250f243da19");
+
+

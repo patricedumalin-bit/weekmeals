@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { RecipeSchema, AIRecipeResponse } from "./schemas";
+import { RecipeSchema, AIRecipeResponse, AIReceiptResponse, ReceiptSchema } from "./schemas";
 
 export type AIProvider = 'groq' | 'gemini';
 
@@ -68,7 +68,7 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
         'Authorization': `Bearer ${options.apiKey}`
       },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen3.8-27b',
+        model: options.model || 'qwen/qwen-2.5-vl-72b',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' }
       })
@@ -115,7 +115,7 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
     const text = response.text().replace(/```json|```/g, "").trim();
     return RecipeSchema.parse(JSON.parse(text));
   } else {
-    // Groq Vision (qwen/qwen3.8-27b supports vision)
+    // Groq Vision
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -123,7 +123,7 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
         'Authorization': `Bearer ${options.apiKey}`
       },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen3.8-27b',
+        model: options.model || 'qwen/qwen-2.5-vl-72b',
         messages: [
           {
             role: 'user',
@@ -200,7 +200,7 @@ Structure JSON attendue :
         'Authorization': `Bearer ${options.apiKey}`
       },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen3.8-27b',
+        model: options.model || 'qwen/qwen-2.5-vl-72b',
         messages: [
           {
             role: 'user',

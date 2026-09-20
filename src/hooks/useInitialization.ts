@@ -15,7 +15,8 @@ import {
   testFirestoreConnection,
   fetchUserCloudData,
   subscribeToUserCloudData,
-  saveUserCloudData
+  saveUserCloudData,
+  fetchSystemConfig
 } from '../utils/cloudSync';
 import { Recipe } from '../types';
 
@@ -38,11 +39,24 @@ export function useInitialization() {
     setIsLoaded,
     isLoaded
   } = useDataStore();
-  const { setTheme, theme } = useAppStore();
+  const { setTheme, theme, setSystemConfig } = useAppStore();
 
   const isSyncingFromCloudRef = useRef(false);
 
-  // 1. Initial Local Load
+  // 1. System Config Load (AI Models etc)
+  useEffect(() => {
+    fetchSystemConfig().then(config => {
+      if (config) {
+        setSystemConfig({
+          geminiModel: config.geminiModel,
+          groqModel: config.groqModel,
+          isLoaded: true
+        });
+      }
+    });
+  }, [setSystemConfig]);
+
+  // 2. Initial Local Load
   useEffect(() => {
     let cancelled = false;
     loadStoredData().then(loaded => {

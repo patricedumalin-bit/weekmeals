@@ -43,6 +43,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   onSaveNewIngredient
 }) => {
   const { language } = useLanguage();
+  const { systemConfig } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
@@ -98,10 +99,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
           }
         }
 
-        aiResult = await parseRecipeWithAI(contentToParse, { provider: aiProvider, apiKey: activeKey });
+        const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+        aiResult = await parseRecipeWithAI(contentToParse, { provider: aiProvider, apiKey: activeKey, model });
       } else if (activeTab === 'photo') {
         if (!selectedImage) throw new Error('Veuillez sélectionner une photo.');
-        aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey });
+        const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+        aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey, model });
       }
 
       if (aiResult) {

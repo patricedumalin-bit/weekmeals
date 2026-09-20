@@ -63,7 +63,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
 
   const { user, userData } = useAuthStore();
   const isPremium = userData?.subscriptionStatus === 'premium';
-  const { theme } = useAppStore();
+  const { theme, systemConfig } = useAppStore();
   const { pantryAddedDates } = useDataStore();
 
   if (!isOpen) return null;
@@ -101,20 +101,30 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
-        const base64 = event.target?.result as string;
-        const result = await parseReceiptWithAI(base64, { provider, apiKey }, file.type);
+        try {
+          const base64 = event.target?.result as string;
+          const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+          const result = await parseReceiptWithAI(base64, { provider, apiKey, model }, file.type);
 
-        // Match with existing ingredients
-        const matched = result.items.map(item => {
-          const lowerName = item.name.toLowerCase();
-          const match = ingredients.find(ing =>
-            ing.name.toLowerCase() === lowerName ||
-            translateIngredient(ing.id, ing.name).toLowerCase() === lowerName
-          );
-          return { ...item, matchedIngredientId: match?.id };
-        });
+          // Match with existing ingredients
+          const matched = result.items.map(item => {
+            const lowerName = item.name.toLowerCase();
+            const match = ingredients.find(ing =>
+              ing.name.toLowerCase() === lowerName ||
+              translateIngredient(ing.id, ing.name).toLowerCase() === lowerName
+            );
+            return { ...item, matchedIngredientId: match?.id };
+          });
 
-        setScanResults(matched as any);
+          setScanResults(matched as any);
+        } catch (parseErr: any) {
+          alert(parseErr.message || "L'IA n'a pas pu analyser ce document.");
+        } finally {
+          setIsScanning(false);
+        }
+      };
+      reader.onerror = () => {
+        alert("Erreur lors de la lecture du fichier.");
         setIsScanning(false);
       };
       reader.readAsDataURL(file);
@@ -215,37 +225,64 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   const handleSearchByBarcode = async () => {
     const code = prompt("Saisissez ou scannez le code-barres (EAN-13) :");
     if (!code) return;
+    await processBarcode(code);
+  };
+
+  const handleScanBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
+    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+
+    if (!apiKey) {
+      alert("Clé API requise pour l'analyse visuelle du code-barres.");
+      return;
+    }
 
     setIsScanning(true);
     try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json`);
-      const data = await response.json();
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const base64 = event.target?.result as string;
+          const prompt = "Extrait UNIQUEMENT le numéro de code-barres EAN-13 de cette image. Retourne seulement les chiffres, rien d'autre.";
 
-      if (data.status === 1) {
-        const product = data.product;
-        const productName = product.product_name_fr || product.product_name || "Produit Inconnu";
+          // Using a simple fetch for quick extraction via Gemini or Groq
+          const url = provider === 'gemini'
+            ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+            : 'https://api.groq.com/openai/v1/chat/completions';
 
-        // Suggest creating it
-        if (confirm(`Produit trouvé : ${productName}\nVoulez-vous l'ajouter à votre base ?`)) {
-          const newIng: Ingredient = {
-            id: `ing-ean-${code}`,
-            name: productName,
-            categoryId: 'cat-produits-laitiers', // OpenFoodFacts categories can be complex to map
-            defaultUnit: 'unit'
+          const body = provider === 'gemini' ? {
+            contents: [{ parts: [{ text: prompt }, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }] }]
+          } : {
+            model: systemConfig.groqModel,
+            messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: base64 } }] }]
           };
-          if (onSaveIngredient) onSaveIngredient(newIng);
-          onTogglePantryItem(newIng.id);
-          alert("Ingrédient ajouté au stock !");
+
+          const res = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
+          const data = await res.json();
+          const code = provider === 'gemini' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+          const cleanedCode = code.replace(/\D/g, '').trim();
+
+          if (cleanedCode && cleanedCode.length >= 8) {
+            await processBarcode(cleanedCode);
+          } else {
+            alert("Code-barres non détecté. Assurez-vous qu'il est bien visible.");
+          }
+        } catch (e) {
+          alert("Erreur lors de l'analyse visuelle.");
+        } finally {
+          setIsScanning(false);
         }
-      } else {
-        alert("Produit non trouvé sur OpenFoodFacts.");
-      }
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
-      alert("Erreur lors de la recherche du code-barres.");
-    } finally {
       setIsScanning(false);
     }
   };
+
+  const processBarcode = async (code: string) => {
 
   const getExpiryInfo = (ingredientId: string, categoryId: string) => {
     const addedAt = pantryAddedDates[ingredientId];

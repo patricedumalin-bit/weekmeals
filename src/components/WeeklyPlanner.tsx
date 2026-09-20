@@ -430,13 +430,13 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
                 <div className="grid grid-cols-2 gap-1.5">
                   {onOpenNutrition && (
-                    <button onClick={onOpenNutrition} className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-white/50 dark:bg-slate-800/50 border border-[var(--border-color)]">
+                    <button onClick={onOpenNutrition} className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg)] text-rose-600 dark:text-rose-400 border border-[var(--border-color)] hover:bg-[var(--cell-bg-hover)] transition-all">
                       <TrendingUp className="w-3.5 h-3.5" />
                       <span>Analyses</span>
                     </button>
                   )}
                   {onOpenPantry && (
-                    <button onClick={onOpenPantry} className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold bg-white/50 dark:bg-slate-800/50 border border-[var(--border-color)]">
+                    <button onClick={onOpenPantry} className="flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold backdrop-blur-md bg-[var(--cell-bg)] text-emerald-600 dark:text-emerald-400 border border-[var(--border-color)] hover:bg-[var(--cell-bg-hover)] transition-all">
                       <Refrigerator className="w-3.5 h-3.5" />
                       <span>Frigo</span>
                     </button>

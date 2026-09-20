@@ -5,12 +5,16 @@
   --primary: #1E293B;
   --accent: #2563EB;
   --hover: #93C5FD;
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(0, 0, 0, 0.1);
+  --cell-bg: rgba(0, 0, 0, 0.05);
+  --cell-bg-hover: rgba(0, 0, 0, 0.1);
 }
 
 /* Base resets */
 html, body {
-  background-color: var(--bg) !important;
-  color: var(--primary) !important;
+  background-color: var(--bg);
+  color: var(--primary);
   transition: background-color 0.3s ease, color 0.3s ease;
   margin: 0;
   padding: 0;
@@ -18,14 +22,14 @@ html, body {
   width: 100%;
 }
 
-/* Theme definitions */
+/* LIGHT THEMES */
 .theme-default {
   --bg: #F0F9FF;
   --primary: #0C4A6E;
   --accent: #0284C7;
   --hover: #BAE6FD;
   --card-bg: rgba(255, 255, 255, 0.95);
-  --border-color: rgba(186, 230, 253, 0.5);
+  --border-color: rgba(186, 230, 253, 0.6);
   --cell-bg: rgba(224, 242, 254, 0.6);
   --cell-bg-hover: rgba(186, 230, 253, 0.8);
 }
@@ -74,8 +78,8 @@ html, body {
   --cell-bg-hover: rgba(252, 231, 243, 0.6);
 }
 
-/* DARK MODE OVERRIDES - High specificity to win over light themes */
-html.dark, body.dark {
+/* DARK MODE - GENERAL */
+.dark {
   --bg: #0F172A;
   --primary: #F1F5F9;
   --accent: #3B82F6;
@@ -86,35 +90,40 @@ html.dark, body.dark {
   --cell-bg-hover: rgba(51, 65, 85, 0.85);
 }
 
-html.dark.theme-nature, body.dark.theme-nature {
+/* DARK MODE + THEME COMBINATIONS - Higher specificity */
+.dark.theme-nature {
   --bg: #141E17;
   --primary: #E8F5E9;
   --accent: #FF8A65;
   --hover: #386641;
   --card-bg: rgba(28, 45, 33, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
 }
 
-html.dark.theme-minimalist, body.dark.theme-minimalist {
+.dark.theme-minimalist {
   --bg: #09090B;
   --primary: #FAF5FF;
   --accent: #F59E0B;
   --card-bg: rgba(24, 24, 27, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
 }
 
-html.dark.theme-creative, body.dark.theme-creative {
+.dark.theme-creative {
   --bg: #1E1B4B;
   --primary: #EEF2FF;
   --accent: #A78BFA;
   --hover: #4338CA;
   --card-bg: rgba(38, 32, 90, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
 }
 
-html.dark.theme-girly, body.dark.theme-girly {
+.dark.theme-girly {
   --bg: #3D051B;
   --primary: #FDF2F8;
   --accent: #F472B6;
   --hover: #831843;
   --card-bg: rgba(76, 5, 33, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
 }
 
 @layer utilities {
@@ -123,7 +132,7 @@ html.dark.theme-girly, body.dark.theme-girly {
   }
 }
 
-/* Hide printable sheet from screen, strictly */
+/* Hide printable sheet from screen */
 @media screen {
   .print-only, #printable-content {
     display: none !important;
