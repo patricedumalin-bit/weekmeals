@@ -11,5 +11,5 @@ export const PREMIUM_FEATURES = {
   VOICE_COMMANDS_FULL: true,
   PDF_EXPORT_ADVANCED: true,
   AD_FREE: true,
-  AI_SAFETY_LIMIT: 200, // Limite invisible anti-abus/bots
+  AI_SAFETY_LIMIT: 500, // Limite invisible anti-abus/bots
 };

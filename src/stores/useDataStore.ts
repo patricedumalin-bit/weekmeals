@@ -5,7 +5,8 @@ import {
   Ingredient,
   IngredientCategory,
   WeeklyPlan,
-  CustomShoppingItem
+  CustomShoppingItem,
+  WeeklyHistoryItem
 } from '../types';
 import {
   saveRecipes,

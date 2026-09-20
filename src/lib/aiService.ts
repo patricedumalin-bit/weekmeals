@@ -230,7 +230,7 @@ export async function parseBarcodeWithAI(imageAsBase64: string, options: AIServi
 // Helper to call the secure Firebase Cloud Function proxy
 async function callServerProxy(endpoint: string, payload: any): Promise<any> {
   try {
-    const response = await fetch(${SERVER_API_URL}/, {
+    const response = await fetch(`${SERVER_API_URL}/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -243,7 +243,7 @@ async function callServerProxy(endpoint: string, payload: any): Promise<any> {
 
     return response.json();
   } catch (err: any) {
-    console.error('[Server Proxy] Error on :', err);
+    console.error(`[Server Proxy] Error on ${endpoint}:`, err);
     throw err;
   }
 }

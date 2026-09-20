@@ -33,6 +33,7 @@ function AppContent({
   const { handleManualSync } = useCloudSync();
   useSyncQueue();
 
+  const appStore = useAppStore();
   const {
     activeTab, setActiveTab,
     theme, setTheme,
@@ -46,8 +47,9 @@ function AppContent({
     setIsRecipeImportModalOpen,
     databaseSource, setDatabaseSource,
     isSeedingGeneric, setIsSeedingGeneric
-  } = useAppStore();
+  } = appStore;
 
+  const dataStore = useDataStore();
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan,
     checkedMap, customItems, pantryMap, isLoaded,
@@ -57,9 +59,10 @@ function AppContent({
     saveRecipeCategory, deleteRecipeCategory, saveIngredient, deleteIngredient,
     saveIngredientCategory, deleteIngredientCategory, importDatabase,
     toggleMealCooked, lockWeeklyPlan, resetWeeklyPlan, archiveWeeklyPlan
-  } = useDataStore();
+  } = dataStore;
 
-  const { user, userData, syncStatus } = useAuthStore();
+  const authStore = useAuthStore();
+  const { user, userData, syncStatus } = authStore;
 
   const handleResetAndArchive = () => {
     if (!weeklyPlan) return;
@@ -263,7 +266,8 @@ function AppContent({
 }
 
 export default function App() {
-  const { user, setUser } = useAuthStore();
+  const authStore = useAuthStore();
+  const { user, setUser } = authStore;
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guest_mode') === 'true');
   const [loading, setLoading] = useState(true);
 

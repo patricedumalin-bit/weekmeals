@@ -19,6 +19,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { saveRecipes, saveWeeklyPlan } from '../utils/storage';
 import { createPersonalCopyOfRecipe } from '../utils/cloudSync';
 import { calculateShoppingList } from '../utils/calculator';
+import { Ingredient } from '../types';
 
 export const ModalManager: React.FC<{
   onSignOut?: () => void;
@@ -27,6 +28,7 @@ export const ModalManager: React.FC<{
 }> = ({ onSignOut, onSwitchToAuth, onSaveIngredient }) => {
   const { t, translateMealLabel } = useLanguage();
 
+  const appStore = useAppStore();
   const {
     previewRecipeState, setPreviewRecipeState,
     recipePickerTarget, setRecipePickerTarget,
@@ -40,16 +42,19 @@ export const ModalManager: React.FC<{
     databaseSource, setDatabaseSource,
     theme, setTheme,
     isSeedingGeneric, setIsSeedingGeneric
-  } = useAppStore();
+  } = appStore;
 
+  const dataStore = useDataStore();
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan, pantryMap, customItems, checkedMap,
     saveRecipe, deleteRecipe, updateWeeklyPlan, togglePantryItem, batchSetPantry, toggleShoppingItem, addCustomShoppingItem, removeCustomShoppingItem,
     setRecipes, setRecipeCategories, setIngredients, setIngredientCategories, setWeeklyPlan, setCheckedMap, setCustomItems,
     saveIngredient
-  } = useDataStore();
+  } = dataStore;
 
-  const { user, userData, syncStatus, lastSyncedAt, setUserData } = useAuthStore();
+  const authStore = useAuthStore();
+  const { user, userData, syncStatus, lastSyncedAt, setUserData } = authStore;
+
   const { handleManualSync, scheduleCloudSync } = useCloudSync();
 
   const { totalItemsCount } = calculateShoppingList(

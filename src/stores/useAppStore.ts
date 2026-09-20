@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ActiveTab, Theme, Recipe, CookingModeType } from '../types';
+import { ActiveTab, Recipe } from '../types';
 
 interface AppState {
   activeTab: ActiveTab;

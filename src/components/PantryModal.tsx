@@ -61,10 +61,17 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit: UnitType; matchedIngredientId?: string }[] | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-  const { userData, incrementAIUsage } = useAuthStore();
-  const { isPremium, aiLimit } = useSubscription();
-  const { theme, systemConfig } = useAppStore();
-  const { pantryAddedDates } = useDataStore();
+  const authStore = useAuthStore();
+  const { userData, incrementAIUsage } = authStore;
+
+  const subscription = useSubscription();
+  const { isPremium, aiLimit } = subscription;
+
+  const appStore = useAppStore();
+  const { theme, systemConfig } = appStore;
+
+  const dataStore = useDataStore();
+  const { pantryAddedDates } = dataStore;
 
   if (!isOpen) return null;
 
@@ -93,7 +100,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       if (isPremium) {
         alert("Activité inhabituelle détectée. Par mesure de sécurité, vos scans IA sont temporairement suspendus. Veuillez contacter le support si vous pensez qu'il s'agit d'une erreur.");
       } else {
-        alert(`Limite de scans IA atteinte (${FREE_LIMITS.AI_SCANS_PER_MONTH}/mois). Passez en version Full pour une utilisation illimitée !`);
+        alert(`Limite de scans IA atteinte (${aiLimit.remaining} restants). Passez en version Full pour une utilisation illimitée !`);
       }
       return;
     }
@@ -157,6 +164,15 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   };
 
   const handleAskChefAI = async () => {
+    if (aiLimit.reached) {
+      if (isPremium) {
+        alert("Activité inhabituelle détectée. Votre accès est limité par sécurité.");
+      } else {
+        alert(`Limite de scans IA atteinte. Passez en version Full pour une utilisation illimitée !`);
+      }
+      return;
+    }
+
     const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
     const provider = localStorage.getItem('ai_provider') as any || 'gemini';
 
@@ -192,6 +208,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
 
       const data = await response.json();
       const text = provider === 'gemini' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+      incrementAIUsage();
       alert(`👨‍🍳 Idées du Chef :\n\n${text}`);
     } catch (err) {
       alert("Le Chef est un peu occupé, réessayez dans un instant.");
@@ -233,7 +250,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       if (isPremium) {
         alert("Activité inhabituelle détectée. Votre accès est limité par sécurité.");
       } else {
-        alert(`Limite de scans IA atteinte (${FREE_LIMITS.AI_SCANS_PER_MONTH}/mois). Passez en version Full pour une utilisation illimitée !`);
+        alert(`Limite de scans IA atteinte. Passez en version Full pour une utilisation illimitée !`);
       }
       return;
     }
