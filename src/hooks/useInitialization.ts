@@ -123,7 +123,8 @@ export function useInitialization() {
         subscriptionStatus: 'premium',
         recipeCount: 0,
         mealCount: 0,
-        displayName: 'Invité'
+        displayName: 'Invité',
+        aiUsage: Number(localStorage.getItem('meal_guest_ai_usage') || 0)
       });
       return;
     }

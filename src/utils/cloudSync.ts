@@ -79,6 +79,7 @@ export interface UserCloudSyncPayload {
   theme?: string;
   subscriptionStatus?: 'free' | 'premium';
   recipeCount?: number;
+  aiUsage?: number;
   mealCount?: number;
   displayName?: string | null;
   email?: string | null;
@@ -144,6 +145,7 @@ export async function saveUserCloudData(userId: string, payload: UserCloudSyncPa
     if (payload.theme !== undefined) cleanPayload.theme = payload.theme;
     if (payload.subscriptionStatus !== undefined) cleanPayload.subscriptionStatus = payload.subscriptionStatus;
     if (payload.recipeCount !== undefined) cleanPayload.recipeCount = payload.recipeCount;
+    if (payload.aiUsage !== undefined) cleanPayload.aiUsage = payload.aiUsage;
     if (payload.mealCount !== undefined) cleanPayload.mealCount = payload.mealCount;
     if (payload.displayName !== undefined) cleanPayload.displayName = payload.displayName;
     if (payload.email !== undefined) cleanPayload.email = payload.email;
