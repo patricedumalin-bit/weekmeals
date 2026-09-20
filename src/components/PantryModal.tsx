@@ -24,6 +24,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { useDataStore } from '../stores/useDataStore';
 import { parseReceiptWithAI, parseBarcodeWithAI } from '../lib/aiService';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface PantryModalProps {
   isOpen: boolean;
@@ -60,8 +61,8 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit: UnitType; matchedIngredientId?: string }[] | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-  const { userData } = useAuthStore();
-  const isPremium = userData?.subscriptionStatus === 'premium';
+  const { userData, incrementAIUsage } = useAuthStore();
+  const { isPremium, aiLimit } = useSubscription();
   const { theme, systemConfig } = useAppStore();
   const { pantryAddedDates } = useDataStore();
 
@@ -88,6 +89,15 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (aiLimit.reached) {
+      if (isPremium) {
+        alert("Activité inhabituelle détectée. Par mesure de sécurité, vos scans IA sont temporairement suspendus. Veuillez contacter le support si vous pensez qu'il s'agit d'une erreur.");
+      } else {
+        alert(`Limite de scans IA atteinte (${FREE_LIMITS.AI_SCANS_PER_MONTH}/mois). Passez en version Full pour une utilisation illimitée !`);
+      }
+      return;
+    }
+
     const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
     const provider = localStorage.getItem('ai_provider') as any || 'gemini';
 
@@ -104,6 +114,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
           const base64 = event.target?.result as string;
           const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
           const result = await parseReceiptWithAI(base64, { provider, apiKey, model }, file.type);
+          incrementAIUsage();
 
           const matched = result.items.map(item => {
             const lowerName = item.name.toLowerCase();
@@ -218,6 +229,15 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (aiLimit.reached) {
+      if (isPremium) {
+        alert("Activité inhabituelle détectée. Votre accès est limité par sécurité.");
+      } else {
+        alert(`Limite de scans IA atteinte (${FREE_LIMITS.AI_SCANS_PER_MONTH}/mois). Passez en version Full pour une utilisation illimitée !`);
+      }
+      return;
+    }
+
     const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
     const provider = localStorage.getItem('ai_provider') as any || 'gemini';
 
@@ -234,8 +254,10 @@ export const PantryModal: React.FC<PantryModalProps> = ({
           const base64 = event.target?.result as string;
           const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
           const code = await parseBarcodeWithAI(base64, { provider, apiKey, model }, file.type);
-          if (code) await processBarcode(code);
-          else alert("Code-barres non détecté.");
+          if (code) {
+            incrementAIUsage();
+            await processBarcode(code);
+          } else alert("Code-barres non détecté.");
         } catch (e: any) {
           alert(e.message || "Erreur lors de l'analyse.");
         } finally {

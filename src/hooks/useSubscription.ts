@@ -1,6 +1,6 @@
 import { useAuthStore } from '../stores/useAuthStore';
 import { useDataStore } from '../stores/useDataStore';
-import { FREE_LIMITS } from '../constants/subscription';
+import { FREE_LIMITS, PREMIUM_FEATURES } from '../constants/subscription';
 
 export function useSubscription() {
   const { userData } = useAuthStore();
@@ -8,8 +8,8 @@ export function useSubscription() {
 
   const isPremium = userData?.subscriptionStatus === 'premium';
 
-  const checkLimit = (currentCount: number, limit: number) => {
-    if (isPremium) return { reached: false, remaining: Infinity };
+  const checkLimit = (currentCount: number, freeLimit: number, premiumLimit: number = Infinity) => {
+    const limit = isPremium ? premiumLimit : freeLimit;
     return {
       reached: currentCount >= limit,
       remaining: Math.max(0, limit - currentCount)
@@ -23,6 +23,7 @@ export function useSubscription() {
     // Limits
     mealsLimit: checkLimit(weeklyPlan?.meals.length || 0, FREE_LIMITS.MAX_MEALS),
     recipesLimit: checkLimit(recipes.filter(r => r.isCustom).length, FREE_LIMITS.MAX_CUSTOM_RECIPES),
+    aiLimit: checkLimit(userData?.aiUsage || 0, FREE_LIMITS.AI_SCANS_PER_MONTH, PREMIUM_FEATURES.AI_SAFETY_LIMIT),
 
     // Feature Permissions
     canUseVoiceFull: isPremium,

@@ -18,6 +18,10 @@ import { Recipe, Ingredient, IngredientCategory, RecipeCategory, RecipeIngredien
 import { normalizeExternalIngredient } from '../utils/datasetCorrelator';
 
 import { useLanguage } from '../i18n/LanguageContext';
+import { useAppStore } from '../stores/useAppStore';
+import { useAuthStore } from '../stores/useAuthStore';
+import { useSubscription } from '../hooks/useSubscription';
+import { FREE_LIMITS } from '../constants/subscription';
 
 interface RecipeImportModalProps {
   isOpen: boolean;
@@ -44,6 +48,8 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
 }) => {
   const { language } = useLanguage();
   const { systemConfig } = useAppStore();
+  const { incrementAIUsage } = useAuthStore();
+  const { aiLimit } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
@@ -64,6 +70,15 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   if (!isOpen) return null;
 
   const handleParse = async () => {
+    if (aiLimit.reached) {
+      if (isPremium) {
+        setParseError("Activité inhabituelle détectée. Par mesure de sécurité, vos imports IA sont temporairement suspendus.");
+      } else {
+        setParseError(`Limite de scans IA atteinte (${FREE_LIMITS.AI_SCANS_PER_MONTH}/mois). Passez en version Full pour une utilisation illimitée !`);
+      }
+      return;
+    }
+
     setIsParsing(true);
     setParseError(null);
 
@@ -101,10 +116,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
 
         const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
         aiResult = await parseRecipeWithAI(contentToParse, { provider: aiProvider, apiKey: activeKey, model });
+        incrementAIUsage();
       } else if (activeTab === 'photo') {
         if (!selectedImage) throw new Error('Veuillez sélectionner une photo.');
         const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
         aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey, model });
+        incrementAIUsage();
       }
 
       if (aiResult) {

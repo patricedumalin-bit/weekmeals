@@ -51,13 +51,29 @@ app.use(validateFirebaseIdToken);
  */
 app.post('/parse-recipe', async (req, res) => {
   const { content, options } = req.body;
-
-  // ICI : Vous pouvez mettre un quota (ex: max 10 scans par jour par utilisateur)
-  // const userRef = admin.firestore().doc(`users/${req.user.uid}`);
+  const uid = req.user.uid;
 
   try {
-    // Logique identique à aiService.ts mais utilisant les clés serveur
-    // ... appel à Gemini ou Groq ...
+    // 1. Vérification du Quota dans Firestore
+    const userRef = admin.firestore().doc(`users/${uid}`);
+    const userSnap = await userRef.get();
+    const userData = userSnap.data() || {};
+
+    const isPremium = userData.subscriptionStatus === 'premium';
+    const currentUsage = userData.aiUsage || 0;
+    const limit = isPremium ? 100 : 3; // Exemple de limites
+
+    if (currentUsage >= limit) {
+      return res.status(429).json({ message: 'Limite de quota IA atteinte pour ce mois.' });
+    }
+
+    // 2. Appel à l'IA (Logique identique à aiService.ts)
+    // ...
+    const result = { /* ... */ };
+
+    // 3. Incrémenter l'usage après succès
+    await userRef.set({ aiUsage: admin.firestore.FieldValue.increment(1) }, { merge: true });
+
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: err.message });
