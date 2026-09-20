@@ -81,7 +81,13 @@ export const useDataStore = create<DataState>((set, get) => ({
   pantryMap: {},
   pantryAddedDates: {},
   totalSavingsEur: Number(localStorage.getItem('meal_total_savings') || 0),
-  weeklyHistory: JSON.parse(localStorage.getItem('meal_weekly_history') || '[]'),
+  weeklyHistory: (() => {
+    try {
+      return JSON.parse(localStorage.getItem('meal_weekly_history') || '[]');
+    } catch (e) {
+      return [];
+    }
+  })(),
   isLoaded: false,
 
   setRecipes: (recipes) => set({ recipes }),

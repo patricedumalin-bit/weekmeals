@@ -147,19 +147,22 @@ function AppContent({
     });
   }, [theme]);
 
-  if (!isLoaded || !weeklyPlan || !weeklyPlan.meals) {
+  if (!isLoaded || !weeklyPlan || !weeklyPlan.meals || !Array.isArray(weeklyPlan.meals)) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+          <p className="text-xs text-slate-400">Chargement de votre cuisine...</p>
+        </div>
       </div>
     );
   }
 
   const { totalItemsCount, checkedItemsCount } = calculateShoppingList(
-    weeklyPlan, recipes, ingredients, ingredientCategories, checkedMap, customItems
+    weeklyPlan, recipes || [], ingredients || [], ingredientCategories || [], checkedMap || {}, customItems || []
   );
 
-  const totalAssignedRecipes = weeklyPlan.meals.reduce((sum, m) => sum + (m.recipeIds?.length || 0), 0);
+  const totalAssignedRecipes = (weeklyPlan?.meals || []).reduce((sum, m) => sum + (m?.recipeIds?.length || 0), 0);
 
   const { t, language, translateMealLabel, translateRecipe, translateIngredientCategory, translateIngredient, translateUnit } = useLanguage();
 

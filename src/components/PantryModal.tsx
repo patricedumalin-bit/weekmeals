@@ -60,7 +60,8 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit: UnitType; matchedIngredientId?: string }[] | null>(null);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
-  const { user } = useAuthStore();
+  const { user, userData } = useAuthStore();
+  const isPremium = userData?.subscriptionStatus === 'premium';
   const { theme } = useAppStore();
 
   if (!isOpen) return null;
