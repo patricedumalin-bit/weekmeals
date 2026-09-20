@@ -19,7 +19,9 @@ import {
   TrendingUp,
   Euro,
   Scale,
-  Sparkles
+  Sparkles,
+  ArrowRight,
+  Heart
 } from 'lucide-react';
 import { SyncStatus, themes, Theme } from '../types';
 import { formatSyncTime } from '../utils/cloudSync';

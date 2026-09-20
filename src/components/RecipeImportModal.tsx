@@ -44,8 +44,6 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
 }) => {
   const { language } = useLanguage();
 
-  if (!isOpen) return null;
-
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
 
@@ -61,6 +59,8 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   const [isParsing, setIsParsing] = useState(false);
   const [parsedRecipe, setParsedRecipe] = useState<Partial<Recipe> | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
 
   const handleParse = async () => {
     setIsParsing(true);

@@ -115,12 +115,6 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   onSaveRecipe
 }) => {
   const { t, translateRecipeCategory, translateMealLabel, translateRecipe, translateCookingMode, translateUnit } = useLanguage();
-  if (!isOpen) return null;
-
-  const safeRecipes = Array.isArray(recipes) ? recipes : [];
-  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
-  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
-  const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
 
   const [activeTab, setActiveTab] = useState<'library' | 'custom'>(
     (currentCustomMeals || []).length > 0 ? 'custom' : 'library'
@@ -128,11 +122,6 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
 
   // Library filters & database source
   const [localDbSource, setLocalDbSource] = useState<DatabaseViewSource>(databaseSource);
-  const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
-  const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
-
-  const personalRecipesCount = safeRecipes.filter(r => r.isCustom).length;
-  const genericRecipesCount = safeRecipes.filter(r => !r.isCustom).length;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -147,6 +136,17 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   );
   const [ingredientSearch, setIngredientSearch] = useState('');
   const [showSaveAsRecipe, setShowSaveAsRecipe] = useState(false);
+
+  if (!isOpen) return null;
+
+  const safeRecipes = Array.isArray(recipes) ? recipes : [];
+  const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
+  const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
+  const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
+
+  const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
+  const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
+
 
   const COOKING_MODES = getAvailableCookingModes(safeRecipes);
 

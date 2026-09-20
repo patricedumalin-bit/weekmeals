@@ -22,6 +22,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { matchRecipesWithPantry, getIngredientCost } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAppStore } from '../stores/useAppStore';
+import { useDataStore } from '../stores/useDataStore';
 import { parseReceiptWithAI } from '../lib/aiService';
 import { useAuthStore } from '../stores/useAuthStore';
 
@@ -63,6 +64,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   const { user, userData } = useAuthStore();
   const isPremium = userData?.subscriptionStatus === 'premium';
   const { theme } = useAppStore();
+  const { pantryAddedDates } = useDataStore();
 
   if (!isOpen) return null;
 
@@ -87,7 +89,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const apiKey = localStorage.getItem('ai_api_key_groq') || localStorage.getItem('ai_api_key_gemini');
+    const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
     const provider = localStorage.getItem('ai_provider') as any || 'gemini';
 
     if (!apiKey) {
@@ -136,7 +138,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
   };
 
   const handleAskChefAI = async () => {
-    const apiKey = localStorage.getItem('ai_api_key_groq') || localStorage.getItem('ai_api_key_gemini');
+    const apiKey = localStorage.getItem('groq_api_key') || localStorage.getItem('gemini_api_key');
     const provider = localStorage.getItem('ai_provider') as any || 'gemini';
 
     if (!apiKey) {
@@ -244,8 +246,6 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       setIsScanning(false);
     }
   };
-
-  const { pantryAddedDates } = useDataStore();
 
   const getExpiryInfo = (ingredientId: string, categoryId: string) => {
     const addedAt = pantryAddedDates[ingredientId];

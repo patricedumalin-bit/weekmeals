@@ -1,25 +1,42 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
+import React, { StrictMode, Component, ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-console.log("APP BOOTING...");
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-900 text-white p-8 flex flex-col items-center justify-center text-center">
+          <h1 className="text-2xl font-bold text-rose-500 mb-4">Oups ! Une erreur est survenue.</h1>
+          <pre className="bg-slate-800 p-4 rounded-xl text-left text-xs overflow-auto max-w-full mb-6">
+            {this.state.error?.toString()}
+          </pre>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-emerald-600 rounded-full font-bold shadow-lg"
+          >
+            Recharger l'application
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
-try {
-  const rootElement = document.getElementById('root');
-  if (!rootElement) {
-    console.error("FATAL: root element not found!");
-  } else {
-    createRoot(rootElement).render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    );
-    console.log("APP RENDER CALLED");
-  }
-} catch (err) {
-  console.error("CRITICAL BOOT ERROR:", err);
-  if (err instanceof Error) {
-    console.error("Stack:", err.stack);
-  }
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
 }

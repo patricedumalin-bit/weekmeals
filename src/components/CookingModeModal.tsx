@@ -25,6 +25,7 @@ import { Recipe, Ingredient, IngredientCategory, UnitType } from '../types';
 import { formatQuantity } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useDataStore } from '../stores/useDataStore';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface CookingModeModalProps {
   recipe: Recipe | null;
@@ -68,6 +69,7 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
 }) => {
   const { translateRecipe, translateIngredient, translateUnit } = useLanguage();
   const { pantryMap, batchSetPantry, addSavings } = useDataStore();
+  const { isPremium } = useSubscription();
 
   if (!recipe) return null;
 

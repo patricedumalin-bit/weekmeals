@@ -79,7 +79,6 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
   onQuickAddIngredient
 }) => {
   const { t, translateUnit, translateRecipeCategory, translateDifficulty, translateIngredient } = useLanguage();
-  if (!isOpen) return null;
 
   const [title, setTitle] = useState(recipeToEdit?.title || '');
   const [categoryId, setCategoryId] = useState(
@@ -107,6 +106,8 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
   );
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (!isOpen) return null;
 
   // Ingredient Row Operations
   const handleAddIngredientRow = () => {

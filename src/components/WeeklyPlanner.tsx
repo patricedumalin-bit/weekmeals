@@ -10,7 +10,6 @@ import {
   RotateCcw, 
   ChevronRight,
   ChevronDown,
-  ChevronUp,
   Utensils,
   Clock,
   Shuffle,
@@ -23,7 +22,8 @@ import {
   ShieldCheck,
   X,
   CheckCircle2,
-  Check
+  Check,
+  ChevronUp
 } from 'lucide-react';
 import { WeeklyPlan, MealSlot, Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';

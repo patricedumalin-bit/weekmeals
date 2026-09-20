@@ -1,8 +1,3 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './lib/firebase';
@@ -19,13 +14,13 @@ import { PlannedMealsList } from './components/PlannedMealsList';
 import { ShoppingListView } from './components/ShoppingListView';
 import { DatabaseManager } from './components/DatabaseManager';
 import { ModalManager } from './components/ModalManager';
-import { Sparkles, Plus, ChefHat } from 'lucide-react';
+import { Sparkles, Plus } from 'lucide-react';
 import { PrintableSheet } from './components/PrintableSheet';
 import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import Auth from './components/Auth';
 import { calculateShoppingList, getWeeklyPlanSummary } from './utils/calculator';
 import { generateFullGenericDatabase, resetToDefaults, clearDatabase } from './utils/storage';
-import { handlePdfPrint } from './utils/pdfGenerator'; // I'll create this utility
+import { handlePdfPrint } from './utils/pdfGenerator';
 
 function AppContent({ 
   onSignOut,
@@ -36,7 +31,7 @@ function AppContent({
 }) {
   useInitialization();
   const { handleManualSync } = useCloudSync();
-  useSyncQueue(); // Initialize online/offline monitoring and queue processing
+  useSyncQueue();
 
   const {
     activeTab, setActiveTab,
@@ -53,17 +48,6 @@ function AppContent({
     isSeedingGeneric, setIsSeedingGeneric
   } = useAppStore();
 
-  // Reset modal states on first mount to ensure clean start
-  useEffect(() => {
-    setIsRecipeImportModalOpen(false);
-    setIsProfileModalOpen(false);
-    setIsPantryModalOpen(false);
-    setIsAutoPlanModalOpen(false);
-    setIsNutritionDashboardOpen(false);
-    setRecipePickerTarget(null);
-    setPreviewRecipeState(null);
-  }, []);
-
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan,
     checkedMap, customItems, pantryMap, isLoaded,
@@ -75,24 +59,20 @@ function AppContent({
     toggleMealCooked, lockWeeklyPlan, resetWeeklyPlan, archiveWeeklyPlan
   } = useDataStore();
 
-  const { user, userData, syncStatus, setUserData } = useAuthStore();
+  const { user, userData, syncStatus } = useAuthStore();
 
   const handleResetAndArchive = () => {
     if (!weeklyPlan) return;
-
-    // Use the helper from calculator.ts
     const stats = getWeeklyPlanSummary(weeklyPlan, recipes, ingredients, pantryMap);
-
     if (stats.mealsCount > 0) {
       archiveWeeklyPlan({
         id: `week-${Date.now()}`,
-        weekNumber: 1, // Simplified
+        weekNumber: 1,
         year: new Date().getFullYear(),
         ...stats,
         date: new Date().toISOString()
       });
     }
-
     resetWeeklyPlan();
   };
 
@@ -123,37 +103,37 @@ function AppContent({
     resetChecked();
   };
 
-  // Sync dark mode class
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleThemeChange = (e: MediaQueryListEvent | MediaQueryList) => {
-      document.documentElement.classList.toggle('dark', e.matches);
-      document.body.classList.toggle('dark', e.matches);
-    };
-    handleThemeChange(mediaQuery);
-    mediaQuery.addEventListener('change', handleThemeChange);
-    return () => mediaQuery.removeEventListener('change', handleThemeChange);
-  }, []);
-
-  // Sync theme classes
+  // Sync theme and dark mode classes to html/body for full variable support
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
-    [html, body].forEach(el => {
-      if (!el) return;
-      const themeClasses = Array.from(el.classList).filter(c => c.startsWith('theme-'));
-      themeClasses.forEach(c => el.classList.remove(c));
-      el.classList.add(`theme-${theme}`);
-    });
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateClasses = () => {
+      const isDark = mediaQuery.matches;
+
+      [html, body].forEach(el => {
+        if (!el) return;
+        // Handle dark mode
+        el.classList.toggle('dark', isDark);
+
+        // Handle theme classes
+        const themeClasses = Array.from(el.classList).filter(c => c.startsWith('theme-'));
+        themeClasses.forEach(c => el.classList.remove(c));
+        el.classList.add(`theme-${theme}`);
+      });
+    };
+
+    updateClasses();
+    mediaQuery.addEventListener('change', updateClasses);
+    return () => mediaQuery.removeEventListener('change', updateClasses);
   }, [theme]);
 
-  if (!isLoaded || !weeklyPlan || !weeklyPlan.meals || !Array.isArray(weeklyPlan.meals)) {
+  if (!isLoaded || !weeklyPlan || !weeklyPlan.meals) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
-          <p className="text-xs text-slate-400">Chargement de votre cuisine...</p>
-        </div>
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center gap-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
+        <p className="text-xs text-slate-400">Chargement...</p>
       </div>
     );
   }
@@ -163,25 +143,10 @@ function AppContent({
   );
 
   const totalAssignedRecipes = (weeklyPlan?.meals || []).reduce((sum, m) => sum + (m?.recipeIds?.length || 0), 0);
-
   const { t, language, translateMealLabel, translateRecipe, translateIngredientCategory, translateIngredient, translateUnit } = useLanguage();
 
   const handlePrint = (type: 'planning' | 'shopping' | 'both' = 'both') => {
-      handlePdfPrint(
-        type,
-        weeklyPlan,
-        recipes,
-        ingredients,
-        ingredientCategories,
-        customItems,
-        language,
-        t,
-        translateMealLabel,
-        translateRecipe,
-        translateIngredientCategory,
-        translateIngredient,
-        translateUnit
-      );
+      handlePdfPrint(type, weeklyPlan, recipes, ingredients, ingredientCategories, customItems, language, t, translateMealLabel, translateRecipe, translateIngredientCategory, translateIngredient, translateUnit);
   };
 
   const handleResetDatabase = async () => {
@@ -197,23 +162,14 @@ function AppContent({
   };
 
   return (
-    <div 
-      className={`min-h-screen theme-${theme} text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[var(--accent)]/30 relative overflow-x-hidden`}
-      style={{ backgroundColor: 'var(--bg)' }}
-    >
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 no-print">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[var(--primary)]/20 blur-3xl" />
-        <div className="absolute top-1/4 -right-32 w-96 h-96 rounded-full bg-[var(--accent)]/20 blur-3xl" />
-      </div>
-
+    <div className={`min-h-screen theme-${theme} text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-[var(--accent)]/30 relative overflow-x-hidden`} style={{ backgroundColor: 'var(--bg)' }}>
       <Header
         activeTab={activeTab} setActiveTab={setActiveTab}
         weeklyPlan={weeklyPlan}
         totalShoppingItems={totalItemsCount} checkedShoppingItems={checkedItemsCount}
         onPrint={handlePrint} onReset={handleResetDatabase}
         isPremium={userData?.subscriptionStatus === 'premium'}
-        user={user} onTogglePremium={() => {}} // Moved to ModalManager
-        currentTheme={theme} onUpdateTheme={setTheme}
+        user={user} currentTheme={theme} onUpdateTheme={setTheme}
         onSignOut={onSignOut} onOpenProfile={() => setIsProfileModalOpen(true)}
         syncStatus={syncStatus}
       />
@@ -291,46 +247,6 @@ function AppContent({
         plannedRecipesCount={totalAssignedRecipes}
         shoppingItemsCount={totalItemsCount} checkedShoppingCount={checkedItemsCount}
       />
-
-      {/* FAB - Floating Action Button for Mobile Ergonomics */}
-      <div className="fixed bottom-24 right-6 z-40 sm:hidden flex flex-col gap-3 pointer-events-none">
-        {activeTab === 'planner' && (
-          <button
-            onClick={() => setIsAutoPlanModalOpen(true)}
-            className="w-14 h-14 rounded-full bg-amber-500 text-slate-900 shadow-lg flex items-center justify-center animate-bounce-subtle pointer-events-auto active:scale-95 transition-transform"
-            title="Auto-Plan"
-          >
-            <Sparkles className="w-6 h-6" />
-          </button>
-        )}
-        {activeTab === 'shopping' && (
-          <button
-            onClick={() => setIsAddCustomShoppingModalOpen(true)}
-            className="w-14 h-14 rounded-full bg-[var(--primary)] text-white shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
-            title="Ajouter un article"
-          >
-            <Plus className="w-6 h-6" />
-          </button>
-        )}
-        {activeTab === 'database' && (
-          <div className="flex flex-col gap-3 items-end">
-            <button
-              onClick={() => setIsRecipeImportModalOpen(true)}
-              className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
-              title="Importer une recette"
-            >
-              <Sparkles className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setRecipeEditorState({ isOpen: true, recipeToEdit: null })}
-              className="w-14 h-14 rounded-full bg-[var(--primary)] text-white shadow-lg flex items-center justify-center pointer-events-auto active:scale-95 transition-transform"
-              title="Nouvelle recette"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
-          </div>
-        )}
-      </div>
 
       <ModalManager
         onSignOut={onSignOut}
