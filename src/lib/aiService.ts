@@ -3,6 +3,10 @@ import { RecipeSchema, AIRecipeResponse, AIReceiptResponse, ReceiptSchema } from
 
 export type AIProvider = 'groq' | 'gemini';
 
+// TOGGLE THIS TO TRUE WHEN READY TO SWITCH TO SERVER-SIDE IA
+const USE_SERVER_PROXY = false;
+const SERVER_API_URL = 'https://your-firebase-region-project.cloudfunctions.net/api';
+
 export interface AIServiceOptions {
   provider: AIProvider;
   apiKey: string;
@@ -44,6 +48,10 @@ CONTENU À ANALYSER :
 ${content}`;
 
 export async function parseRecipeWithAI(content: string, options: AIServiceOptions): Promise<AIRecipeResponse> {
+  if (USE_SERVER_PROXY) {
+    return callServerProxy('parse-recipe', { content, options });
+  }
+
   const prompt = RECIPE_PROMPT_TEMPLATE(content);
 
   if (options.provider === 'gemini') {
@@ -56,11 +64,9 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    // Clean JSON text if markdown blocks are present
     const cleanJson = text.replace(/```json|```/g, "").trim();
     return RecipeSchema.parse(JSON.parse(cleanJson));
   } else {
-    // Groq implementation
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -76,20 +82,23 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur Groq AI (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq dans votre Profil."}`);
+      throw new Error(`Erreur Groq AI (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq."}`);
     }
 
     const data = await response.json();
     const jsonText = data.choices?.[0]?.message?.content;
     if (!jsonText) throw new Error("L'IA n'a pas pu générer de contenu.");
 
-    // Clean JSON text if markdown blocks are present
     const cleanJson = jsonText.replace(/```json|```/g, "").trim();
     return RecipeSchema.parse(JSON.parse(cleanJson));
   }
 }
 
 export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIServiceOptions): Promise<AIRecipeResponse> {
+  if (USE_SERVER_PROXY) {
+    return callServerProxy('parse-recipe-image', { imageAsBase64, options });
+  }
+
   const prompt = RECIPE_PROMPT_TEMPLATE("Analyse cette photo de recette.");
 
   if (options.provider === 'gemini') {
@@ -99,7 +108,6 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    // Convert base64 data URL to raw base64 if needed
     const base64Data = imageAsBase64.split(',')[1] || imageAsBase64;
 
     const result = await model.generateContent([
@@ -115,7 +123,6 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
     const text = response.text().replace(/```json|```/g, "").trim();
     return RecipeSchema.parse(JSON.parse(text));
   } else {
-    // Groq Vision
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -139,32 +146,25 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq dans votre Profil."}`);
+      throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq."}`);
     }
 
     const data = await response.json();
     const jsonText = data.choices?.[0]?.message?.content;
     if (!jsonText) throw new Error("L'IA n'a pas pu générer de contenu.");
 
-    // Clean JSON text if markdown blocks are present
     const cleanJson = jsonText.replace(/```json|```/g, "").trim();
     return RecipeSchema.parse(JSON.parse(cleanJson));
   }
 }
 
 export async function parseReceiptWithAI(fileBase64: string, options: AIServiceOptions, fileType: string = 'image/jpeg'): Promise<AIReceiptResponse> {
-  const isPdf = fileType === 'application/pdf';
-  const prompt = `Tu es un expert en lecture de tickets de caisse et factures de drive (PDF ou Image).
-Analyse ce document et extrais la liste des produits alimentaires achetés.
-Pour chaque produit, identifie son nom simple et générique (ex: "Yaourt Velouté x8" devient "Yaourt"), sa quantité et son unité (si précisée, sinon "unit").
+  if (USE_SERVER_PROXY) {
+    return callServerProxy('parse-receipt', { fileBase64, options, fileType });
+  }
 
-IMPORTANT : Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown, SANS texte autour).
-Structure JSON attendue :
-{
-  "items": [
-    { "name": "Nom du produit", "quantity": 1, "unit": "g" | "kg" | "ml" | "cl" | "l" | "tbsp" | "tsp" | "unit" | "clove" | "pinch" | "can" | "pack" | "bunch" | "slice" }
-  ]
-}`;
+  const isPdf = fileType === 'application/pdf';
+  const prompt = `Tu es un expert en lecture de tickets de caisse et factures de drive. Analyse ce document et extrais UNIQUEMENT les produits alimentaires au format JSON : { "items": [{ "name": "...", "quantity": 1, "unit": "..." }] }`;
 
   if (options.provider === 'gemini') {
     const genAI = new GoogleGenerativeAI(options.apiKey);
@@ -174,56 +174,76 @@ Structure JSON attendue :
     });
 
     const base64Data = fileBase64.split(',')[1] || fileBase64;
-
     const result = await model.generateContent([
       prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: fileType
-        }
-      }
+      { inlineData: { data: base64Data, mimeType: fileType } }
     ]);
     const response = await result.response;
     const text = response.text().replace(/```json|```/g, "").trim();
     return ReceiptSchema.parse(JSON.parse(text));
   } else {
-    // Groq Vision (Uniquement pour les images)
-    if (isPdf) {
-      throw new Error("Le fournisseur Groq ne supporte pas encore l'analyse directe des fichiers PDF. Veuillez utiliser Gemini ou une image du ticket.");
-    }
-
+    if (isPdf) throw new Error("Groq ne supporte pas encore les PDF. Utilisez Gemini.");
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${options.apiKey}`
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },
       body: JSON.stringify({
         model: options.model || 'qwen/qwen-2.5-vl-72b',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: fileBase64 } }
-            ]
-          }
-        ],
+        messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: fileBase64 } }] }],
         response_format: { type: 'json_object' }
       })
     });
+    const data = await response.json();
+    const cleanJson = data.choices[0].message.content.replace(/```json|```/g, "").trim();
+    return ReceiptSchema.parse(JSON.parse(cleanJson));
+  }
+}
+
+export async function parseBarcodeWithAI(imageAsBase64: string, options: AIServiceOptions, fileType: string = 'image/jpeg'): Promise<string | null> {
+  if (USE_SERVER_PROXY) {
+    const result = await callServerProxy('parse-barcode', { imageAsBase64, options, fileType });
+    return result.code || null;
+  }
+
+  const prompt = "Extrait UNIQUEMENT le numéro de code-barres EAN-13 de cette image. Retourne seulement les chiffres.";
+
+  if (options.provider === 'gemini') {
+    const genAI = new GoogleGenerativeAI(options.apiKey);
+    const model = genAI.getGenerativeModel({ model: options.model || "gemini-1.5-flash" });
+    const base64Data = imageAsBase64.split(',')[1] || imageAsBase64;
+    const result = await model.generateContent([prompt, { inlineData: { data: base64Data, mimeType: fileType } }]);
+    const response = await result.response;
+    return response.text().replace(/\D/g, '').trim();
+  } else {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },
+      body: JSON.stringify({
+        model: options.model || 'qwen/qwen-2.5-vl-72b',
+        messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: imageAsBase64 } }] }]
+      })
+    });
+    const data = await response.json();
+    return data.choices[0].message.content.replace(/\D/g, '').trim();
+  }
+}
+
+// Helper to call the secure Firebase Cloud Function proxy
+async function callServerProxy(endpoint: string, payload: any): Promise<any> {
+  try {
+    const response = await fetch(${SERVER_API_URL}/, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq."}`);
+      const error = await response.json();
+      throw new Error(error.message || 'Server Proxy Error');
     }
 
-    const data = await response.json();
-    const jsonText = data.choices?.[0]?.message?.content;
-    if (!jsonText) throw new Error("L'IA n'a pas pu lire le document.");
-
-    const cleanJson = jsonText.replace(/```json|```/g, "").trim();
-    return ReceiptSchema.parse(JSON.parse(cleanJson));
+    return response.json();
+  } catch (err: any) {
+    console.error('[Server Proxy] Error on :', err);
+    throw err;
   }
 }
