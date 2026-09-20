@@ -147,7 +147,7 @@ function AppContent({
     });
   }, [theme]);
 
-  if (!isLoaded || !weeklyPlan) {
+  if (!isLoaded || !weeklyPlan || !weeklyPlan.meals) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
