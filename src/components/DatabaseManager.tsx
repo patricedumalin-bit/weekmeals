@@ -253,29 +253,9 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     reader.readAsText(file);
   };
 
-  // Submit Ingredient
-  const handleSaveIngredient = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ingName.trim()) return;
-
-    onSaveIngredient({
-      id: ingToEdit ? ingToEdit.id : `ing-${Date.now()}`,
-      name: ingName.trim(),
-      categoryId: ingCatId,
-      defaultUnit: ingUnit
-    });
-
-    setIngName('');
-    setIngToEdit(null);
-    setShowAddIngModal(false);
-  };
-
   // Open Edit Ingredient
   const handleOpenEditIng = (ing: Ingredient) => {
     setIngToEdit(ing);
-    setIngName(ing.name);
-    setIngCatId(ing.categoryId);
-    setIngUnit(ing.defaultUnit);
     setShowAddIngModal(true);
   };
 
@@ -934,70 +914,18 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
 
       {/* Add / Edit Ingredient Modal */}
       {showAddIngModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in">
-          <div className="backdrop-blur-2xl bg-white/90 dark:bg-slate-900/90 border border-white/40 dark:border-white/10 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              {ingToEdit ? t('editIngredient') : t('newIngredient')}
-            </h3>
-
-            <form onSubmit={handleSaveIngredient} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t('ingredientNameLabel')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={ingName}
-                  onChange={e => setIngName(e.target.value)}
-                  placeholder="e.g. Baby Spinach, Garlic, Chicken Breast..."
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t('category')}
-                </label>
-                <select
-                  value={ingCatId}
-                  onChange={e => setIngCatId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
-                >
-                  {ingredientCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {translateIngredientCategory(cat.id, cat.name)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  {t('unit')}
-                </label>
-                <select
-                  value={ingUnit}
-                  onChange={e => setIngUnit(e.target.value as UnitType)}
-                  className="w-full px-3 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
-                >
-                  {UNIT_OPTIONS.map(u => (
-                    <option key={u} value={u}>
-                      {translateUnit(u)} ({u})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddIngModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400"
-                >
-                  {t('cancel')}
-                </button>
-                <button
+        <IngredientEditorModal
+          isOpen={showAddIngModal}
+          onClose={() => {
+            setShowAddIngModal(false);
+            setIngToEdit(null);
+          }}
+          ingredient={ingToEdit}
+          categories={ingredientCategories}
+          onSave={onSaveIngredient}
+          onDelete={onDeleteIngredient}
+        />
+      )}
                   type="submit"
                   className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
                 >
