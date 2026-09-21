@@ -46,6 +46,15 @@ export interface Ingredient {
   defaultUnit: UnitType;
   notes?: string;
   localizations?: Record<string, string>;
+  // Product file info
+  pricePer100g?: number;
+  caloriesPer100g?: number;
+  proteinPer100g?: number;
+  carbsPer100g?: number;
+  fatPer100g?: number;
+  brand?: string;
+  shelfLifeDays?: number;
+  barcode?: string;
 }
 
 export type CookingModeType = 'four' | 'poele' | 'cookeo' | 'robot' | 'cocotte' | 'vapeur' | 'grill' | 'sans-cuisson';
@@ -206,6 +215,8 @@ export interface AutoPlanOptions {
   preferredCookingMode?: CookingModeType | 'all';
   dietaryStyle?: 'all' | 'protein' | 'balanced' | 'vegetarian' | 'quick';
   noDuplicates?: boolean;
+  includeStarters?: boolean;
+  includeDesserts?: boolean;
 }
 
 export interface PantryItem {

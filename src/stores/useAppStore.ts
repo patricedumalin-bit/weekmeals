@@ -116,8 +116,8 @@ export const useAppStore = create<AppState>((set) => ({
   setIsSeedingGeneric: (isSeeding) => set({ isSeedingGeneric: isSeeding }),
 
   systemConfig: {
-    geminiModel: 'gemini-1.5-flash',
-    groqModel: 'qwen/qwen-2.5-vl-72b',
+    geminiModel: 'gemini-2.0-flash',
+    groqModel: 'qwen/qwen3.8-27b',
     isLoaded: false
   },
   setSystemConfig: (config) => set((state) => ({

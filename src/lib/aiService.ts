@@ -14,18 +14,18 @@ export interface AIServiceOptions {
 }
 
 const RECIPE_PROMPT_TEMPLATE = (content: string) => `Tu es un assistant culinaire expert et traducteur multilingue professionnel.
-Analyse le contenu suivant (texte, URL ou description d'image) pour en extraire une recette structurée.
-Tu dois obligatoirement générer les traductions de cette recette pour les langues suivantes : fr, en, de, es, pt.
+Analyse le contenu suivant pour en extraire une recette structurée.
+Tu dois OBLIGATOIREMENT générer les traductions de cette recette pour TOUTES les langues suivantes : fr, en, de, es, pt.
 
 IMPORTANT : Retourne UNIQUEMENT un objet JSON valide (SANS blocs markdown, SANS texte autour).
 Structure JSON attendue :
 {
-  "title": "Nom de la recette",
+  "title": "Nom de la recette en français",
   "servings": 4,
   "prepTimeMinutes": 15,
   "cookTimeMinutes": 20,
   "difficulty": "easy" | "medium" | "hard",
-  "description": "Brève description",
+  "description": "Brève description en français",
   "ingredients": [
     {
       "name": "nom de l'ingrédient en français",
@@ -47,26 +47,43 @@ Structure JSON attendue :
 CONTENU À ANALYSER :
 ${content}`;
 
+/**
+ * Utility to clean model ID and strip common corruption prefixes
+ */
+function getCleanModelId(provider: AIProvider, model?: string): string {
+  const rawId = (model || "").toString();
+  // Strip common field-name prefixes that might get concatenated by mistake
+  let cleanId = rawId.replace("geminiModel", "").replace("groqModel", "").trim();
+
+  if (!cleanId || cleanId === 'undefined') {
+    return provider === 'gemini' ? 'gemini-2.0-flash' : 'qwen/qwen3.8-27b';
+  }
+  return cleanId;
+}
+
 export async function parseRecipeWithAI(content: string, options: AIServiceOptions): Promise<AIRecipeResponse> {
   if (USE_SERVER_PROXY) {
     return callServerProxy('parse-recipe', { content, options });
   }
 
   const prompt = RECIPE_PROMPT_TEMPLATE(content);
+  const modelId = getCleanModelId(options.provider, options.model);
 
   if (options.provider === 'gemini') {
     const genAI = new GoogleGenerativeAI(options.apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || "gemini-1.5-flash",
+      model: modelId,
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    const cleanJson = text.replace(/```json|```/g, "").trim();
+    const cleanJson = (text || "").replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide de l'IA (Gemini).");
     return RecipeSchema.parse(JSON.parse(cleanJson));
   } else {
+    // For text-only parsing on Groq, we can use Qwen if preferred, or Llama
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -74,7 +91,7 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
         'Authorization': `Bearer ${options.apiKey}`
       },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen-2.5-vl-72b',
+        model: modelId,
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' }
       })
@@ -86,10 +103,9 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
     }
 
     const data = await response.json();
-    const jsonText = data.choices?.[0]?.message?.content;
-    if (!jsonText) throw new Error("L'IA n'a pas pu générer de contenu.");
-
+    const jsonText = data.choices?.[0]?.message?.content || "";
     const cleanJson = jsonText.replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide de l'IA (Groq).");
     return RecipeSchema.parse(JSON.parse(cleanJson));
   }
 }
@@ -100,16 +116,20 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
   }
 
   const prompt = RECIPE_PROMPT_TEMPLATE("Analyse cette photo de recette.");
+  // Force a vision model for images
+  let modelId = getCleanModelId(options.provider, options.model);
+  if (options.provider === 'groq' && !modelId.includes('vision')) {
+     modelId = 'qwen/qwen3.8-27b';
+  }
 
   if (options.provider === 'gemini') {
     const genAI = new GoogleGenerativeAI(options.apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || "gemini-1.5-flash",
+      model: modelId,
       generationConfig: { responseMimeType: "application/json" }
     });
 
     const base64Data = imageAsBase64.split(',')[1] || imageAsBase64;
-
     const result = await model.generateContent([
       prompt,
       {
@@ -120,8 +140,10 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
       }
     ]);
     const response = await result.response;
-    const text = response.text().replace(/```json|```/g, "").trim();
-    return RecipeSchema.parse(JSON.parse(text));
+    const text = response.text();
+    const cleanJson = (text || "").replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide de l'IA Vision (Gemini).");
+    return RecipeSchema.parse(JSON.parse(cleanJson));
   } else {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -130,7 +152,7 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
         'Authorization': `Bearer ${options.apiKey}`
       },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen-2.5-vl-72b',
+        model: modelId,
         messages: [
           {
             role: 'user',
@@ -146,14 +168,13 @@ export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIS
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API Groq."}`);
+      throw new Error(`Erreur Groq Vision (${response.status}) : ${errData.error?.message || "Vérifiez votre clé API."}`);
     }
 
     const data = await response.json();
-    const jsonText = data.choices?.[0]?.message?.content;
-    if (!jsonText) throw new Error("L'IA n'a pas pu générer de contenu.");
-
+    const jsonText = data.choices?.[0]?.message?.content || "";
     const cleanJson = jsonText.replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide de l'IA Vision (Groq).");
     return RecipeSchema.parse(JSON.parse(cleanJson));
   }
 }
@@ -164,12 +185,16 @@ export async function parseReceiptWithAI(fileBase64: string, options: AIServiceO
   }
 
   const isPdf = fileType === 'application/pdf';
-  const prompt = `Tu es un expert en lecture de tickets de caisse et factures de drive. Analyse ce document et extrais UNIQUEMENT les produits alimentaires au format JSON : { "items": [{ "name": "...", "quantity": 1, "unit": "..." }] }`;
+  const prompt = `Tu es un expert en lecture de tickets de caisse. Extrais les produits alimentaires achetés au format JSON : { "items": [{ "name": "nom simple", "quantity": 1, "unit": "unité", "price": 0.00, "brand": "marque" }] }`;
+  let modelId = getCleanModelId(options.provider, options.model);
+  if (options.provider === 'groq' && !modelId.includes('vision')) {
+     modelId = 'qwen/qwen3.8-27b';
+  }
 
   if (options.provider === 'gemini') {
     const genAI = new GoogleGenerativeAI(options.apiKey);
     const model = genAI.getGenerativeModel({
-      model: options.model || "gemini-1.5-flash",
+      model: modelId,
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -179,21 +204,31 @@ export async function parseReceiptWithAI(fileBase64: string, options: AIServiceO
       { inlineData: { data: base64Data, mimeType: fileType } }
     ]);
     const response = await result.response;
-    const text = response.text().replace(/```json|```/g, "").trim();
-    return ReceiptSchema.parse(JSON.parse(text));
+    const text = response.text();
+    const cleanJson = (text || "").replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide du ticket (Gemini).");
+    return ReceiptSchema.parse(JSON.parse(cleanJson));
   } else {
     if (isPdf) throw new Error("Groq ne supporte pas encore les PDF. Utilisez Gemini.");
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen-2.5-vl-72b',
+        model: modelId,
         messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: fileBase64 } }] }],
         response_format: { type: 'json_object' }
       })
     });
+
+    if (!response.ok) {
+       const errData = await response.json().catch(() => ({}));
+       throw new Error(`Erreur Groq Ticket (${response.status}) : ${errData.error?.message || "Erreur réseau."}`);
+    }
+
     const data = await response.json();
-    const cleanJson = data.choices[0].message.content.replace(/```json|```/g, "").trim();
+    const jsonText = data.choices?.[0]?.message?.content || "";
+    const cleanJson = jsonText.replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide du ticket (Groq).");
     return ReceiptSchema.parse(JSON.parse(cleanJson));
   }
 }
@@ -205,29 +240,31 @@ export async function parseBarcodeWithAI(imageAsBase64: string, options: AIServi
   }
 
   const prompt = "Extrait UNIQUEMENT le numéro de code-barres EAN-13 de cette image. Retourne seulement les chiffres.";
+  const modelId = getCleanModelId(options.provider, options.model);
 
   if (options.provider === 'gemini') {
     const genAI = new GoogleGenerativeAI(options.apiKey);
-    const model = genAI.getGenerativeModel({ model: options.model || "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: modelId });
     const base64Data = imageAsBase64.split(',')[1] || imageAsBase64;
     const result = await model.generateContent([prompt, { inlineData: { data: base64Data, mimeType: fileType } }]);
     const response = await result.response;
-    return response.text().replace(/\D/g, '').trim();
+    const text = response.text() || "";
+    return text.replace(/\D/g, '').trim();
   } else {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${options.apiKey}` },
       body: JSON.stringify({
-        model: options.model || 'qwen/qwen-2.5-vl-72b',
+        model: modelId.includes('vision') ? modelId : 'qwen/qwen3.8-27b',
         messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: imageAsBase64 } }] }]
       })
     });
     const data = await response.json();
-    return data.choices[0].message.content.replace(/\D/g, '').trim();
+    const text = data.choices?.[0]?.message?.content || "";
+    return text.replace(/\D/g, '').trim();
   }
 }
 
-// Helper to call the secure Firebase Cloud Function proxy
 async function callServerProxy(endpoint: string, payload: any): Promise<any> {
   try {
     const response = await fetch(`${SERVER_API_URL}/${endpoint}`, {

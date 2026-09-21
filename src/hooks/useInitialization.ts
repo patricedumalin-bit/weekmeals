@@ -22,6 +22,7 @@ import { Recipe } from '../types';
 
 export function useInitialization() {
   const { user, setUserData, setSyncStatus, setLastSyncedAt } = useAuthStore();
+
   const {
     recipes,
     weeklyPlan,
@@ -39,6 +40,7 @@ export function useInitialization() {
     setIsLoaded,
     isLoaded
   } = useDataStore();
+
   const { setTheme, theme, setSystemConfig } = useAppStore();
 
   const isSyncingFromCloudRef = useRef(false);
@@ -110,7 +112,7 @@ export function useInitialization() {
 
     initGeneric();
     return () => { if (unsubGeneric) unsubGeneric(); };
-  }, [isLoaded]); // Reduced dependencies to avoid loops
+  }, [isLoaded]);
 
   // 3. User Cloud Hydration
   useEffect(() => {
@@ -181,7 +183,6 @@ export function useInitialization() {
         (data) => {
           if (!data || !isSubscribed) return;
           setUserData(data);
-          // ... update other stores as needed
           setSyncStatus('synced');
         },
         () => setSyncStatus('error')
@@ -195,5 +196,5 @@ export function useInitialization() {
       isSubscribed = false;
       cleanupPromise.then(unsub => { if (typeof unsub === 'function') unsub(); });
     };
-  }, [user]); // Reduced dependencies
+  }, [user]);
 }

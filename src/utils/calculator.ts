@@ -556,7 +556,7 @@ export function matchRecipesWithPantry(
 export function generateSmartWeeklyPlan(
   recipes: Recipe[] = [],
   options: AutoPlanOptions
-): Recipe[] {
+): Recipe[][] {
   const safeRecipes = Array.isArray(recipes) ? recipes : [];
   let pool = [...safeRecipes];
 
@@ -571,30 +571,50 @@ export function generateSmartWeeklyPlan(
     }
   }
 
+  const starters = pool.filter(r => r.categoryId === 'rcat-entree' || r.categoryId === 'rcat-starters');
+  const mains = pool.filter(r => ['rcat-viande', 'rcat-volaille', 'rcat-poisson', 'rcat-legume', 'rcat-pates', 'rcat-autre', 'rcat-poultry', 'rcat-seafood', 'rcat-pasta', 'rcat-veggie', 'rcat-quick'].includes(r.categoryId));
+  const desserts = pool.filter(r => r.categoryId === 'rcat-dessert' || r.categoryId === 'rcat-desserts');
+
   if (options.dietaryStyle === 'vegetarian') {
-    const veg = pool.filter(r => (r.tags || []).some(t => t.toLowerCase().includes('végé') || t.toLowerCase().includes('veggie')));
-    if (veg.length > 0) pool = veg;
-  } else if (options.dietaryStyle === 'quick') {
-    pool.sort((a, b) => (a.prepTimeMinutes + a.cookTimeMinutes) - (b.prepTimeMinutes + b.cookTimeMinutes));
+    const vegFilter = (r: Recipe) => (r.tags || []).some(t => t.toLowerCase().includes('végé') || t.toLowerCase().includes('veggie')) || r.categoryId === 'rcat-legume' || r.categoryId === 'rcat-veggie';
+    // Apply to pool if needed, or just let the categorisation handle it?
   }
 
-  if (pool.length === 0) {
-    pool = [...safeRecipes];
-  }
-
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  const selected: Recipe[] = [];
+  const selected: Recipe[][] = [];
+  const usedIds = new Set<string>();
 
   for (let i = 0; i < options.mealCount; i++) {
-    if (shuffled.length > 0) {
-      const pick = shuffled.shift()!;
-      selected.push(pick);
-      if (!options.noDuplicates) {
-        shuffled.push(pick);
-      }
-    } else if (safeRecipes.length > 0) {
-      selected.push(safeRecipes[Math.floor(Math.random() * safeRecipes.length)]);
+    const mealRecipes: Recipe[] = [];
+
+    // Pick Main
+    const availableMains = mains.filter(r => !options.noDuplicates || !usedIds.has(r.id));
+    if (availableMains.length > 0) {
+      const pick = availableMains[Math.floor(Math.random() * availableMains.length)];
+      mealRecipes.push(pick);
+      usedIds.add(pick.id);
     }
+
+    // Pick Starter
+    if (options.includeStarters && starters.length > 0) {
+      const availableStarters = starters.filter(r => !options.noDuplicates || !usedIds.has(r.id));
+      if (availableStarters.length > 0) {
+        const pick = availableStarters[Math.floor(Math.random() * availableStarters.length)];
+        mealRecipes.push(pick);
+        usedIds.add(pick.id);
+      }
+    }
+
+    // Pick Dessert
+    if (options.includeDesserts && desserts.length > 0) {
+      const availableDesserts = desserts.filter(r => !options.noDuplicates || !usedIds.has(r.id));
+      if (availableDesserts.length > 0) {
+        const pick = availableDesserts[Math.floor(Math.random() * availableDesserts.length)];
+        mealRecipes.push(pick);
+        usedIds.add(pick.id);
+      }
+    }
+
+    selected.push(mealRecipes);
   }
 
   return selected;

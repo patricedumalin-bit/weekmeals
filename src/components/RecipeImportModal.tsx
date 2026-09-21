@@ -86,18 +86,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     const geminiKey = localStorage.getItem('gemini_api_key') || '';
     const activeKey = aiProvider === 'groq' ? groqKey : geminiKey;
 
+    if (!activeKey) {
+      alert(`Veuillez renseigner votre Clé d'API ${aiProvider === 'groq' ? 'Groq' : 'Gemini'} dans votre Profil.`);
+      return;
+    }
+
     try {
-      if (activeTab === 'text' && !groqKey && !geminiKey) {
-        // Local parser fallback for simple text if no AI keys
-        const parsed = parseRecipeText(pastedText);
-        setParsedRecipe(parsed);
-        return;
-      }
-
-      if (!activeKey) {
-        throw new Error(`Veuillez renseigner votre Clé d'API ${aiProvider === 'groq' ? 'Groq' : 'Gemini'} dans votre Profil.`);
-      }
-
       let aiResult;
       if (activeTab === 'text' || activeTab === 'url') {
         let contentToParse = activeTab === 'text' ? pastedText : recipeUrl;

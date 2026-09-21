@@ -45,6 +45,7 @@ import { inferCookingMode, getAvailableCookingModes } from '../utils/calculator'
 import { getAvailableCuisines, recipeMatchesCuisine } from '../data/cuisineData';
 import { RecipeCard } from './RecipeCard';
 import { IngredientListItem } from './IngredientListItem';
+import { IngredientEditorModal } from './IngredientEditorModal';
 
 interface DatabaseManagerProps {
   recipes: Recipe[];

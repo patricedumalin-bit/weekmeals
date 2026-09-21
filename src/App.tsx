@@ -22,18 +22,22 @@ import { calculateShoppingList, getWeeklyPlanSummary } from './utils/calculator'
 import { generateFullGenericDatabase, resetToDefaults, clearDatabase } from './utils/storage';
 import { handlePdfPrint } from './utils/pdfGenerator';
 
-function AppContent({ 
+/**
+ * Main Application Shell (Content visible after login)
+ */
+function AppContent({
   onSignOut,
   onSwitchToAuth 
 }: { 
   onSignOut?: () => void;
   onSwitchToAuth?: () => void;
 }) {
+  // 1. Hooks for logic
   useInitialization();
   const { handleManualSync } = useCloudSync();
   useSyncQueue();
 
-  const appStore = useAppStore();
+  // 2. Global Stores
   const {
     activeTab, setActiveTab,
     theme, setTheme,
@@ -47,9 +51,8 @@ function AppContent({
     setIsRecipeImportModalOpen,
     databaseSource, setDatabaseSource,
     isSeedingGeneric, setIsSeedingGeneric
-  } = appStore;
+  } = useAppStore();
 
-  const dataStore = useDataStore();
   const {
     recipes, recipeCategories, ingredients, ingredientCategories, weeklyPlan,
     checkedMap, customItems, pantryMap, isLoaded,
@@ -59,11 +62,11 @@ function AppContent({
     saveRecipeCategory, deleteRecipeCategory, saveIngredient, deleteIngredient,
     saveIngredientCategory, deleteIngredientCategory, importDatabase,
     toggleMealCooked, lockWeeklyPlan, resetWeeklyPlan, archiveWeeklyPlan
-  } = dataStore;
+  } = useDataStore();
 
-  const authStore = useAuthStore();
-  const { user, userData, syncStatus } = authStore;
+  const { user, userData, syncStatus } = useAuthStore();
 
+  // 3. UI Helpers
   const handleResetAndArchive = () => {
     if (!weeklyPlan) return;
     const stats = getWeeklyPlanSummary(weeklyPlan, recipes, ingredients, pantryMap);
@@ -108,7 +111,6 @@ function AppContent({
 
   const [isDark, setIsDark] = useState(window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  // Sync theme and dark mode classes to html/body for full variable support
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -120,10 +122,7 @@ function AppContent({
 
       [html, body].forEach(el => {
         if (!el) return;
-        // Handle dark mode
         el.classList.toggle('dark', darkMatch);
-
-        // Handle theme classes
         const themeClasses = Array.from(el.classList).filter(c => c.startsWith('theme-'));
         themeClasses.forEach(c => el.classList.remove(c));
         el.classList.add(`theme-${theme}`);
@@ -217,7 +216,7 @@ function AppContent({
             onOpenPantry={() => setIsPantryModalOpen(true)}
             onToggleItem={toggleShoppingItem}
             onAddCustomItem={addCustomShoppingItem}
-            onRemoveCustomItem={removeCustomShoppingItem}
+            onRemoveCustomShoppingItem={removeCustomShoppingItem}
             onResetChecked={resetChecked}
             onPrint={() => handlePrint('shopping')}
           />
@@ -265,9 +264,11 @@ function AppContent({
   );
 }
 
+/**
+ * Entry point Component with Auth handling
+ */
 export default function App() {
-  const authStore = useAuthStore();
-  const { user, setUser } = authStore;
+  const { user, setUser } = useAuthStore();
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guest_mode') === 'true');
   const [loading, setLoading] = useState(true);
 

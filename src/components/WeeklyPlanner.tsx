@@ -88,6 +88,9 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
     onPreview: (recipe: Recipe, servings?: number, mealIndex?: number, recipeIndex?: number) => void;
   }> = ({ recipe, mealIdx, rIdx, meal, onRemove, onPreview }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
+    const [touchStartX, setTouchStartX] = useState<number | null>(null);
+    const [swipeOffset, setSwipeOffset] = useState(0);
+
     const localized = translateRecipe(recipe);
     const category = catMap.get(recipe.categoryId);
     const catDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
@@ -99,8 +102,33 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
     const isCooked = meal.isCooked;
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+      setTouchStartX(e.targetTouches[0].clientX);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (touchStartX === null || weeklyPlan.isLocked || isCooked) return;
+      const currentX = e.targetTouches[0].clientX;
+      const diff = touchStartX - currentX;
+      if (diff > 0) { // Swipe left only
+        setSwipeOffset(Math.min(diff, 100));
+      }
+    };
+
+    const handleTouchEnd = (e: React.TouchEvent) => {
+      if (swipeOffset > 70) {
+        onRemove(mealIdx, rIdx);
+      }
+      setTouchStartX(null);
+      setSwipeOffset(0);
+    };
+
     return (
       <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ transform: `translateX(-${swipeOffset}px)` }}
         className={`p-3 rounded-xl border flex flex-col justify-between gap-2 relative group shadow-2xs animate-spring-in hover:shadow-md transition-all tap-bounce ${
           isCooked ? 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-60' : 'border-[var(--accent)]/20 backdrop-blur-md bg-[var(--accent)]/5 dark:bg-[var(--accent)]/20'
         }`}

@@ -19,7 +19,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { saveRecipes, saveWeeklyPlan } from '../utils/storage';
 import { createPersonalCopyOfRecipe } from '../utils/cloudSync';
 import { calculateShoppingList } from '../utils/calculator';
-import { Ingredient } from '../types';
+import { Ingredient, Recipe } from '../types';
 
 export const ModalManager: React.FC<{
   onSignOut?: () => void;
@@ -225,14 +225,14 @@ export const ModalManager: React.FC<{
             updateWeeklyPlan({ ...weeklyPlan, meals: updatedMeals });
           }}
           onSaveAsRecipe={async (name, catId, mode, ings) => {
-             const newRecipe = {
+             const newRecipe: Recipe = {
                id: `recipe-${Date.now()}`,
                title: name,
                categoryId: catId,
                servings: 4,
                prepTimeMinutes: 10,
                cookTimeMinutes: 10,
-               difficulty: 'easy' as const,
+               difficulty: 'easy',
                description: '',
                instructions: [],
                ingredients: ings.map(ci => ({ ingredientId: ci.ingredientId, quantity: ci.quantity, unit: ci.unit })),
@@ -315,6 +315,7 @@ export const ModalManager: React.FC<{
           recipe={cookingModeState.recipe}
           servings={cookingModeState.servings}
           ingredients={ingredients}
+          ingredientCategories={ingredientCategories}
         />
       )}
 

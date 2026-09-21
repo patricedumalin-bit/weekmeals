@@ -49,9 +49,11 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
   const [preferredMode, setPreferredMode] = useState<CookingModeType | 'all'>('all');
   const [dietaryStyle, setDietaryStyle] = useState<'all' | 'protein' | 'balanced' | 'vegetarian' | 'quick'>('all');
   const [noDuplicates, setNoDuplicates] = useState<boolean>(true);
+  const [includeStarters, setIncludeStarters] = useState<boolean>(false);
+  const [includeDesserts, setIncludeDesserts] = useState<boolean>(false);
   const [isFilterCollapsed, setIsFilterCollapsed] = useState<boolean>(false);
 
-  const [previewRecipes, setPreviewRecipes] = useState<Recipe[]>([]);
+  const [previewRecipes, setPreviewRecipes] = useState<Recipe[][]>([]);
 
   const handleGenerate = () => {
     const options: AutoPlanOptions = {
@@ -59,7 +61,9 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
       maxPrepTime,
       preferredCookingMode: preferredMode,
       dietaryStyle,
-      noDuplicates
+      noDuplicates,
+      includeStarters,
+      includeDesserts
     };
     const generated = generateSmartWeeklyPlan(safeRecipes, options);
     setPreviewRecipes(generated);
@@ -81,8 +85,8 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
 
     for (let i = 0; i < mealCount; i++) {
       const existingMeal = activePlan?.meals ? activePlan.meals[i] : undefined;
-      const assignedRecipe = previewRecipes[i];
-      const recipeIds = assignedRecipe ? [assignedRecipe.id] : [];
+      const assignedRecipes = previewRecipes[i] || [];
+      const recipeIds = assignedRecipes.map(r => r.id);
 
       updatedMeals.push({
         id: existingMeal?.id || `meal-${Date.now()}-${i + 1}`,
@@ -235,19 +239,47 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
               </div>
 
               {/* Duplicates checkbox & Regenerate button */}
-              <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
-                  <input
-                    type="checkbox"
-                    checked={noDuplicates}
-                    onChange={(e) => {
-                      setNoDuplicates(e.target.checked);
-                      setTimeout(handleGenerate, 10);
-                    }}
-                    className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
-                  />
-                  <span>Garantir aucune répétition (pas de doublon)</span>
-                </label>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
+                    <input
+                      type="checkbox"
+                      checked={noDuplicates}
+                      onChange={(e) => {
+                        setNoDuplicates(e.target.checked);
+                        setTimeout(handleGenerate, 10);
+                      }}
+                      className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
+                    />
+                    <span>Pas de doublons</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
+                    <input
+                      type="checkbox"
+                      checked={includeStarters}
+                      onChange={(e) => {
+                        setIncludeStarters(e.target.checked);
+                        setTimeout(handleGenerate, 10);
+                      }}
+                      className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
+                    />
+                    <span>Inclure Entrées</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-300 select-none">
+                    <input
+                      type="checkbox"
+                      checked={includeDesserts}
+                      onChange={(e) => {
+                        setIncludeDesserts(e.target.checked);
+                        setTimeout(handleGenerate, 10);
+                      }}
+                      className="w-4 h-4 text-amber-500 rounded border-slate-300 focus:ring-amber-500"
+                    />
+                    <span>Inclure Desserts</span>
+                  </label>
+                </div>
 
                 <button
                   type="button"
@@ -255,7 +287,7 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
                   className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition-all"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Régénérer une combinaison</span>
+                  <span>Régénérer</span>
                 </button>
               </div>
             </div>
@@ -295,41 +327,49 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
             Aperçu des repas générés ({previewRecipes.length}) :
           </h3>
 
-          <div className="space-y-2">
-            {previewRecipes.map((recipe, idx) => {
-              const localized = translateRecipe(recipe);
-              const mode = inferCookingMode(recipe);
-
-              return (
-                <div
-                  key={idx}
-                  className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
-                      #{idx + 1}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                        {localized.title}
-                      </p>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {(recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0)} min
-                        </span>
-                        <span>•</span>
-                        <span className="capitalize">{translateCookingMode(mode)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <span className="text-xs font-medium text-slate-400 shrink-0">
-                    {recipe.servings || 4} pers.
+          <div className="space-y-4">
+            {previewRecipes.map((mealRecipes, idx) => (
+              <div key={idx} className="p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 shadow-sm space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center">
+                    #{idx + 1}
                   </span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Repas {idx + 1}</span>
                 </div>
-              );
-            })}
+
+                <div className="grid grid-cols-1 gap-2">
+                  {mealRecipes.map((recipe, rIdx) => {
+                    const localized = translateRecipe(recipe);
+                    const mode = inferCookingMode(recipe);
+                    return (
+                      <div key={rIdx} className="flex items-center justify-between gap-3 p-2 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-3 min-w-0">
+                           <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                              {localized.title}
+                            </p>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                {(recipe.prepTimeMinutes || 0) + (recipe.cookTimeMinutes || 0)} min
+                              </span>
+                              <span>•</span>
+                              <span className="capitalize">{translateCookingMode(mode)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-medium text-slate-400 whitespace-nowrap bg-white dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-100 dark:border-slate-700">
+                          {recipe.servings || 4} pers.
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {mealRecipes.length === 0 && (
+                    <p className="text-xs italic text-slate-400 text-center py-2">Aucune recette trouvée</p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
