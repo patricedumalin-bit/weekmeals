@@ -112,7 +112,8 @@ export function getLocalizedRecipeContent(
 
   // If the target language is French and the recipe original fields are already in French,
   // prefer the original content over falling back to an English translation entry.
-  if (language === 'fr' && recipe.title && (id.startsWith('rec-fr-') || /^[a-àe-éi-îo-ôu-û]/i.test(recipe.title))) {
+  // We check for the 'rec-fr-' prefix or French-specific characters.
+  if (language === 'fr' && recipe.title && (id.startsWith('rec-fr-') || /[éèêëàâîïôûùç]/.test(recipe.title.toLowerCase()))) {
     return {
       title: recipe.title,
       description: recipe.description || '',

@@ -25,12 +25,6 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       id: 'planner' as ActiveTab,
       label: t('tabPlanner'),
       icon: CalendarDays,
-      badge: null
-    },
-    {
-      id: 'meals' as ActiveTab,
-      label: t('tabPlannedMeals'),
-      icon: UtensilsCrossed,
       badge: plannedRecipesCount > 0 ? plannedRecipesCount : null,
       badgeColor: 'bg-[var(--accent)] text-white'
     },

@@ -441,7 +441,7 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                    {weeklyPlan.isLocked ? (
                      <button onClick={() => onLockPlan && onLockPlan(false)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-rose-500 text-white shadow-md"><X className="w-3.5 h-3.5" /><span>Modifier</span></button>
                    ) : (
-                     <button disabled={totalAssignedRecipes === 0} onClick={() => onLockPlan && onLockPlan(true)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md disabled:opacity-50"><CheckCircle2 className="w-3.5 h-3.5" /><span>Valider</span></button>
+                     <button disabled={totalAssignedRecipes === 0} onClick={() => onLockPlan && onLockPlan(true)} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md disabled:opacity-50"><CheckCircle2 className="w-3.5 h-3.5" /><span>Valider la semaine</span></button>
                    )}
                    <button onClick={() => onResetPlan && onResetPlan()} className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-rose-500 hover:text-white transition-all"><RotateCcw className="w-3.5 h-3.5" /></button>
                 </div>
@@ -490,7 +490,14 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
         <div className="grid grid-cols-1 gap-4">
           {weeklyPlan.meals.map((meal, mealIdx) => {
             const assignedRecipes = (meal.recipeIds || []).map(id => recipeMap.get(id)).filter((r): r is Recipe => Boolean(r));
-            const displayLabel = translateMealLabel(meal.mealNumber, meal.label);
+
+            // Si le label est générique (Meal X ou Repas X) et qu'il y a une recette, on affiche le titre de la recette.
+            // Sinon on utilise la traduction standard du label.
+            const isGenericLabel = !meal.label || /^(Meal|Repas)\s*#?\s*\d+$/i.test(meal.label);
+            const displayLabel = (isGenericLabel && assignedRecipes.length > 0)
+              ? translateRecipe(assignedRecipes[0]).title
+              : translateMealLabel(meal.mealNumber, meal.label);
+
             const isCooked = meal.isCooked;
 
             return (

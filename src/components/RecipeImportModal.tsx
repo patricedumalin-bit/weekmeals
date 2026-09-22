@@ -12,7 +12,9 @@ import {
   Users, 
   ChefHat,
   ArrowRight,
-  Plus
+  Plus,
+  Book,
+  Library
 } from 'lucide-react';
 import { Recipe, Ingredient, IngredientCategory, RecipeCategory, RecipeIngredient, UnitType } from '../types';
 import { normalizeExternalIngredient } from '../utils/datasetCorrelator';
@@ -22,6 +24,7 @@ import { useAppStore } from '../stores/useAppStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useSubscription } from '../hooks/useSubscription';
 import { FREE_LIMITS } from '../constants/subscription';
+import { extractTextFromPDF, groupPagesByRecipe } from '../utils/pdfExtractor';
 
 interface RecipeImportModalProps {
   isOpen: boolean;
@@ -34,7 +37,7 @@ interface RecipeImportModalProps {
   onSaveNewIngredient?: (ingredient: Ingredient) => void;
 }
 
-import { parseRecipeWithAI, parseRecipeImageWithAI, AIProvider } from '../lib/aiService';
+import { parseRecipeWithAI, parseRecipeImageWithAI, parseRecipeBookWithAI, AIProvider } from '../lib/aiService';
 
 export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   isOpen,
@@ -46,12 +49,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   onSaveImportedRecipe,
   onSaveNewIngredient
 }) => {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const { systemConfig } = useAppStore();
   const { incrementAIUsage } = useAuthStore();
   const { aiLimit, isPremium } = useSubscription();
 
-  const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
+  const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'book' | 'themealdb'>('text');
   const [aiProvider, setAIProviderState] = useState<AIProvider>(() => (localStorage.getItem('ai_provider') as AIProvider) || 'groq');
 
   const setAIProvider = (provider: AIProvider) => {
@@ -63,6 +66,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   const [pastedText, setPastedText] = useState('');
   const [recipeUrl, setRecipeUrl] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedPDF, setSelectedPDF] = useState<File | null>(null);
   const [mealDbQuery, setMealDbQuery] = useState('');
   const [mealDbResults, setMealDbResults] = useState<any[]>([]);
   const [isSearchingMealDb, setIsSearchingMealDb] = useState(false);
@@ -70,7 +74,10 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   // Parsing & Loading State
   const [isParsing, setIsParsing] = useState(false);
   const [parsedRecipe, setParsedRecipe] = useState<Partial<Recipe> | null>(null);
+  const [detectedRecipes, setDetectedRecipes] = useState<Partial<Recipe>[]>([]);
+  const [selectedRecipeIndices, setSelectedRecipeIndices] = useState<number[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [bookParsingProgress, setBookParsingProgress] = useState({ current: 0, total: 0 });
 
   if (!isOpen) return null;
 
@@ -121,6 +128,62 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
         const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
         aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey, model });
         incrementAIUsage();
+      } else if (activeTab === 'book') {
+        if (!selectedPDF) throw new Error('Veuillez sélectionner un fichier PDF.');
+
+        // 1. Extract text from PDF
+        const pageTexts = await extractTextFromPDF(selectedPDF);
+        const chunks = groupPagesByRecipe(pageTexts);
+
+        setBookParsingProgress({ current: 0, total: chunks.length });
+        const allExtractedRecipes: Partial<Recipe>[] = [];
+
+        // 2. Process each chunk with AI
+        const model = aiProvider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+
+        for (let i = 0; i < chunks.length; i++) {
+          setBookParsingProgress({ current: i + 1, total: chunks.length });
+          try {
+            const batch = await parseRecipeBookWithAI(chunks[i], { provider: aiProvider, apiKey: activeKey, model });
+            allExtractedRecipes.push(...batch);
+            incrementAIUsage();
+          } catch (e) {
+            console.error("Batch parsing error:", e);
+            // Continue with other batches even if one fails
+          }
+        }
+
+        if (allExtractedRecipes.length === 0) throw new Error("Aucune recette n'a pu être extraite du document.");
+
+        // Match ingredients for all detected recipes
+        const processedRecipes = allExtractedRecipes.map(res => {
+          const mappedIngredients = (res.ingredients || []).map((i: any) => {
+            const norm = normalizeExternalIngredient(i.name);
+            const matchedExisting = ingredients.find(ex =>
+              ex.id === norm.ingredientId || ex.name.toLowerCase().trim() === i.name.toLowerCase().trim()
+            );
+            const finalId = matchedExisting ? matchedExisting.id : norm.ingredientId;
+            return {
+              ingredientId: finalId,
+              quantity: i.quantity,
+              unit: i.unit as UnitType,
+              notes: i.name
+            };
+          });
+
+          return {
+            ...res,
+            ingredients: mappedIngredients,
+            categoryId: recipeCategories.find(c => c.id === 'rcat-autre')?.id || recipeCategories[0]?.id,
+            tags: ['Book-Import'],
+            isCustom: true,
+            rating: 1
+          };
+        });
+
+        setDetectedRecipes(processedRecipes);
+        setSelectedRecipeIndices(processedRecipes.map((_, idx) => idx)); // Select all by default
+        return; // Don't proceed to single-recipe logic
       }
 
       if (aiResult) {
@@ -172,6 +235,34 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     } finally {
       setIsParsing(false);
     }
+  };
+
+  const handleConfirmBatchSave = () => {
+    const toSave = detectedRecipes.filter((_, idx) => selectedRecipeIndices.includes(idx));
+    if (toSave.length === 0) return;
+
+    toSave.forEach((parsed, idx) => {
+      const newRecipe: Recipe = {
+        id: `imported-book-${Date.now()}-${idx}`,
+        title: parsed.title || 'Recette sans titre',
+        categoryId: parsed.categoryId || 'rcat-autre',
+        servings: parsed.servings || 4,
+        prepTimeMinutes: parsed.prepTimeMinutes || 15,
+        cookTimeMinutes: parsed.cookTimeMinutes || 20,
+        difficulty: parsed.difficulty || 'easy',
+        description: parsed.description || '',
+        instructions: parsed.instructions || [],
+        ingredients: parsed.ingredients || [],
+        tags: parsed.tags || ['Livre'],
+        rating: 1,
+        isCustom: true,
+        localizations: parsed.localizations
+      };
+      onSaveImportedRecipe(newRecipe);
+    });
+
+    alert(`${toSave.length} recettes ajoutées à votre base avec succès !`);
+    onClose();
   };
 
   const handleConfirmSave = () => {
@@ -414,6 +505,17 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                 <span>Photo</span>
               </button>
               <button
+                onClick={() => setActiveTab('book')}
+                className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+                  activeTab === 'book'
+                    ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400 bg-blue-50/40'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Book className="w-4 h-4" />
+                <span>Livre (PDF)</span>
+              </button>
+              <button
                 onClick={() => setActiveTab('themealdb')}
                 className={`px-3 py-2 rounded-t-xl text-xs sm:text-sm font-semibold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
                   activeTab === 'themealdb'
@@ -455,7 +557,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
             </div>
           )}
 
-          {!parsedRecipe ? (
+          {!parsedRecipe && detectedRecipes.length === 0 ? (
             <div>
               {isParsing ? (
                 <div className="py-12 flex flex-col items-center justify-center space-y-4 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-slate-200 dark:border-slate-700/60 text-center p-6 my-4">
@@ -464,9 +566,11 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                     <Sparkles className="w-4 h-4 text-blue-500 absolute animate-pulse" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Analyse de la recette en cours...</h3>
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {activeTab === 'book' ? `Analyse du livre en cours (${bookParsingProgress.current}/${bookParsingProgress.total})...` : 'Analyse de la recette en cours...'}
+                    </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                      L'intelligence artificielle extrait et structure automatiquement les ingrédients, les quantités et les étapes de préparation. Veuillez patienter quelques secondes.
+                      L'intelligence artificielle extrait et structure automatiquement les recettes du document. Cela peut prendre un peu plus de temps pour un livre complet.
                     </p>
                   </div>
                 </div>
@@ -529,6 +633,38 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                               Cliquez pour téléverser ou glissez une image ici
                             </p>
                             <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, WebP jusqu'à 10 Mo</p>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+
+                  {activeTab === 'book' && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Importez un livre de recettes complet au format PDF. L'IA va analyser le contenu et détecter toutes les recettes présentes.
+                      </p>
+                      <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors text-center bg-slate-50/50 dark:bg-slate-800/30">
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(e) => setSelectedPDF(e.target.files?.[0] || null)}
+                          className="hidden"
+                        />
+                        {selectedPDF ? (
+                          <div className="space-y-2">
+                            <Upload className="w-8 h-8 text-blue-500 mx-auto" />
+                            <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">{selectedPDF.name}</p>
+                            <p className="text-[10px] text-slate-400">{(selectedPDF.size / (1024 * 1024)).toFixed(2)} Mo</p>
+                            <p className="text-xs text-slate-500 font-medium">Cliquez pour changer de fichier</p>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                            <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              Cliquez pour sélectionner un livre PDF
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-1">Format PDF uniquement (max 50 Mo)</p>
                           </>
                         )}
                       </label>
@@ -625,6 +761,63 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                   )}
                 </>
               )}
+            </div>
+          ) : detectedRecipes.length > 0 ? (
+            /* Multi-Recipe Selection View */
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-800 dark:text-blue-300 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Library className="w-4 h-4" />
+                  <span className="font-bold">Livre analysé : {detectedRecipes.length} recettes détectées.</span>
+                </div>
+                <button
+                  onClick={() => { setDetectedRecipes([]); setSelectedRecipeIndices([]); }}
+                  className="underline font-bold"
+                >
+                  Annuler
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Sélectionnez les recettes que vous souhaitez ajouter à votre bibliothèque :
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto p-1">
+                {detectedRecipes.map((rec, idx) => {
+                  const isSelected = selectedRecipeIndices.includes(idx);
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => {
+                        setSelectedRecipeIndices(prev =>
+                          prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                        );
+                      }}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                        isSelected
+                          ? 'bg-blue-600/10 border-blue-500 shadow-sm'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                        isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300'
+                      }`}>
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {rec.title}
+                        </h4>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-1">
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {(rec.prepTimeMinutes || 0) + (rec.cookTimeMinutes || 0)} min</span>
+                          <span>•</span>
+                          <span>{rec.ingredients?.length || 0} ingrédients</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             /* Parsed Recipe Preview */
@@ -733,6 +926,24 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
               >
                 <Check className="w-4 h-4" />
                 <span>Enregistrer dans ma Base Cloud</span>
+              </button>
+            </>
+          ) : detectedRecipes.length > 0 ? (
+            <>
+              <button
+                onClick={() => { setDetectedRecipes([]); setSelectedRecipeIndices([]); }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400"
+              >
+                Annuler l'importation
+              </button>
+
+              <button
+                onClick={handleConfirmBatchSave}
+                disabled={selectedRecipeIndices.length === 0}
+                className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+              >
+                <Check className="w-4 h-4" />
+                <span>Importer {selectedRecipeIndices.length} recette(s)</span>
               </button>
             </>
           ) : (

@@ -198,16 +198,7 @@ function AppContent({
             onOpenPantry={() => setIsPantryModalOpen(true)}
           />
         )}
-        {activeTab === 'meals' && (
-          <PlannedMealsList
-            weeklyPlan={weeklyPlan} recipes={recipes} recipeCategories={recipeCategories}
-            ingredients={ingredients} ingredientCategories={ingredientCategories}
-            onPreviewRecipe={(r, s) => setPreviewRecipeState({ recipe: r, servings: s })}
-            onGoToPlanner={() => setActiveTab('planner')}
-            onGoToShopping={() => setActiveTab('shopping')}
-            onPrint={() => handlePrint('planning')}
-          />
-        )}
+
         {activeTab === 'shopping' && (
           <ShoppingListView
             weeklyPlan={weeklyPlan} recipes={recipes} ingredients={ingredients}

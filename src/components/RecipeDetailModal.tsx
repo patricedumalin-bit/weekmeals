@@ -53,6 +53,10 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const { t, translateUnit, translateRecipeCategory, translateDifficulty, translateRecipe, translateIngredient } = useLanguage();
   if (!recipe) return null;
 
+  // Swipe gesture state for ingredient exclusion
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [swipingIngredientId, setSwipingIngredientId] = useState<string | null>(null);
+
   const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
   const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
   const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
@@ -74,6 +78,29 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const { total: recipePrice, itemsCost } = calculateRecipeTotalBudget(recipe, safeIngredients, excludedIngredientIds, pantryMap, scaleFactor);
   const categoryDisplayName = category ? translateRecipeCategory(category.id, category.name) : '';
   const difficultyDisplayName = translateDifficulty(recipe.difficulty);
+
+  const handleTouchStart = (e: React.TouchEvent, ingredientId: string) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setSwipingIngredientId(ingredientId);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, ingredientId: string) => {
+    if (touchStartX === null || swipingIngredientId !== ingredientId) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = touchEndX - touchStartX;
+    const threshold = 50; // swipe length in pixels
+
+    if (Math.abs(diff) > threshold) {
+      // If we have the necessary props to toggle exclusion
+      if (mealIndex !== undefined && recipeIndex !== undefined && onToggleExcludeIngredient) {
+        onToggleExcludeIngredient(mealIndex, recipeIndex, ingredientId);
+      }
+    }
+
+    setTouchStartX(null);
+    setSwipingIngredientId(null);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -231,7 +258,9 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 return (
                   <div
                     key={idx}
-                    className={`flex items-center justify-between p-2.5 rounded-xl backdrop-blur-md border transition-all ${
+                    onTouchStart={(e) => handleTouchStart(e, item.ingredientId)}
+                    onTouchEnd={(e) => handleTouchEnd(e, item.ingredientId)}
+                    className={`flex items-center justify-between p-2.5 rounded-xl backdrop-blur-md border transition-all select-none touch-pan-y ${
                       isExcluded
                         ? 'bg-rose-500/10 dark:bg-rose-950/20 border-rose-500/30 opacity-60'
                         : 'bg-white/60 dark:bg-slate-800/50 border-white/50 dark:border-white/10'

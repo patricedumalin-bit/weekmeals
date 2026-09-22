@@ -309,7 +309,8 @@ export const ModalManager: React.FC<{
               return m;
             });
             updateWeeklyPlan({ ...weeklyPlan, meals: updatedMeals });
-            alert(`Recette ajoutée pour le repas : ${firstAvailableSlot.label || `Repas ${firstAvailableSlot.mealNumber}`}`);
+            const translatedLabel = translateMealLabel(firstAvailableSlot.mealNumber, firstAvailableSlot.label);
+            alert(`Recette ajoutée pour le repas : ${translatedLabel}`);
           } else {
             // Fallback if all slots are occupied: append to the first slot or alert user
             alert("Tous vos créneaux de repas possèdent déjà une recette. Libérez une place pour insérer automatiquement.");

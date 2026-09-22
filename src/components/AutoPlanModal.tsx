@@ -91,7 +91,7 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
       updatedMeals.push({
         id: existingMeal?.id || `meal-${Date.now()}-${i + 1}`,
         mealNumber: i + 1,
-        label: existingMeal?.label || `Repas ${i + 1}`,
+        label: existingMeal?.label || t('mealDefaultName', { number: i + 1 }),
         servings: existingMeal?.servings || activePlan?.defaultServings || 4,
         recipeIds,
         excludedIngredients: {},

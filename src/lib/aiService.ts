@@ -110,6 +110,63 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
   }
 }
 
+export async function parseRecipeBookWithAI(content: string, options: AIServiceOptions): Promise<AIRecipeResponse[]> {
+  const prompt = `Tu es un assistant culinaire expert.
+Analyse le contenu suivant qui provient d'un livre de recettes.
+Extrais TOUTES les recettes complètes que tu trouves dans ce texte.
+Pour CHAQUE recette, génère un objet JSON suivant la structure demandée précédemment (title, servings, prepTimeMinutes, cookTimeMinutes, difficulty, description, ingredients, instructions, localizations).
+
+IMPORTANT : Retourne UNIQUEMENT un tableau JSON d'objets (SANS blocs markdown, SANS texte autour).
+Exemple de retour : [ { "title": "Recette 1", ... }, { "title": "Recette 2", ... } ]
+
+CONTENU À ANALYSER :
+${content}`;
+
+  const modelId = getCleanModelId(options.provider, options.model);
+
+  if (options.provider === 'gemini') {
+    const genAI = new GoogleGenerativeAI(options.apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelId,
+      generationConfig: { responseMimeType: "application/json" }
+    });
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    const cleanJson = (text || "").replace(/```json|```/g, "").trim();
+    if (!cleanJson) throw new Error("Réponse vide de l'IA (Gemini).");
+    const parsed = JSON.parse(cleanJson);
+    return Array.isArray(parsed) ? parsed.map(r => RecipeSchema.parse(r)) : [RecipeSchema.parse(parsed)];
+  } else {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${options.apiKey}`
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erreur Groq AI (${response.status})`);
+    }
+
+    const data = await response.json();
+    const jsonText = data.choices?.[0]?.message?.content || "";
+    const cleanJson = jsonText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleanJson);
+    // Groq json_object mode might return { "recipes": [...] } or just [...] if supported by model,
+    // but usually it expects a root object.
+    const recipesArray = Array.isArray(parsed) ? parsed : (parsed.recipes || [parsed]);
+    return recipesArray.map((r: any) => RecipeSchema.parse(r));
+  }
+}
+
 export async function parseRecipeImageWithAI(imageAsBase64: string, options: AIServiceOptions): Promise<AIRecipeResponse> {
   if (USE_SERVER_PROXY) {
     return callServerProxy('parse-recipe-image', { imageAsBase64, options });
