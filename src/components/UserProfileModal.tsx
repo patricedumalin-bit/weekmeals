@@ -29,6 +29,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useDataStore } from '../stores/useDataStore';
 import { useSubscription } from '../hooks/useSubscription';
 import { FREE_LIMITS } from '../constants/subscription';
+import { PremiumBadge } from './PremiumBadge';
 
 interface UserProfileModalProps {
   isOpen: boolean;

@@ -207,7 +207,7 @@ function AppContent({
             onOpenPantry={() => setIsPantryModalOpen(true)}
             onToggleItem={toggleShoppingItem}
             onAddCustomItem={addCustomShoppingItem}
-            onRemoveCustomShoppingItem={removeCustomShoppingItem}
+            onRemoveCustomItem={removeCustomShoppingItem}
             onResetChecked={resetChecked}
             onPrint={() => handlePrint('shopping')}
           />

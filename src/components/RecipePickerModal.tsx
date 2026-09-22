@@ -147,6 +147,8 @@ export const RecipePickerModal: React.FC<RecipePickerModalProps> = ({
   const activeSource = onChangeDatabaseSource ? databaseSource : localDbSource;
   const handleSourceChange = onChangeDatabaseSource || setLocalDbSource;
 
+  const personalRecipesCount = safeRecipes.filter(r => r.isCustom).length;
+  const genericRecipesCount = safeRecipes.filter(r => !r.isCustom).length;
 
   const COOKING_MODES = getAvailableCookingModes(safeRecipes);
 

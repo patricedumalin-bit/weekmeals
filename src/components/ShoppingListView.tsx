@@ -578,7 +578,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                               <button
                                 onClick={() => onRemoveCustomItem(item.ingredientId)}
                                 title="Remove custom item"
-                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-500/10"
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
