@@ -295,6 +295,27 @@ export const ModalManager: React.FC<{
         onBatchSetPantry={batchSetPantry}
         onSaveIngredient={onSaveIngredient || saveIngredient}
         recipes={recipes}
+        onSelectRecipeForMeal={(recipe) => {
+          if (!weeklyPlan) return;
+
+          // Find the first meal slot that has 0 or empty recipeIds
+          const firstAvailableSlot = weeklyPlan.meals.find(m => !m.recipeIds || m.recipeIds.length === 0);
+
+          if (firstAvailableSlot) {
+            const updatedMeals = weeklyPlan.meals.map(m => {
+              if (m.id === firstAvailableSlot.id) {
+                return { ...m, recipeIds: [recipe.id] };
+              }
+              return m;
+            });
+            updateWeeklyPlan({ ...weeklyPlan, meals: updatedMeals });
+            alert(`Recette ajoutée pour le repas : ${firstAvailableSlot.label || `Repas ${firstAvailableSlot.mealNumber}`}`);
+          } else {
+            // Fallback if all slots are occupied: append to the first slot or alert user
+            alert("Tous vos créneaux de repas possèdent déjà une recette. Libérez une place pour insérer automatiquement.");
+          }
+        }}
+        onPreviewRecipe={(recipe) => setPreviewRecipeState({ recipe })}
       />
 
       <AutoPlanModal

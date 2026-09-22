@@ -80,25 +80,53 @@ export function getLocalizedRecipeContent(
   recipe: any,
   language: SupportedLanguage
 ): LocalizedRecipeContent {
+  if (!recipe) {
+    return { title: '', description: '', instructions: [], tags: [] };
+  }
+
   // If the recipe contains custom runtime localizations embedded directly (e.g. AI-imported multilingual recipes)
-  if (recipe && recipe.localizations && recipe.localizations[language]) {
+  if (recipe.localizations && recipe.localizations[language]) {
     return {
-      title: recipe.localizations[language].title || recipe.title,
+      title: recipe.localizations[language].title || recipe.title || '',
       description: recipe.localizations[language].description || recipe.description || '',
       instructions: recipe.localizations[language].instructions || recipe.instructions || [],
       tags: recipe.tags || []
     };
   }
 
-  const translations = cache[recipe.id];
+  // Robust ID lookup to handle any prefix mismatches or variations (e.g., rec-fr- vs rec-)
+  const id = recipe.id || '';
+  let translations = cache[id];
+
+  if (!translations && id) {
+    if (id.startsWith('rec-fr-')) {
+      translations = cache[id.replace('rec-fr-', 'rec-')];
+    } else if (id.startsWith('rec-')) {
+      translations = cache[id.replace('rec-', 'rec-fr-')];
+    }
+  }
+
   if (translations && translations[language]) {
     return translations[language];
   }
+
+  // If the target language is French and the recipe original fields are already in French,
+  // prefer the original content over falling back to an English translation entry.
+  if (language === 'fr' && recipe.title && (id.startsWith('rec-fr-') || /^[a-àe-éi-îo-ôu-û]/i.test(recipe.title))) {
+    return {
+      title: recipe.title,
+      description: recipe.description || '',
+      instructions: recipe.instructions || [],
+      tags: recipe.tags || []
+    };
+  }
+
   if (translations && translations['en']) {
     return translations['en'];
   }
+
   return {
-    title: recipe.title,
+    title: recipe.title || '',
     description: recipe.description || '',
     instructions: recipe.instructions || [],
     tags: recipe.tags || []

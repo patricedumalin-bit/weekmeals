@@ -25,9 +25,11 @@ import {
   Filter,
   SlidersHorizontal,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Barcode
 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning';
 import {
   Recipe, 
   RecipeCategory, 
@@ -342,17 +344,73 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
               )}
 
               {activeSubTab === 'ingredients' && (
-                <button
-                  onClick={() => {
-                    setIngToEdit(null);
-                    setIngName('');
-                    setShowAddIngModal(true);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>{t('newIngredient')}</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const status = await BarcodeScanner.checkPermissions();
+                        if (status.camera !== 'granted') {
+                          const req = await BarcodeScanner.requestPermissions();
+                          if (req.camera !== 'granted') {
+                            alert("Permission caméra refusée.");
+                            return;
+                          }
+                        }
+
+                        const { barcodes } = await BarcodeScanner.scan();
+                        if (barcodes.length > 0) {
+                          const code = barcodes[0].displayValue;
+                          if (code) {
+                            const cleanCode = code.replace(/\s/g, '');
+                            const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${cleanCode}.json`);
+                            const data = await response.json();
+                            if (data.status === 1) {
+                              const productName = data.product.product_name_fr || data.product.product_name || "Produit Inconnu";
+                              setIngName(productName);
+                              setIngToEdit(null);
+                              setShowAddIngModal(true);
+                              alert(`Produit détecté : ${productName}\nVeuillez finaliser sa catégorie.`);
+                            } else {
+                              alert("Produit non trouvé sur OpenFoodFacts.");
+                            }
+                          }
+                        }
+                      } catch (scanErr) {
+                        const code = prompt("Saisissez le code-barres (EAN-13) :");
+                        if (code) {
+                          const cleanCode = code.replace(/\s/g, '');
+                          const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${cleanCode}.json`);
+                          const data = await response.json();
+                          if (data.status === 1) {
+                            const productName = data.product.product_name_fr || data.product.product_name || "Produit Inconnu";
+                            setIngName(productName);
+                            setIngToEdit(null);
+                            setShowAddIngModal(true);
+                          } else {
+                            alert("Produit non trouvé.");
+                          }
+                        }
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all shadow-xs"
+                  >
+                    <Barcode className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span>Importer Code-barres</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIngToEdit(null);
+                      setIngName('');
+                      setShowAddIngModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{t('newIngredient')}</span>
+                  </button>
+                </>
               )}
 
               {(activeSubTab === 'recipeCats' || activeSubTab === 'ingredientCats') && (
@@ -925,16 +983,6 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
           onSave={onSaveIngredient}
           onDelete={onDeleteIngredient}
         />
-      )}
-                  type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20"
-                >
-                  {t('saveIngredient')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
 
       {/* Add Category Modal */}

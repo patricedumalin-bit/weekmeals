@@ -466,6 +466,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </h4>
             <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
               <div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">
+                  {language === 'fr' ? "Moteur IA actif par défaut" : "Default Active AI Engine"}
+                </label>
+                <select
+                  defaultValue={localStorage.getItem('ai_provider') || 'groq'}
+                  onChange={(e) => localStorage.setItem('ai_provider', e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="groq">Groq Cloud (Llama 3 / Qwen)</option>
+                  <option value="gemini">Google Gemini (Flash)</option>
+                </select>
+              </div>
+              <div>
                 <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Groq Cloud (Llama 3)</label>
                 <input
                   type="password"

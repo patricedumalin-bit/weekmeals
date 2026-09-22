@@ -100,7 +100,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       return;
     }
 
-    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+    const provider = localStorage.getItem('ai_provider') as any || 'groq';
     const apiKey = provider === 'gemini' ? localStorage.getItem('gemini_api_key') : localStorage.getItem('groq_api_key');
 
     if (!apiKey) {
@@ -158,7 +158,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       alert("Limite de scans IA atteinte.");
       return;
     }
-    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+    const provider = localStorage.getItem('ai_provider') as any || 'groq';
     const apiKey = provider === 'gemini' ? localStorage.getItem('gemini_api_key') : localStorage.getItem('groq_api_key');
 
     if (!apiKey) {
@@ -194,11 +194,16 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       });
 
       const data = await response.json();
-      const text = provider === 'gemini' ? data.candidates[0].content.parts[0].text : data.choices[0].message.content;
+      if (!response.ok || data.error) {
+        throw new Error(data.error?.message || `Erreur HTTP ${response.status}`);
+      }
+      const text = provider === 'gemini'
+        ? (data.candidates?.[0]?.content?.parts?.[0]?.text || "Pas de réponse du Chef AI.")
+        : data.choices?.[0]?.message?.content;
       incrementAIUsage();
       alert(`👨‍🍳 Idées du Chef :\n\n${text}`);
-    } catch (err) {
-      alert("Erreur Chef IA.");
+    } catch (err: any) {
+      alert(`Erreur Chef IA : ${err.message || "Erreur réseau ou configuration."}`);
     } finally {
       setIsScanning(false);
     }
@@ -262,7 +267,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       return;
     }
 
-    const provider = localStorage.getItem('ai_provider') as any || 'gemini';
+    const provider = localStorage.getItem('ai_provider') as any || 'groq';
     const apiKey = provider === 'gemini' ? localStorage.getItem('gemini_api_key') : localStorage.getItem('groq_api_key');
 
     if (!apiKey) {

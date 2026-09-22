@@ -31,6 +31,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { BudgetDonutChart } from './BudgetDonutChart';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAppStore } from '../stores/useAppStore';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface ShoppingListViewProps {
   weeklyPlan: WeeklyPlan;
@@ -257,7 +258,13 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
               </button>
 
               <button
-                onClick={handleCopyList}
+                onClick={() => {
+                  if (!isPremium) {
+                    alert("Le partage de liste ou planning est réservé aux comptes Premium 🔒");
+                    return;
+                  }
+                  handleCopyList();
+                }}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
               >
                 {copied ? (
@@ -268,17 +275,23 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 ) : (
                   <>
                     <Share2 className="w-4 h-4" />
-                    <span>{t('share')}</span>
+                    <span>{t('share')} {!isPremium && '🔒'}</span>
                   </>
                 )}
               </button>
 
               <button
-                onClick={onPrint}
+                onClick={() => {
+                  if (!isPremium) {
+                    alert("L'impression PDF est réservée aux comptes Premium 🔒");
+                    return;
+                  }
+                  onPrint();
+                }}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
               >
                 <Printer className="w-4 h-4" />
-                <span>{t('printList')}</span>
+                <span>{t('printList')} {!isPremium && '🔒'}</span>
               </button>
             </div>
           )}

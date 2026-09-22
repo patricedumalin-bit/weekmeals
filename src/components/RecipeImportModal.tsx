@@ -52,7 +52,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   const { aiLimit } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
-  const [aiProvider, setAIProvider] = useState<AIProvider>('groq');
+  const [aiProvider, setAIProviderState] = useState<AIProvider>(() => (localStorage.getItem('ai_provider') as AIProvider) || 'groq');
+
+  const setAIProvider = (provider: AIProvider) => {
+    setAIProviderState(provider);
+    localStorage.setItem('ai_provider', provider);
+  };
 
   // Inputs
   const [pastedText, setPastedText] = useState('');

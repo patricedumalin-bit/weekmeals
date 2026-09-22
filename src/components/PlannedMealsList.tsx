@@ -19,6 +19,7 @@ import {
 import { WeeklyPlan, Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { useLanguage } from '../i18n/LanguageContext';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface PlannedMealsListProps {
   weeklyPlan: WeeklyPlan;
@@ -44,6 +45,7 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
   onPrint
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
+  const { isPremium } = useSubscription();
   const [copied, setCopied] = useState(false);
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   if (!weeklyPlan) return null;
@@ -191,7 +193,13 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
           {!isHeaderCollapsed && (
             <div className="flex items-center gap-2 flex-wrap animate-in fade-in slide-in-from-top-2 duration-300">
               <button
-                onClick={handleCopySchedule}
+                onClick={() => {
+                  if (!isPremium) {
+                    alert("Le partage de liste ou planning est réservé aux comptes Premium 🔒");
+                    return;
+                  }
+                  handleCopySchedule();
+                }}
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold backdrop-blur-md bg-[var(--cell-bg)] hover:bg-[var(--cell-bg-hover)] border border-[var(--border-color)] text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
               >
                 {copied ? (
@@ -202,17 +210,23 @@ export const PlannedMealsList: React.FC<PlannedMealsListProps> = ({
                 ) : (
                   <>
                     <Share2 className="w-4 h-4" />
-                    <span>{t('sharePlan')}</span>
+                    <span>{t('sharePlan')} {!isPremium && '🔒'}</span>
                   </>
                 )}
               </button>
 
               <button
-                onClick={onPrint}
+                onClick={() => {
+                  if (!isPremium) {
+                    alert("L'impression PDF est réservée aux comptes Premium 🔒");
+                    return;
+                  }
+                  onPrint();
+                }}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent)] hover:bg-[var(--primary)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
               >
                 <Printer className="w-4 h-4" />
-                <span>{t('printSchedule')}</span>
+                <span>{t('printSchedule')} {!isPremium && '🔒'}</span>
               </button>
             </div>
           )}
