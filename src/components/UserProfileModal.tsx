@@ -564,9 +564,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               }`}
             >
               {isPremium ? (
-                <>Simuler l'Expérience Gratuite 🔒</>
+                <div className="flex items-center gap-2">
+                  <span>Simuler l'Expérience Gratuite</span>
+                  <PremiumBadge size="xs" />
+                </div>
               ) : (
-                <>Rétablir la Version Full 👑</>
+                <div className="flex items-center gap-2">
+                  <span>Rétablir la Version Full</span>
+                  <Crown className="w-3 h-3 fill-current" />
+                </div>
               )}
             </button>
           </div>

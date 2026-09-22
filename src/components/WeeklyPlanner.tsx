@@ -30,6 +30,7 @@ import { CategoryIcon } from './CategoryIcon';
 import { useLanguage } from '../i18n/LanguageContext';
 import { calculateRecipeTotalBudget } from '../utils/calculator';
 import { FREE_LIMITS } from '../constants/subscription';
+import { PremiumBadge } from './PremiumBadge';
 
 interface WeeklyPlannerProps {
   weeklyPlan: WeeklyPlan;
@@ -448,11 +449,12 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
 
                 {onOpenAutoPlan && !weeklyPlan.isLocked && (
                   <button
-                    onClick={() => isPremium ? onOpenAutoPlan() : alert("L'IA d'auto-planification est réservée à la version Full 🔒")}
+                    onClick={() => isPremium ? onOpenAutoPlan() : alert("L'IA d'auto-planification est réservée à la version Full. Elle permet de générer un planning équilibré en un clic !")}
                     className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold shadow-md ${isPremium ? 'bg-amber-500 text-slate-950' : 'bg-slate-200 text-slate-400 grayscale'}`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Auto-Plan {!isPremium && '🔒'}</span>
+                    <span>Auto-Plan</span>
+                    {!isPremium && <PremiumBadge size="xs" />}
                   </button>
                 )}
 

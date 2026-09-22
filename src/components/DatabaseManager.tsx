@@ -597,44 +597,54 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
             ref={recipesParentRef}
             className="flex-1 overflow-y-auto h-[600px] pr-2"
           >
-            <div
-              style={{
-                height: `${recipeVirtualizer.getTotalSize()}px`,
-                width: '100%',
-                position: 'relative',
-              }}
-            >
-              {recipeVirtualizer.getVirtualItems().map((virtualRow) => {
-                const rowItems = recipeRows[virtualRow.index];
-                return (
-                  <div
-                    key={virtualRow.key}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4"
-                  >
-                    {rowItems.map(recipe => (
-                      <RecipeCard
-                        key={recipe.id}
-                        recipe={recipe}
-                        recipeCategories={recipeCategories}
-                        onPreview={onPreviewRecipe}
-                        onDelete={onDeleteRecipe}
-                        onCopy={onCopyGenericToPersonal}
-                        onEdit={onOpenRecipeEditor}
-                        onSave={onSaveRecipe}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
+            {filteredAndSortedRecipes.length === 0 ? (
+              <div className="py-20 text-center flex flex-col items-center justify-center">
+                <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
+                   <ChefHat className="w-10 h-10 text-slate-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">Aucune recette trouvée</h3>
+                <p className="text-sm text-slate-500 mt-2 max-w-sm">Désolé, nous n'avons pas trouvé de recettes correspondant à vos filtres. Essayez de chercher un autre terme ou de changer de base de données.</p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  height: `${recipeVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {recipeVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const rowItems = recipeRows[virtualRow.index];
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualRow.size}px`,
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4"
+                    >
+                      {rowItems.map(recipe => (
+                        <RecipeCard
+                          key={recipe.id}
+                          recipe={recipe}
+                          recipeCategories={recipeCategories}
+                          onPreview={onPreviewRecipe}
+                          onDelete={onDeleteRecipe}
+                          onCopy={onCopyGenericToPersonal}
+                          onEdit={onOpenRecipeEditor}
+                          onSave={onSaveRecipe}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

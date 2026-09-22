@@ -32,6 +32,7 @@ import { BudgetDonutChart } from './BudgetDonutChart';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAppStore } from '../stores/useAppStore';
 import { useSubscription } from '../hooks/useSubscription';
+import { PremiumBadge } from './PremiumBadge';
 
 interface ShoppingListViewProps {
   weeklyPlan: WeeklyPlan;
@@ -276,7 +277,8 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 ) : (
                   <>
                     <Share2 className="w-4 h-4" />
-                    <span>{t('share')} {!isPremium && '🔒'}</span>
+                    <span>{t('share')}</span>
+                    {!isPremium && <PremiumBadge size="xs" />}
                   </>
                 )}
               </button>
@@ -284,7 +286,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
               <button
                 onClick={() => {
                   if (!isPremium) {
-                    alert("L'impression PDF est réservée aux comptes Premium 🔒");
+                    alert("L'impression PDF est réservée aux comptes Premium. Passez en version Full pour débloquer toutes les fonctionnalités !");
                     return;
                   }
                   onPrint();
@@ -292,7 +294,8 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[var(--accent)] to-[var(--accent)] hover:from-[var(--accent)] hover:to-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20 transition-all"
               >
                 <Printer className="w-4 h-4" />
-                <span>{t('printList')} {!isPremium && '🔒'}</span>
+                <span>{t('printList')}</span>
+                {!isPremium && <PremiumBadge size="xs" />}
               </button>
             </div>
           )}
@@ -443,14 +446,21 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
       {/* Categorized Lists */}
       {groupedByCategory.length === 0 ? (
-        <div className="text-center py-16 px-4 backdrop-blur-xl bg-[var(--card-bg)] rounded-3xl border border-[var(--border-color)] shadow-lg shadow-slate-900/5 transition-all duration-300">
-          <ShoppingCart className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+        <div className="text-center py-20 px-6 backdrop-blur-xl bg-[var(--card-bg)] rounded-3xl border border-[var(--border-color)] shadow-lg shadow-slate-900/5 transition-all duration-300 flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full bg-[var(--accent)]/10 flex items-center justify-center mb-6 animate-pulse">
+            <ShoppingCart className="w-10 h-10 text-[var(--accent)]" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
             {t('shoppingListEmpty')}
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
             {t('shoppingListEmptySub')}
           </p>
+          <div className="mt-8 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 max-w-xs">
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+              💡 Astuce : Ajoutez des recettes dans votre <span className="font-bold text-[var(--primary)]">Planning</span> pour voir les ingrédients apparaître ici automatiquement.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-5">
@@ -754,6 +764,15 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating Action Button (Mobile) */}
+      <button
+        onClick={() => setIsAddCustomShoppingModalOpen(true)}
+        className="md:hidden fixed bottom-24 right-6 w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--accent)] to-[var(--primary)] text-white shadow-lg shadow-[var(--accent)]/30 flex items-center justify-center active:scale-95 transition-all z-40 border border-white/20"
+        aria-label={t('addCustomItem')}
+      >
+        <Plus className="w-7 h-7" />
+      </button>
     </div>
   );
 };

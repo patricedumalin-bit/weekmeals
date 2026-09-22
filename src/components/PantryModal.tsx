@@ -15,7 +15,8 @@ import {
   Loader2,
   FileText,
   Barcode,
-  AlertTriangle
+  AlertTriangle,
+  Crown
 } from 'lucide-react';
 import { Ingredient, IngredientCategory, Recipe, UnitType } from '../types';
 import { CategoryIcon } from './CategoryIcon';
@@ -27,6 +28,7 @@ import { parseReceiptWithAI, parseBarcodeWithAI } from '../lib/aiService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useSubscription } from '../hooks/useSubscription';
 import { BarcodeScanner, LensFacing } from '@capacitor-mlkit/barcode-scanning';
+import { PremiumBadge } from './PremiumBadge';
 
 interface PantryModalProps {
   isOpen: boolean;
@@ -389,7 +391,10 @@ export const PantryModal: React.FC<PantryModalProps> = ({
         <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
           <button onClick={() => setActiveTab('stock')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'stock' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Stocks</button>
           <button onClick={() => setActiveTab('antiwaste')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'antiwaste' ? 'border-amber-600 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Anti-Gaspillage</button>
-          <button onClick={handleAskChefAI} className={`px-4 py-2 text-sm font-bold transition-all ${isPremium ? 'text-blue-600 hover:text-blue-700' : 'text-slate-300'}`}>Chef IA {!isPremium && '🔒'}</button>
+          <button onClick={handleAskChefAI} className={`px-4 py-2 text-sm font-bold transition-all flex items-center gap-1.5 ${isPremium ? 'text-blue-600 hover:text-blue-700' : 'text-slate-300'}`}>
+            <span>Chef IA</span>
+            {!isPremium && <PremiumBadge size="xs" />}
+          </button>
         </div>
 
         <div className="px-4 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/30 dark:bg-slate-900/40">
@@ -430,43 +435,53 @@ export const PantryModal: React.FC<PantryModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                {filteredIngredients.map(ing => {
-                  const isInStock = !!pantryMap[ing.id];
-                  const expiry = getExpiryInfo(ing.id, ing.categoryId);
-                  return (
-                    <button
-                      key={ing.id}
-                      onClick={() => onTogglePantryItem(ing.id)}
-                      onTouchStart={handleTouchStart}
-                      onTouchEnd={(e) => handleTouchEnd(e, ing.id)}
-                      className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 select-none active:scale-[0.98] ${
-                        isInStock
-                          ? 'bg-emerald-100 border-emerald-600 shadow-sm'
-                          : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <span className={`font-bold text-sm leading-tight line-clamp-2 ${isInStock ? 'text-emerald-900' : 'text-slate-800 dark:text-slate-200'}`}>
-                          {translateIngredient(ing.id, ing.name)}
-                        </span>
-                        <div className={`w-5 h-5 rounded-lg border shrink-0 flex items-center justify-center transition-colors ${
-                          isInStock ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600'
-                        }`}>
-                          {isInStock && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+              {filteredIngredients.length === 0 ? (
+                <div className="py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Aucun ingrédient trouvé</p>
+                  <p className="text-xs text-slate-500 mt-1">Essayez de modifier votre recherche ou de changer de catégorie.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                  {filteredIngredients.map(ing => {
+                    const isInStock = !!pantryMap[ing.id];
+                    const expiry = getExpiryInfo(ing.id, ing.categoryId);
+                    return (
+                      <button
+                        key={ing.id}
+                        onClick={() => onTogglePantryItem(ing.id)}
+                        onTouchStart={handleTouchStart}
+                        onTouchEnd={(e) => handleTouchEnd(e, ing.id)}
+                        className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 select-none active:scale-[0.98] ${
+                          isInStock
+                            ? 'bg-emerald-100 border-emerald-600 shadow-sm'
+                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          <span className={`font-bold text-sm leading-tight line-clamp-2 ${isInStock ? 'text-emerald-900' : 'text-slate-800 dark:text-slate-200'}`}>
+                            {translateIngredient(ing.id, ing.name)}
+                          </span>
+                          <div className={`w-5 h-5 rounded-lg border shrink-0 flex items-center justify-center transition-colors ${
+                            isInStock ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600'
+                          }`}>
+                            {isInStock && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
+                          </div>
                         </div>
-                      </div>
 
-                      {expiry && (
-                        <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md border w-fit ${expiry.color}`}>
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>{expiry.label}</span>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                        {expiry && (
+                          <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md border w-fit ${expiry.color}`}>
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>{expiry.label}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

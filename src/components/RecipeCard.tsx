@@ -58,7 +58,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = React.memo(({
 
   return (
     <div
-      className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between backdrop-blur-xl ${
+      className={`p-3.5 rounded-3xl border transition-all flex flex-col justify-between backdrop-blur-xl ${
         isSelected
           ? 'border-[var(--primary)]/60 bg-[var(--primary)]/10 dark:bg-[var(--primary)]/30 shadow-md shadow-[var(--primary)]/10'
           : 'border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 hover:border-[var(--primary)]/30 shadow-xs'
