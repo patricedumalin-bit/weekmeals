@@ -78,6 +78,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   const [filterHidePantry, setFilterHidePantry] = useState(false);
 
   const { isAddCustomShoppingModalOpen, setIsAddCustomShoppingModalOpen } = useAppStore();
+  const { isPremium } = useSubscription();
 
   // Swipe gesture state
   const [touchStartX, setTouchStartX] = useState<number | null>(null);

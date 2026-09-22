@@ -49,7 +49,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
   const { language } = useLanguage();
   const { systemConfig } = useAppStore();
   const { incrementAIUsage } = useAuthStore();
-  const { aiLimit } = useSubscription();
+  const { aiLimit, isPremium } = useSubscription();
 
   const [activeTab, setActiveTab] = useState<'text' | 'url' | 'photo' | 'themealdb'>('text');
   const [aiProvider, setAIProviderState] = useState<AIProvider>(() => (localStorage.getItem('ai_provider') as AIProvider) || 'groq');
