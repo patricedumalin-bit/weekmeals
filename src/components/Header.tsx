@@ -21,6 +21,7 @@ import {
 import { ActiveTab, WeeklyPlan, themes, Theme, SyncStatus } from '../types';
 import { useLanguage } from '../i18n/LanguageContext';
 import { SupportedLanguage } from '../i18n/translations';
+import { PremiumBadge } from './PremiumBadge';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -273,7 +274,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => {
               if (!isPremium) {
-                alert("L'impression globale PDF est réservée aux comptes Premium 🔒");
+                alert("L'impression globale PDF est réservée aux comptes Premium. Passez en version Full pour débloquer toutes les fonctionnalités !");
                 return;
               }
               handlePrintClick();
@@ -282,7 +283,8 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-700 dark:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-2xs"
           >
             <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">{t('print')} {!isPremium && '🔒'}</span>
+            <span className="hidden sm:inline">{t('print')}</span>
+            {!isPremium && <PremiumBadge size="xs" />}
           </button>
 
           <button

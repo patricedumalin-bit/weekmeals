@@ -23,6 +23,7 @@ import { estimateRecipeNutrition, calculateRecipeTotalBudget } from '../utils/ca
 import { useLanguage } from '../i18n/LanguageContext';
 import { useDataStore } from '../stores/useDataStore';
 import { useAuthStore } from '../stores/useAuthStore';
+import { PremiumBadge } from './PremiumBadge';
 
 interface NutritionDashboardProps {
   isOpen: boolean;
@@ -227,8 +228,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
                   }`}>
                     {!isPremium && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/5 backdrop-blur-[2px] z-10 p-4 text-center">
-                        <Crown className="w-8 h-8 text-amber-500 mb-2" />
-                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-tighter">Conseils IA réservés à la version Full 🔒</p>
+                        <PremiumBadge size="md" className="mb-2" />
+                        <p className="text-[10px] font-bold text-slate-800 uppercase tracking-tighter">Conseils IA réservés à la version Full</p>
                       </div>
                     )}
                     <h3 className="text-sm font-bold flex items-center gap-2 text-rose-700 dark:text-rose-400">
@@ -268,7 +269,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
                     }`}
                   >
                     <CheckCircle2 className="w-5 h-5" />
-                    Valider et Archiver cette Semaine {!isPremium && '🔒'}
+                    <span>Valider et Archiver cette Semaine</span>
+                    {!isPremium && <PremiumBadge size="sm" />}
                   </button>
                 </div>
               )}
@@ -277,8 +279,8 @@ export const NutritionDashboard: React.FC<NutritionDashboardProps> = ({
                 <div className="space-y-6 animate-in fade-in duration-300 relative min-h-[300px]">
                   {!isPremium && (
                     <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/60 dark:bg-slate-900/60 backdrop-blur-md rounded-3xl p-6 text-center">
-                      <Crown className="w-10 h-10 text-amber-500 mb-4" />
-                      <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tighter italic">Historique Premium 🔒</h3>
+                      <PremiumBadge size="md" className="mb-4" />
+                      <h3 className="text-lg font-black text-slate-900 dark:text-slate-100 uppercase tracking-tighter italic">Historique Premium</h3>
                     </div>
                   )}
                   <div className="flex items-center justify-between">

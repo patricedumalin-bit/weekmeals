@@ -113,11 +113,24 @@ export async function parseRecipeWithAI(content: string, options: AIServiceOptio
 export async function parseRecipeBookWithAI(content: string, options: AIServiceOptions): Promise<AIRecipeResponse[]> {
   const prompt = `Tu es un assistant culinaire expert.
 Analyse le contenu suivant qui provient d'un livre de recettes.
-Extrais TOUTES les recettes complètes que tu trouves dans ce texte.
-Pour CHAQUE recette, génère un objet JSON suivant la structure demandée précédemment (title, servings, prepTimeMinutes, cookTimeMinutes, difficulty, description, ingredients, instructions, localizations).
+Extrais TOUTES les recettes que tu trouves dans ce texte, même si elles semblent incomplètes ou courtes.
 
-IMPORTANT : Retourne UNIQUEMENT un tableau JSON d'objets (SANS blocs markdown, SANS texte autour).
-Exemple de retour : [ { "title": "Recette 1", ... }, { "title": "Recette 2", ... } ]
+Pour CHAQUE recette, génère un objet JSON suivant cette structure :
+{
+  "title": "Nom de la recette",
+  "servings": 4,
+  "prepTimeMinutes": 15,
+  "cookTimeMinutes": 20,
+  "difficulty": "easy" | "medium" | "hard",
+  "description": "...",
+  "ingredients": [
+    { "name": "nom ingrédient", "quantity": 1, "unit": "unit" }
+  ],
+  "instructions": ["Étape 1...", "Étape 2..."]
+}
+
+IMPORTANT : Retourne UNIQUEMENT un tableau JSON d'objets (SANS blocs markdown).
+Si tu ne trouves aucune recette, retourne un tableau vide [].
 
 CONTENU À ANALYSER :
 ${content}`;

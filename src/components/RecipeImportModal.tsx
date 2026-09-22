@@ -129,12 +129,26 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
         aiResult = await parseRecipeImageWithAI(selectedImage, { provider: aiProvider, apiKey: activeKey, model });
         incrementAIUsage();
       } else if (activeTab === 'book') {
-        if (!selectedPDF) throw new Error('Veuillez sélectionner un fichier PDF.');
+        if (!selectedPDF) throw new Error('Veuillez sélectionner un fichier PDF ou EPUB.');
 
-        // 1. Extract text from PDF
-        const pageTexts = await extractTextFromPDF(selectedPDF);
+        let pageTexts: string[] = [];
+        const isEpub = selectedPDF.name.toLowerCase().endsWith('.epub');
+
+        if (isEpub) {
+          const { extractTextFromEPUB } = await import('../utils/epubExtractor');
+          pageTexts = await extractTextFromEPUB(selectedPDF);
+        } else {
+          pageTexts = await extractTextFromPDF(selectedPDF);
+        }
+
+        const allText = pageTexts.join('\n');
+        console.log(`Extracted ${isEpub ? 'EPUB' : 'PDF'} Text Sample:`, allText.slice(0, 1000));
+
+        if (allText.trim().length < 50) {
+          throw new Error("Le fichier semble vide ou protégé (le texte n'est pas extractible).");
+        }
+
         const chunks = groupPagesByRecipe(pageTexts);
-
         setBookParsingProgress({ current: 0, total: chunks.length });
         const allExtractedRecipes: Partial<Recipe>[] = [];
 
@@ -145,15 +159,18 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
           setBookParsingProgress({ current: i + 1, total: chunks.length });
           try {
             const batch = await parseRecipeBookWithAI(chunks[i], { provider: aiProvider, apiKey: activeKey, model });
-            allExtractedRecipes.push(...batch);
-            incrementAIUsage();
-          } catch (e) {
-            console.error("Batch parsing error:", e);
-            // Continue with other batches even if one fails
+            if (Array.isArray(batch)) {
+              allExtractedRecipes.push(...batch);
+              incrementAIUsage();
+            }
+          } catch (e: any) {
+            console.error(`Batch ${i+1} parsing error:`, e);
           }
         }
 
-        if (allExtractedRecipes.length === 0) throw new Error("Aucune recette n'a pu être extraite du document.");
+        if (allExtractedRecipes.length === 0) {
+           throw new Error("L'IA n'a pas détecté de recettes structurées dans ce document.");
+        }
 
         // Match ingredients for all detected recipes
         const processedRecipes = allExtractedRecipes.map(res => {
@@ -642,12 +659,12 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                   {activeTab === 'book' && (
                     <div className="space-y-3">
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Importez un livre de recettes complet au format PDF. L'IA va analyser le contenu et détecter toutes les recettes présentes.
+                        Importez un livre de recettes complet au format PDF ou EPUB. L'IA va analyser le contenu et détecter toutes les recettes présentes.
                       </p>
                       <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors text-center bg-slate-50/50 dark:bg-slate-800/30">
                         <input
                           type="file"
-                          accept="application/pdf"
+                          accept="application/pdf,application/epub+zip"
                           onChange={(e) => setSelectedPDF(e.target.files?.[0] || null)}
                           className="hidden"
                         />
@@ -662,9 +679,9 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
                           <>
                             <Upload className="w-8 h-8 text-slate-400 mb-2" />
                             <p className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
-                              Cliquez pour sélectionner un livre PDF
+                              Cliquez pour sélectionner un livre PDF ou EPUB
                             </p>
-                            <p className="text-[10px] text-slate-400 mt-1">Format PDF uniquement (max 50 Mo)</p>
+                            <p className="text-[10px] text-slate-400 mt-1">Formats PDF ou EPUB (max 50 Mo)</p>
                           </>
                         )}
                       </label>

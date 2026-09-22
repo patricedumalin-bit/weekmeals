@@ -26,6 +26,7 @@ import { formatQuantity } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useDataStore } from '../stores/useDataStore';
 import { useSubscription } from '../hooks/useSubscription';
+import { PremiumBadge } from './PremiumBadge';
 
 interface CookingModeModalProps {
   recipe: Recipe | null;
@@ -314,12 +315,12 @@ export const CookingModeModal: React.FC<CookingModeModalProps> = ({
                   ? 'bg-slate-800 text-slate-400 hover:text-white'
                   : 'bg-slate-800/50 text-slate-600 cursor-not-allowed opacity-50'
               }`}
-              title={isPremium ? (isListening ? "Désactiver la voix" : "Activer la commande vocale") : "Commande vocale (Premium 🔒)"}
+              title={isPremium ? (isListening ? "Désactiver la voix" : "Activer la commande vocale") : "Commande vocale (Premium)"}
             >
               {isListening ? <Mic className="w-5 h-5" /> : (
                 <div className="relative">
                   <MicOff className="w-5 h-5" />
-                  {!isPremium && <span className="absolute -top-1 -right-1 text-[10px]">🔒</span>}
+                  {!isPremium && <PremiumBadge className="absolute -top-2 -right-2" size="xs" />}
                 </div>
               )}
             </button>

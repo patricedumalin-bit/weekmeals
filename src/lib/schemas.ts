@@ -24,8 +24,8 @@ export const RecipeSchema = z.object({
   cookTimeMinutes: z.coerce.number().default(20),
   difficulty: DifficultySchema,
   description: z.string().optional().default("Recette importée par IA"),
-  ingredients: z.array(RecipeIngredientSchema).min(1, "Au moins un ingrédient est requis"),
-  instructions: z.array(z.string()).min(1, "Au moins une étape est requise"),
+  ingredients: z.array(RecipeIngredientSchema).default([]),
+  instructions: z.array(z.string()).default([]),
   localizations: z.record(z.object({
     title: z.string(),
     description: z.string(),
