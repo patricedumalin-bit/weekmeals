@@ -2,7 +2,9 @@ package com.weekmeals.app.data.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 
+@Immutable
 @Entity(tableName = "weekly_plans")
 data class WeeklyPlanEntity(
     @PrimaryKey val id: String = "current_plan",

@@ -1,9 +1,15 @@
 package com.weekmeals.app.data.model
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.compose.runtime.Immutable
 
-@Entity(tableName = "ingredients")
+@Immutable
+@Entity(
+    tableName = "ingredients",
+    indices = [Index("categoryId"), Index("name"), Index("barcode")]
+)
 data class IngredientEntity(
     @PrimaryKey val id: String,
     val name: String,

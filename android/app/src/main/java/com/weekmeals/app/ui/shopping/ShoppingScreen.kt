@@ -20,10 +20,24 @@ fun ShoppingScreen(viewModel: ShoppingViewModel) {
     val items by viewModel.items.collectAsStateWithLifecycle()
     var newItemName by remember { mutableStateOf("") }
 
+    val checkedCount by remember {
+        derivedStateOf { items.count { it.checked } }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Liste de Courses") },
+                title = { 
+                    Column {
+                        Text("Liste de Courses")
+                        if (items.isNotEmpty()) {
+                            Text(
+                                text = "$checkedCount sur ${items.size} achetés",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = { viewModel.clearChecked() }) {
                         Icon(Icons.Default.Delete, contentDescription = "Effacer les éléments cochés")

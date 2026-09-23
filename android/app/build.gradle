@@ -3,6 +3,8 @@ apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'dagger.hilt.android.plugin'
+apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'com.google.firebase.firebase-perf'
 
 android {
     namespace = "com.weekmeals.app"
@@ -87,6 +89,20 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.squareup.moshi:moshi-kotlin:1.15.1'
     kapt 'com.squareup.moshi:moshi-kotlin-codegen:1.15.1'
+
+    // Jetpack Security (EncryptedSharedPreferences)
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
+    // Firebase BoM & Services (Analytics, Crashlytics, Perf, Auth, Firestore)
+    implementation platform('com.google.firebase:firebase-bom:33.8.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-crashlytics'
+    implementation 'com.google.firebase:firebase-perf'
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+
+    // WorkManager for background sync
+    implementation 'androidx.work:work-runtime-ktx:2.10.0'
 
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
