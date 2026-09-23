@@ -3,6 +3,10 @@ package com.weekmeals.app.ui.planner
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,10 +18,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun PlannerScreen(viewModel: PlannerViewModel) {
     val weeklyPlan by viewModel.weeklyPlan.collectAsStateWithLifecycle()
+    val dayNames = listOf("Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche")
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Planning des Repas") })
+            TopAppBar(
+                title = { Text("Planning des Repas") },
+                actions = {
+                    IconButton(onClick = { viewModel.toggleLock() }) {
+                        Icon(
+                            imageVector = if (weeklyPlan?.isLocked == true) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = "Verrouiller le planning"
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { /* TODO: Auto-plan generation */ },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = "Générer automatiquement")
+            }
         }
     ) { innerPadding ->
         Column(
@@ -29,21 +52,37 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp)
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Semaine en cours",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Semaine de la famille",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Badge(
+                            containerColor = if (weeklyPlan?.isLocked == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = if (weeklyPlan?.isLocked == true) "Verrouillé" else "Modifiable",
+                                modifier = Modifier.padding(4.dp)
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("Nombre de repas : ${weeklyPlan?.numberOfMeals ?: 7}")
-                    Text("Portions par défaut : ${weeklyPlan?.defaultServings ?: 4}")
+                    Text("Portions par défaut : ${weeklyPlan?.defaultServings ?: 4} personnes")
                 }
             }
 
             Text(
-                text = "Repas programmés",
+                text = "Repas de la semaine",
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
@@ -54,20 +93,38 @@ fun PlannerScreen(viewModel: PlannerViewModel) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 items((1..numberOfMeals).toList()) { mealIndex ->
+                    val dayLabel = dayNames.getOrElse(mealIndex - 1) { "Jour $mealIndex" }
                     Card(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(16.dp)
                         ) {
-                            Text("Repas $mealIndex", style = MaterialTheme.typography.bodyLarge)
-                            TextButton(onClick = { /* TODO: Choisir recette */ }) {
-                                Text("Ajouter une recette")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = dayLabel,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                TextButton(
+                                    onClick = { /* TODO: Ouvrir sélecteur de recette */ },
+                                    enabled = weeklyPlan?.isLocked != true
+                                ) {
+                                    Text("+ Choisir une recette")
+                                }
                             }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Aucune recette assignée",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }

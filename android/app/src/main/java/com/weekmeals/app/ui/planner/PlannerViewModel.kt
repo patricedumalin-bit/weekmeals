@@ -28,4 +28,15 @@ class PlannerViewModel(private val plannerRepository: PlannerRepository) : ViewM
             plannerRepository.savePlan(updated)
         }
     }
+
+    fun toggleLock() {
+        viewModelScope.launch {
+            val current = weeklyPlan.value ?: WeeklyPlanEntity()
+            val updated = current.copy(
+                isLocked = !current.isLocked,
+                lastUpdated = System.currentTimeMillis().toString()
+            )
+            plannerRepository.savePlan(updated)
+        }
+    }
 }
