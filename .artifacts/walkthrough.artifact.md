@@ -1,25 +1,25 @@
-# Refactoring and Code Cleanup Walkthrough
+# Feature Walkthrough - Batch-Cooking with Smart Ingredient Mutualization
 
-Successfully sanitized the `weekmeals` application code following the project methodology on the dedicated refactoring branch (`refactor/nettoyage-code`).
+Successfully developed and verified the **Batch-Cooking** feature on the isolated `feature/batch-cooking` branch.
 
 ## Changes Made
 
-### TypeScript & Core Code Fixes
-- **[logger.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/utils/logger.ts)**: Safely typed Vite environment access (`import.meta.env`).
-- **[schemas.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/lib/schemas.ts)**: Updated Zod v4 schemas (`z.record`) with explicit key/value types.
-- **[main.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/main.tsx)**: Fixed React `ErrorBoundary` class component state and props typing.
-- **[useBilling.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/hooks/useBilling.ts)**: Fixed RevenueCat imports and configuration properties (`appUserID`).
-- **[useInitialization.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/hooks/useInitialization.ts)** & **[cloudSync.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/utils/cloudSync.ts)**: Fixed Zustand state store updaters and missing type imports (`Ingredient`).
-- **UI Components & Modals**:
-  - **[AutoPlanModal.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/AutoPlanModal.tsx)**: Fixed missing translation function `t`.
-  - **[NutritionDashboard.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/NutritionDashboard.tsx)** & **[useDataStore.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/stores/useDataStore.ts)**: Added and wired `clearHistory` action.
-  - **[RecipeCard.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/RecipeCard.tsx)** & **[UserProfileModal.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/UserProfileModal.tsx)**: Fixed missing `Plus` and `AlertCircle` icon imports from `lucide-react`.
-  - **[RecipeImportModal.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/RecipeImportModal.tsx)**: Fixed partial recipe ingredient mapping type compatibility.
-  - **[ShoppingListView.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/ShoppingListView.tsx)**: Fixed `getIngredientCost` argument count and budget category sorting types.
+### Core Logic
+- **[NEW] [batchCookingCalculator.ts](file:///C:/Users/diane/StudioProjects/weekmeals/src/utils/batchCookingCalculator.ts)**:
+  - Implemented `generateBatchCookingPlan` which selects recipes iteratively by prioritizing maximum ingredient overlap/mutualization across meals.
+  - Implemented `generateBatchCookingSessionGuide` to generate a chronological step-by-step prep session schedule (wash/cut, concurrent cooking, packaging/storage).
+
+### UI Components & Integration
+- **[NEW] [BatchCookingModal.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/BatchCookingModal.tsx)**:
+  - Interactive assistant modal allowing users to configure meal count and generate a batch-cooking session plan with chronological steps.
+- **[MODIFY] [WeeklyPlanner.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/WeeklyPlanner.tsx)**:
+  - Added the "Batch-Cooking" action button in the planner sidebar.
+- **[MODIFY] [ModalManager.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/components/ModalManager.tsx)** & **[App.tsx](file:///C:/Users/diane/StudioProjects/weekmeals/src/App.tsx)**:
+  - Wired `BatchCookingModal` state and event handlers.
 
 ## Verification Results
 
-### Automated Tests & Linting
-- **TypeScript Linting (`npm run lint`)**: Passed with **0 errors** (all 24 compilation errors resolved).
-- **Unit Tests (`npm test`)**: All **14 tests passed** successfully (`calculator.test.ts` and `schemas.test.ts`).
-- **Production Build (`npm run build`)**: Vite bundle successfully compiled and generated distribution files.
+### Automated Tests & Validation
+- **TypeScript Linting (`npm run lint`)**: Passed with **0 errors**.
+- **Unit Tests (`npm test`)**: All **14 tests passed** successfully.
+- **Production Build (`npm run build`)**: Vite build successfully generated.

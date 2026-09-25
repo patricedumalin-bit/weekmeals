@@ -48,6 +48,7 @@ function AppContent({
     setIsPantryModalOpen,
     setIsAutoPlanModalOpen,
     setIsNutritionDashboardOpen,
+    setIsBatchCookingModalOpen,
     setIsRecipeImportModalOpen,
     databaseSource, setDatabaseSource,
     isSeedingGeneric, setIsSeedingGeneric
@@ -196,6 +197,7 @@ function AppContent({
             onOpenAutoPlan={() => setIsAutoPlanModalOpen(true)}
             onOpenNutrition={() => setIsNutritionDashboardOpen(true)}
             onOpenPantry={() => setIsPantryModalOpen(true)}
+            onOpenBatchCooking={() => setIsBatchCookingModalOpen(true)}
           />
         )}
 

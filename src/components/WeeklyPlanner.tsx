@@ -51,6 +51,7 @@ interface WeeklyPlannerProps {
   onOpenAutoPlan?: () => void;
   onOpenNutrition?: () => void;
   onOpenPantry?: () => void;
+  onOpenBatchCooking?: () => void;
 }
 
 export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
@@ -70,7 +71,8 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
   isPremium,
   onOpenAutoPlan,
   onOpenNutrition,
-  onOpenPantry
+  onOpenPantry,
+  onOpenBatchCooking
 }) => {
   const { t, translateMealLabel, translateRecipeCategory, translateRecipe } = useLanguage();
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
@@ -458,6 +460,17 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Auto-Plan</span>
+                    {!isPremium && <PremiumBadge size="xs" />}
+                  </button>
+                )}
+
+                {onOpenBatchCooking && !weeklyPlan.isLocked && (
+                  <button
+                    onClick={() => isPremium ? onOpenBatchCooking() : alert("Le mode Batch-Cooking intelligent est réservé à la version Full.")}
+                    className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold shadow-md ${isPremium ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-400 grayscale'}`}
+                  >
+                    <ChefHat className="w-3.5 h-3.5" />
+                    <span>Batch-Cooking</span>
                     {!isPremium && <PremiumBadge size="xs" />}
                   </button>
                 )}
