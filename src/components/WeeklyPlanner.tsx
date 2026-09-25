@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { WeeklyPlan, MealSlot, Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
+import { RecipeImage } from './RecipeImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { calculateRecipeTotalBudget } from '../utils/calculator';
 import { FREE_LIMITS } from '../constants/subscription';
@@ -134,6 +135,9 @@ export const WeeklyPlanner: React.FC<WeeklyPlannerProps> = ({
           isCooked ? 'bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 opacity-60' : 'border-[var(--accent)]/20 backdrop-blur-md bg-[var(--accent)]/5 dark:bg-[var(--accent)]/20'
         }`}
       >
+        <div className="w-full h-20 rounded-xl overflow-hidden mb-1 shadow-xs">
+          <RecipeImage title={localized.title} categoryId={recipe.categoryId} imageUrl={recipe.imageUrl} className="w-full h-full" />
+        </div>
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0" onClick={() => setIsCollapsed(!isCollapsed)}>
             <h4 className={`text-xs font-bold line-clamp-2 pr-12 ${isCooked ? 'text-slate-500 line-through' : 'text-slate-900 dark:text-slate-100'}`}>

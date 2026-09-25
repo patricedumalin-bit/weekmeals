@@ -16,6 +16,7 @@ import {
 import { useState } from 'react';
 import { Recipe, RecipeCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
+import { RecipeImage } from './RecipeImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { inferCookingMode } from '../utils/calculator';
 
@@ -64,6 +65,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = React.memo(({
           : 'border-white/50 dark:border-white/10 bg-white/60 dark:bg-slate-800/60 hover:border-[var(--primary)]/30 shadow-xs'
       } ${recipe.isCustom && !isPicker ? 'border-emerald-500/30 dark:border-emerald-500/20 hover:border-emerald-500' : ''}`}
     >
+      <div className="w-full h-28 rounded-2xl overflow-hidden mb-3 shadow-xs">
+        <RecipeImage title={localized.title} categoryId={recipe.categoryId} imageUrl={recipe.imageUrl} className="w-full h-full" />
+      </div>
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-snug flex-1">

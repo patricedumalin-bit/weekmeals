@@ -186,7 +186,7 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
   const recipeVirtualizer = useVirtualizer({
     count: recipeRows.length,
     getScrollElement: () => recipesParentRef.current,
-    estimateSize: () => 250,
+    estimateSize: () => 380,
     overscan: 5,
   });
 
@@ -606,43 +606,19 @@ export const DatabaseManager: React.FC<DatabaseManagerProps> = ({
                 <p className="text-sm text-slate-500 mt-2 max-w-sm">Désolé, nous n'avons pas trouvé de recettes correspondant à vos filtres. Essayez de chercher un autre terme ou de changer de base de données.</p>
               </div>
             ) : (
-              <div
-                style={{
-                  height: `${recipeVirtualizer.getTotalSize()}px`,
-                  width: '100%',
-                  position: 'relative',
-                }}
-              >
-                {recipeVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const rowItems = recipeRows[virtualRow.index];
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: `${virtualRow.size}px`,
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4"
-                    >
-                      {rowItems.map(recipe => (
-                        <RecipeCard
-                          key={recipe.id}
-                          recipe={recipe}
-                          recipeCategories={recipeCategories}
-                          onPreview={onPreviewRecipe}
-                          onDelete={onDeleteRecipe}
-                          onCopy={onCopyGenericToPersonal}
-                          onEdit={onOpenRecipeEditor}
-                          onSave={onSaveRecipe}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                {filteredAndSortedRecipes.map(recipe => (
+                  <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    recipeCategories={recipeCategories}
+                    onPreview={onPreviewRecipe}
+                    onDelete={onDeleteRecipe}
+                    onCopy={onCopyGenericToPersonal}
+                    onEdit={onOpenRecipeEditor}
+                    onSave={onSaveRecipe}
+                  />
+                ))}
               </div>
             )}
           </div>
