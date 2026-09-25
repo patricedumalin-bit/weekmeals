@@ -21,7 +21,8 @@ import {
   Scale,
   Sparkles,
   ArrowRight,
-  Heart
+  Heart,
+  AlertCircle
 } from 'lucide-react';
 import { SyncStatus, themes, Theme } from '../types';
 import { formatSyncTime } from '../utils/cloudSync';

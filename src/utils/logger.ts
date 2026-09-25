@@ -6,7 +6,7 @@
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 class Logger {
-  private isProduction = import.meta.env.PROD;
+  private isProduction = (import.meta as any).env?.PROD ?? false;
 
   private log(level: LogLevel, message: string, data?: any) {
     if (this.isProduction && level === 'debug') return;

@@ -117,7 +117,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
       let categoryTotal = 0;
       group.items.forEach(item => {
-        const cost = getIngredientCost(item.ingredientId, item.totalQuantity, item.unit);
+        const cost = getIngredientCost(item.ingredientId, item.totalQuantity, item.unit, item.categoryId || group.category.id, item.name);
         categoryTotal += cost;
       });
 
@@ -360,7 +360,7 @@ export const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                     {/* Répartition par Rayon (Amélioration Esthétique) */}
                     {estimatedTotalBudget > 0 && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                        {Object.entries(budgetByCategory)
+                        {(Object.entries(budgetByCategory) as [string, { name: string; amount: number; color: string }][])
                           .sort((a, b) => b[1].amount - a[1].amount)
                           .slice(0, 6) // Show top 6 categories
                           .map(([id, cat]) => (

@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { Purchases, CUSTOMER_INFO_UPDATE_LISTENER, CustomerInfo } from '@revenuecat/purchases-capacitor';
+import { Purchases, CustomerInfo } from '@revenuecat/purchases-capacitor';
 import { useAuthStore } from '../stores/useAuthStore';
 import { Device } from '@capacitor/device';
 
@@ -32,7 +32,7 @@ export function useBilling() {
         // Initialize RevenueCat
         await Purchases.configure({
           apiKey: REVENUECAT_ANDROID_API_KEY,
-          appUserId: user?.uid || undefined // Link to Firebase UID if logged in
+          appUserID: user?.uid || undefined as any // Link to Firebase UID if logged in
         });
 
         // Get current subscriber info

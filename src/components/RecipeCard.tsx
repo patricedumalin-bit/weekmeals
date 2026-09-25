@@ -11,7 +11,8 @@ import {
   Edit2,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Plus
 } from 'lucide-react';
 import { useState } from 'react';
 import { Recipe, RecipeCategory } from '../types';
