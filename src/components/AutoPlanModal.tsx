@@ -42,7 +42,7 @@ export const AutoPlanModal: React.FC<AutoPlanModalProps> = ({
 }) => {
   const activePlan = weeklyPlan || currentWeeklyPlan;
   const safeRecipes = Array.isArray(recipes) ? recipes : [];
-  const { translateRecipe, translateCookingMode } = useLanguage();
+  const { t, translateRecipe, translateCookingMode } = useLanguage();
 
   const [mealCount, setMealCount] = useState<number>(activePlan?.numberOfMeals || 7);
   const [maxPrepTime, setMaxPrepTime] = useState<number | null>(null);

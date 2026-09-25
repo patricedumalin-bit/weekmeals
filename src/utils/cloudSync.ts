@@ -5,7 +5,7 @@
 
 import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, getDocs, query, orderBy, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { WeeklyPlan, CustomShoppingItem, Recipe } from '../types';
+import { WeeklyPlan, CustomShoppingItem, Recipe, Ingredient } from '../types';
 
 export enum OperationType {
   CREATE = 'create',

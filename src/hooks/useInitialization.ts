@@ -94,15 +94,14 @@ export function useInitialization() {
 
         unsubGeneric = subscribeToGenericCatalog((catalog) => {
           if (catalog && Array.isArray(catalog.recipes) && catalog.recipes.length > 0) {
-            setRecipes(prev => {
-              const personal = prev.filter(r => r.isCustom);
-              const map = new Map<string, Recipe>();
-              catalog.recipes.forEach(r => map.set(r.id, r));
-              personal.forEach(r => map.set(r.id, r));
-              const merged = Array.from(map.values());
-              saveRecipes(merged);
-              return merged;
-            });
+            const currentRecipes = useDataStore.getState().recipes;
+            const personal = currentRecipes.filter(r => r.isCustom);
+            const map = new Map<string, Recipe>();
+            catalog.recipes.forEach(r => map.set(r.id, r));
+            personal.forEach(r => map.set(r.id, r));
+            const merged = Array.from(map.values());
+            saveRecipes(merged);
+            setRecipes(merged);
           }
         });
       } catch (err) {
@@ -147,13 +146,12 @@ export function useInitialization() {
           }
 
           if (Array.isArray(cloudData.customRecipes)) {
-            setRecipes(prev => {
-              const map = new Map<string, Recipe>(prev.map(r => [r.id, r]));
-              cloudData.customRecipes.forEach((cr: Recipe) => map.set(cr.id, cr));
-              const merged = Array.from(map.values());
-              saveRecipes(merged);
-              return merged;
-            });
+            const currentRecipes = useDataStore.getState().recipes;
+            const map = new Map<string, Recipe>(currentRecipes.map(r => [r.id, r]));
+            cloudData.customRecipes.forEach((cr: Recipe) => map.set(cr.id, cr));
+            const merged = Array.from(map.values());
+            saveRecipes(merged);
+            setRecipes(merged);
           }
 
           if (cloudData.weeklyPlan) {

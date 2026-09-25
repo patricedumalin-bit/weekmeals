@@ -14,7 +14,7 @@ export const RecipeIngredientSchema = z.object({
     return 1;
   }, z.number().default(1)),
   unit: UnitTypeSchema,
-  localizations: z.record(z.string()).optional(),
+  localizations: z.record(z.string(), z.string()).optional(),
 });
 
 export const RecipeSchema = z.object({
@@ -26,7 +26,7 @@ export const RecipeSchema = z.object({
   description: z.string().optional().default("Recette importée par IA"),
   ingredients: z.array(RecipeIngredientSchema).default([]),
   instructions: z.array(z.string()).default([]),
-  localizations: z.record(z.object({
+  localizations: z.record(z.string(), z.object({
     title: z.string(),
     description: z.string(),
     instructions: z.array(z.string())

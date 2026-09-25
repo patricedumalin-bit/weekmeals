@@ -45,6 +45,7 @@ interface DataState {
   setPantryAddedDates: (map: Record<string, string>) => void;
   addSavings: (amount: number) => void;
   archiveWeeklyPlan: (summary: WeeklyHistoryItem) => void;
+  clearHistory: () => void;
   setIsLoaded: (isLoaded: boolean) => void;
 
   // Business Logic Actions (from App.tsx)

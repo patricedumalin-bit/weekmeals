@@ -160,7 +160,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
           try {
             const batch = await parseRecipeBookWithAI(chunks[i], { provider: aiProvider, apiKey: activeKey, model });
             if (Array.isArray(batch)) {
-              allExtractedRecipes.push(...batch);
+              allExtractedRecipes.push(...batch as any[]);
               incrementAIUsage();
             }
           } catch (e: any) {
