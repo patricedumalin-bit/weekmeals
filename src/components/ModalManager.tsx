@@ -12,6 +12,7 @@ import { AutoPlanModal } from './AutoPlanModal';
 import { CookingModeModal } from './CookingModeModal';
 import { RecipeImportModal } from './RecipeImportModal';
 import { NutritionDashboard } from './NutritionDashboard';
+import { BatchCookingModal } from './BatchCookingModal';
 import { useLanguage } from '../i18n/LanguageContext';
 import { auth, db } from '../lib/firebase';
 import { updateProfile } from 'firebase/auth';
@@ -39,6 +40,7 @@ export const ModalManager: React.FC<{
     cookingModeState, setCookingModeState,
     isRecipeImportModalOpen, setIsRecipeImportModalOpen,
     isNutritionDashboardOpen, setIsNutritionDashboardOpen,
+    isBatchCookingModalOpen, setIsBatchCookingModalOpen,
     databaseSource, setDatabaseSource,
     theme, setTheme,
     isSeedingGeneric, setIsSeedingGeneric
@@ -327,6 +329,14 @@ export const ModalManager: React.FC<{
         recipeCategories={recipeCategories}
         ingredients={ingredients}
         pantryMap={pantryMap}
+        onApplyPlan={updateWeeklyPlan}
+      />
+
+      <BatchCookingModal
+        isOpen={isBatchCookingModalOpen}
+        onClose={() => setIsBatchCookingModalOpen(false)}
+        recipes={recipes}
+        currentWeeklyPlan={weeklyPlan}
         onApplyPlan={updateWeeklyPlan}
       />
 

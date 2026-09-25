@@ -1,4 +1,5 @@
-- [x] Fix TypeScript configuration and core library issues (logger, schemas, main.tsx, useBilling)
-- [x] Fix hooks issues (useInitialization, cloudSync)
-- [x] Fix UI components issues (AutoPlanModal, NutritionDashboard, RecipeCard, RecipeImportModal, ShoppingListView, UserProfileModal)
-- [x] Verify clean compilation with `npm run lint` and `npm run build`
+- [x] Implement smart recipe selection and prep guide in `batchCookingCalculator.ts`
+- [x] Update `AutoPlanModal.tsx` to support Batch-Cooking mutualization mode
+- [x] Create `BatchCookingModal.tsx` for the step-by-step batch preparation guide
+- [x] Integrate batch-cooking options into `WeeklyPlanner.tsx`
+- [x] Verify build and tests (`npm run lint`, `npm test`, `npm run build`)

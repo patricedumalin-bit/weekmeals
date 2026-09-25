@@ -51,6 +51,9 @@ interface AppState {
   isNutritionDashboardOpen: boolean;
   setIsNutritionDashboardOpen: (isOpen: boolean) => void;
 
+  isBatchCookingModalOpen: boolean;
+  setIsBatchCookingModalOpen: (isOpen: boolean) => void;
+
   isAddCustomShoppingModalOpen: boolean;
   setIsAddCustomShoppingModalOpen: (isOpen: boolean) => void;
 
@@ -105,6 +108,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   isNutritionDashboardOpen: false,
   setIsNutritionDashboardOpen: (isOpen) => set({ isNutritionDashboardOpen: isOpen }),
+
+  isBatchCookingModalOpen: false,
+  setIsBatchCookingModalOpen: (isOpen) => set({ isBatchCookingModalOpen: isOpen }),
 
   isAddCustomShoppingModalOpen: false,
   setIsAddCustomShoppingModalOpen: (isOpen) => set({ isAddCustomShoppingModalOpen: isOpen }),
