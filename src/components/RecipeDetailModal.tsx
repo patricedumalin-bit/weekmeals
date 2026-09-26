@@ -11,12 +11,16 @@ import {
   Minus,
   Plus,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Globe
 } from 'lucide-react';
 import { Recipe, RecipeCategory, Ingredient, IngredientCategory } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { formatQuantity, estimateRecipeNutrition, getDietaryBadges, calculateRecipeTotalBudget } from '../utils/calculator';
 import { NutritionRings } from './NutritionRings';
+import { RecipeImage } from './RecipeImage';
+import { ImageSearchModal } from './ImageSearchModal';
+import { useDataStore } from '../stores/useDataStore';
 import { useLanguage } from '../i18n/LanguageContext';
 
 interface RecipeDetailModalProps {
@@ -61,10 +65,17 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const safeRecipeCategories = Array.isArray(recipeCategories) ? recipeCategories : [];
   const safeIngredientCategories = Array.isArray(ingredientCategories) ? ingredientCategories : [];
 
+  const saveRecipe = useDataStore(state => state.saveRecipe);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [currentServings, setCurrentServings] = useState<number>(
     initialServings || recipe.servings || 4
   );
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(recipe.imageUrl);
+
+  React.useEffect(() => {
+    setCurrentImageUrl(recipe.imageUrl);
+  }, [recipe.id, recipe.imageUrl]);
 
   const localized = translateRecipe(recipe);
   const category = safeRecipeCategories.find(c => c.id === recipe.categoryId);
@@ -146,6 +157,23 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
         {!isHeaderCollapsed && (
           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+            {/* Recipe Image with AI Photo Change Button */}
+            <div className="relative h-48 sm:h-56 w-full group overflow-hidden bg-slate-900">
+              <RecipeImage
+                title={localized.title}
+                categoryId={recipe.categoryId}
+                imageUrl={recipe.imageUrl}
+                className="w-full h-full"
+              />
+              <button
+                onClick={() => setIsImageModalOpen(true)}
+                className="absolute bottom-3 right-3 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 text-white backdrop-blur-md rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg border border-white/20 transition-all hover:scale-105"
+              >
+                <Globe className="w-3.5 h-3.5 text-blue-400" />
+                Changer la photo (Google Images)
+              </button>
+            </div>
+
             {localized.description && (
               <div className="px-5 py-2 bg-white/20 dark:bg-slate-800/20 border-b border-white/40 dark:border-white/5">
                 <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -395,6 +423,15 @@ export const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           )}
         </div>
       </div>
+
+      <ImageSearchModal
+        title={localized.title}
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSelectImage={(newUrl) => {
+          saveRecipe({ ...recipe, imageUrl: newUrl });
+        }}
+      />
     </div>
   );
 };

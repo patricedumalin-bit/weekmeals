@@ -87,7 +87,22 @@ export async function loadStoredData() {
 
     let recipes: Recipe[] = INITIAL_RECIPES;
     if (recipesData) {
-      const normalizedParsed = recipesData.map(r => ({ ...r, categoryId: normalizeRecipeCategoryId(r.categoryId) }));
+      // Filter out only legacy mock items with placeholder titles or bulk datasets.
+      // ALWAYS keep user's personal & imported recipes (isCustom / imported- / rec-custom-).
+      const cleanStored = recipesData.filter(r => {
+        if (r.isCustom || r.id.startsWith('imported-') || r.id.startsWith('rec-custom-')) {
+          return true; // Conservé à 100%
+        }
+        if (/familial|familiale|family main|family starter|dessert maison \d+|cloud-recipe-\d+/i.test(r.title || '')) {
+          return false; // Anciennes recettes de test supprimées
+        }
+        if (r.id.startsWith('rec-fr-') || r.id.startsWith('wb-')) {
+          return false; // Anciens gros catalogues obsolètes supprimés
+        }
+        return true;
+      });
+
+      const normalizedParsed = cleanStored.map(r => ({ ...r, categoryId: normalizeRecipeCategoryId(r.categoryId) }));
       const merged: Recipe[] = [...normalizedParsed];
       const existingIds = new Set(normalizedParsed.map(r => r.id));
       for (const defaultRecipe of INITIAL_RECIPES) {
@@ -96,10 +111,11 @@ export async function loadStoredData() {
         }
       }
       recipes = merged;
+      await saveRecipes(recipes);
     }
 
     let ingredients: Ingredient[] = INITIAL_INGREDIENTS;
-    if (ingredientsData) {
+    if (ingredientsData && ingredientsData.length <= 100) {
       const existingIngIds = new Set(ingredientsData.map(i => i.id));
       const mergedIngs = [...ingredientsData];
       for (const defaultIng of INITIAL_INGREDIENTS) {
@@ -108,6 +124,10 @@ export async function loadStoredData() {
         }
       }
       ingredients = mergedIngs;
+    } else {
+      // Purge old bulk ingredient catalog and save clean new initial ingredients
+      ingredients = INITIAL_INGREDIENTS;
+      await saveIngredients(INITIAL_INGREDIENTS);
     }
 
     const recipeCategories = recipeCatsData || INITIAL_RECIPE_CATEGORIES;

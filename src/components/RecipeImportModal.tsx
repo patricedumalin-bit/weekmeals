@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Recipe, Ingredient, IngredientCategory, RecipeCategory, RecipeIngredient, UnitType } from '../types';
 import { normalizeExternalIngredient } from '../utils/datasetCorrelator';
+import { searchFoodImages } from '../services/imageSearchService';
 
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAppStore } from '../stores/useAppStore';
@@ -231,6 +232,11 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
           };
         });
 
+        const fetchedImages = await searchFoodImages(aiResult.title, 1);
+        if (fetchedImages.length > 0) {
+          setSelectedImage(fetchedImages[0]);
+        }
+
         setParsedRecipe({
           title: aiResult.title,
           servings: aiResult.servings,
@@ -244,6 +250,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
           tags: ['AI-Import'],
           rating: 1,
           isCustom: true,
+          imageUrl: fetchedImages[0],
           localizations: aiResult.localizations
         });
       }
@@ -254,14 +261,17 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
     }
   };
 
-  const handleConfirmBatchSave = () => {
+  const handleConfirmBatchSave = async () => {
     const toSave = detectedRecipes.filter((_, idx) => selectedRecipeIndices.includes(idx));
     if (toSave.length === 0) return;
 
-    toSave.forEach((parsed, idx) => {
+    for (let idx = 0; idx < toSave.length; idx++) {
+      const parsed = toSave[idx];
+      const title = parsed.title || 'Recette sans titre';
+      const images = await searchFoodImages(title, 1);
       const newRecipe: Recipe = {
         id: `imported-book-${Date.now()}-${idx}`,
-        title: parsed.title || 'Recette sans titre',
+        title,
         categoryId: parsed.categoryId || 'rcat-autre',
         servings: parsed.servings || 4,
         prepTimeMinutes: parsed.prepTimeMinutes || 15,
@@ -271,18 +281,19 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
         instructions: parsed.instructions || [],
         ingredients: parsed.ingredients || [],
         tags: parsed.tags || ['Livre'],
+        imageUrl: parsed.imageUrl || images[0],
         rating: 1,
         isCustom: true,
         localizations: parsed.localizations
       };
       onSaveImportedRecipe(newRecipe);
-    });
+    }
 
     alert(`${toSave.length} recettes ajoutées à votre base avec succès !`);
     onClose();
   };
 
-  const handleConfirmSave = () => {
+  const handleConfirmSave = async () => {
     if (!parsedRecipe || !parsedRecipe.title) return;
 
     // Check for duplicates by name
@@ -300,6 +311,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
       }
     }
 
+    const images = await searchFoodImages(parsedRecipe.title, 1);
     const newRecipe: Recipe = {
       id: `imported-${Date.now()}`,
       title: parsedRecipe.title,
@@ -312,6 +324,7 @@ export const RecipeImportModal: React.FC<RecipeImportModalProps> = ({
       instructions: parsedRecipe.instructions || [],
       ingredients: parsedRecipe.ingredients || [],
       tags: parsedRecipe.tags || ['Importé'],
+      imageUrl: selectedImage || parsedRecipe.imageUrl || images[0],
       rating: parsedRecipe.rating || 1,
       isCustom: true,
       localizations: parsedRecipe.localizations

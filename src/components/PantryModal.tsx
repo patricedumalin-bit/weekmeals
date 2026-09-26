@@ -24,7 +24,8 @@ import { matchRecipesWithPantry, getIngredientCost } from '../utils/calculator';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useAppStore } from '../stores/useAppStore';
 import { useDataStore } from '../stores/useDataStore';
-import { parseReceiptWithAI, parseBarcodeWithAI } from '../lib/aiService';
+import { parseReceiptWithAI, parseBarcodeWithAI, parseRecipeWithAI } from '../lib/aiService';
+import { searchFoodImages } from '../services/imageSearchService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useSubscription } from '../hooks/useSubscription';
 import { BarcodeScanner, LensFacing } from '@capacitor-mlkit/barcode-scanning';
@@ -47,33 +48,43 @@ interface PantryModalProps {
 export const PantryModal: React.FC<PantryModalProps> = ({
   isOpen,
   onClose,
-  ingredients,
-  ingredientCategories,
-  pantryMap,
+  ingredients = [],
+  ingredientCategories = [],
+  pantryMap = {},
   onTogglePantryItem,
   onBatchSetPantry,
   onSaveIngredient,
-  recipes,
+  recipes = [],
   onSelectRecipeForMeal,
   onPreviewRecipe
 }) => {
-  const { translateIngredient, translateIngredientCategory, translateRecipe, t } = useLanguage();
+  const { t, translateIngredientCategory, translateIngredient } = useLanguage();
+  const systemConfig = useAppStore(state => state.systemConfig);
+  const saveRecipe = useDataStore(state => state.saveRecipe);
+
+  const { isPremium, aiLimit, incrementAIUsage } = useSubscription();
+
   const [activeTab, setActiveTab] = useState<'stock' | 'antiwaste'>('stock');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit: UnitType; matchedIngredientId?: string }[] | null>(null);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [scanResults, setScanResults] = useState<{ name: string; quantity: number; unit?: string; matchedIngredientId?: string }[] | null>(null);
+  const [chefAiProposal, setChefAiProposal] = useState<Recipe | null>(null);
 
-  const { userData, incrementAIUsage } = useAuthStore();
-  const { isPremium, aiLimit } = useSubscription();
-  const { theme, systemConfig } = useAppStore();
-  const { pantryAddedDates } = useDataStore();
+  // Expiry tracking state
+  const [pantryAddedDates, setPantryAddedDates] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('pantry_added_dates') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   if (!isOpen) return null;
 
   const inStockCount = Object.values(pantryMap).filter(Boolean).length;
-  const antiWasteMatches = matchRecipesWithPantry(recipes, pantryMap, ingredients);
 
   const filteredIngredients = ingredients.filter(ing => {
     const matchesSearch = translateIngredient(ing.id, ing.name).toLowerCase().includes(searchQuery.toLowerCase());
@@ -81,22 +92,14 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     return matchesSearch && matchesCat;
   });
 
-  const handleClearAll = () => {
-    if (confirm('Voulez-vous réinitialiser tous les ingrédients de votre stock ?')) {
-      const cleared: Record<string, boolean> = {};
-      Object.keys(pantryMap).forEach(k => { cleared[k] = false; });
-      onBatchSetPantry(cleared);
-    }
-  };
+  const matchedRecipes = matchRecipesWithPantry(recipes, pantryMap, ingredients);
 
   const handleScanReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (aiLimit.reached) {
-      if (isPremium) {
-        alert("Activité inhabituelle détectée. Par mesure de sécurité, vos scans IA sont suspendus.");
-      } else {
+      if (confirm("Limite d'analyses IA atteinte. Souhaitez-vous passer à la version Premium ?")) {
         alert(`Limite de scans IA atteinte. Passez en version Full !`);
       }
       return;
@@ -116,8 +119,10 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       reader.onload = async (event) => {
         try {
           const base64 = event.target?.result as string;
-          const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
-          const result = await parseReceiptWithAI(base64, { provider, apiKey, model }, file.type);
+          const rawModel = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+          const activeModel = (rawModel || '').replace('geminiModel', '').replace('groqModel', '').trim() || (provider === 'gemini' ? 'gemini-2.0-flash' : 'qwen/qwen3.8-27b');
+
+          const result = await parseReceiptWithAI(base64, { provider, apiKey, model: activeModel }, file.type);
           incrementAIUsage();
 
           const matched = result.items.map(item => {
@@ -173,37 +178,52 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       .map(i => translateIngredient(i.id, i.name));
 
     if (inStockNames.length < 3) {
-      alert("Cochez au moins 3 ingrédients !");
+      alert("Cochez au moins 3 ingrédients dans votre frigo pour que le Chef IA vous propose une recette !");
       return;
     }
 
     setIsScanning(true);
-    try {
-      const prompt = `Voici les ingrédients que j'ai : ${inStockNames.join(', ')}. Suggère-moi 3 idées de plats.`;
-      const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+    setChefAiProposal(null);
 
-      const response = await fetch(provider === 'gemini'
-        ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-        : 'https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(provider === 'groq' && { 'Authorization': `Bearer ${apiKey}` }) },
-        body: JSON.stringify(provider === 'gemini' ? {
-          contents: [{ parts: [{ text: prompt }] }]
-        } : {
-          model: model,
-          messages: [{ role: 'user', content: prompt }]
-        })
+    try {
+      const prompt = `Voici les ingrédients que j'ai dans mon frigo/placard : ${inStockNames.join(', ')}. Crée une seule excellente recette originale et savoureuse basée principalement sur ces ingrédients.`;
+      const rawModel = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+      const activeModel = (rawModel || '').replace('geminiModel', '').replace('groqModel', '').trim() || (provider === 'gemini' ? 'gemini-2.0-flash' : 'qwen/qwen3.8-27b');
+
+      const aiRecipe = await parseRecipeWithAI(prompt, { provider, apiKey, model: activeModel });
+      incrementAIUsage();
+
+      const foodPhotos = await searchFoodImages(aiRecipe.title, 1);
+
+      const mappedIngredients = aiRecipe.ingredients.map(i => {
+        const match = ingredients.find(ing => ing.name.toLowerCase().trim() === i.name.toLowerCase().trim());
+        return {
+          ingredientId: match ? match.id : `ing-custom-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          quantity: i.quantity,
+          unit: i.unit as any,
+          notes: i.name
+        };
       });
 
-      const data = await response.json();
-      if (!response.ok || data.error) {
-        throw new Error(data.error?.message || `Erreur HTTP ${response.status}`);
-      }
-      const text = provider === 'gemini'
-        ? (data.candidates?.[0]?.content?.parts?.[0]?.text || "Pas de réponse du Chef AI.")
-        : data.choices?.[0]?.message?.content;
-      incrementAIUsage();
-      alert(`👨‍🍳 Idées du Chef :\n\n${text}`);
+      const fullRecipe: Recipe = {
+        id: `chef-ai-${Date.now()}`,
+        title: aiRecipe.title,
+        categoryId: 'rcat-plat',
+        servings: aiRecipe.servings || 4,
+        prepTimeMinutes: aiRecipe.prepTimeMinutes || 15,
+        cookTimeMinutes: aiRecipe.cookTimeMinutes || 20,
+        difficulty: (aiRecipe.difficulty as any) || 'easy',
+        description: aiRecipe.description || 'Recette créée par le Chef IA à partir de vos ingrédients.',
+        instructions: aiRecipe.instructions || [],
+        ingredients: mappedIngredients,
+        tags: ['Chef IA', 'Frigo'],
+        imageUrl: foodPhotos[0],
+        rating: 1,
+        isCustom: true,
+        localizations: aiRecipe.localizations
+      };
+
+      setChefAiProposal(fullRecipe);
     } catch (err: any) {
       alert(`Erreur Chef IA : ${err.message || "Erreur réseau ou configuration."}`);
     } finally {
@@ -211,69 +231,15 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     }
   };
 
-  const handleLinkIngredient = (index: number, ingredientId: string) => {
-    if (!scanResults) return;
-    const updated = [...scanResults];
-    updated[index] = { ...updated[index], matchedIngredientId: ingredientId };
-    setScanResults(updated);
-  };
-
-  const handleQuickCreateIngredient = (index: number) => {
-    if (!scanResults || !onSaveIngredient) return;
-    const item = scanResults[index];
-    const newIng: Ingredient = {
-      id: `ing-custom-${Date.now()}`,
-      name: item.name,
-      categoryId: 'cat-produits-laitiers',
-      defaultUnit: item.unit || 'unit'
-    };
-    onSaveIngredient(newIng);
-    handleLinkIngredient(index, newIng.id);
-  };
-
-  const handleSearchByBarcode = async () => {
-    const code = prompt("Saisissez le code-barres (EAN-13) :");
-    if (code) await processBarcode(code);
-  };
-
-  const handleNativeBarcodeScan = async () => {
-    try {
-      const status = await BarcodeScanner.checkPermissions();
-      if (status.camera !== 'granted') {
-        const req = await BarcodeScanner.requestPermissions();
-        if (req.camera !== 'granted') {
-          throw new Error("Permission caméra refusée.");
-        }
-      }
-
-      const { barcodes } = await BarcodeScanner.scan();
-
-      if (barcodes.length > 0) {
-        const code = barcodes[0].displayValue;
-        if (code) {
-          await processBarcode(code);
-        }
-      }
-    } catch (e: any) {
-      console.error('Native scan failed', e);
-      document.getElementById('hidden-barcode-input')?.click();
-    }
-  };
-
-  const handleScanBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleScanBarcodeImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (aiLimit.reached) {
-      alert("Limite de scans IA atteinte.");
-      return;
-    }
 
     const provider = localStorage.getItem('ai_provider') as any || 'groq';
     const apiKey = provider === 'gemini' ? localStorage.getItem('gemini_api_key') : localStorage.getItem('groq_api_key');
 
     if (!apiKey) {
-      alert("Clé API requise.");
+      alert(`Veuillez configurer votre clé API pour ${provider === 'gemini' ? 'Gemini' : 'Groq'} dans votre Profil.`);
       return;
     }
 
@@ -283,8 +249,10 @@ export const PantryModal: React.FC<PantryModalProps> = ({
       reader.onload = async (event) => {
         try {
           const base64 = event.target?.result as string;
-          const model = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
-          const code = await parseBarcodeWithAI(base64, { provider, apiKey, model }, file.type);
+          const rawModel = provider === 'gemini' ? systemConfig.geminiModel : systemConfig.groqModel;
+          const activeModel = (rawModel || '').replace('geminiModel', '').replace('groqModel', '').trim() || (provider === 'gemini' ? 'gemini-2.0-flash' : 'qwen/qwen3.8-27b');
+
+          const code = await parseBarcodeWithAI(base64, { provider, apiKey, model: activeModel }, file.type);
           if (code) {
             incrementAIUsage();
             await processBarcode(code);
@@ -323,31 +291,62 @@ export const PantryModal: React.FC<PantryModalProps> = ({
     }
   };
 
-  const getExpiryInfo = (ingredientId: string, categoryId: string) => {
-    const addedAt = pantryAddedDates[ingredientId];
-    if (!addedAt) return null;
-    const daysSince = Math.floor((new Date().getTime() - new Date(addedAt).getTime()) / (1000 * 60 * 60 * 24));
-    const shelfLife: Record<string, number> = { 'cat-viandes': 3, 'cat-poissons': 2, 'cat-legumes': 7, 'cat-fruits': 10 };
-    const remaining = (shelfLife[categoryId] || 14) - daysSince;
-    if (remaining <= 0) return { label: 'Périmé ?', color: 'text-rose-600 bg-rose-50 border-rose-200' };
-    if (remaining <= 2) return { label: 'À vérifier', color: 'text-amber-600 bg-amber-50 border-amber-200' };
-    return null;
+  const handleLinkIngredient = (index: number, ingredientId: string) => {
+    if (!scanResults) return;
+    const updated = [...scanResults];
+    updated[index] = { ...updated[index], matchedIngredientId: ingredientId };
+    setScanResults(updated);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStartX(e.targetTouches[0].clientX);
-  const handleTouchEnd = (e: React.TouchEvent, id: string) => {
-    if (touchStartX === null) return;
-    if (Math.abs(e.changedTouches[0].clientX - touchStartX) > 60) onTogglePantryItem(id);
-    setTouchStartX(null);
+  const handleQuickCreateIngredient = (index: number) => {
+    if (!scanResults || !onSaveIngredient) return;
+    const item = scanResults[index];
+    const newIng: Ingredient = {
+      id: `ing-custom-${Date.now()}`,
+      name: item.name,
+      categoryId: 'cat-produits-laitiers',
+      defaultUnit: (item.unit as any) || 'unit'
+    };
+    onSaveIngredient(newIng);
+    handleLinkIngredient(index, newIng.id);
+  };
+
+  const handleSearchByBarcode = async () => {
+    const code = prompt("Saisissez le code-barres (EAN-13) :");
+    if (code) await processBarcode(code);
+  };
+
+  const handleNativeBarcodeScan = async () => {
+    try {
+      const status = await BarcodeScanner.checkPermissions();
+      if (status.camera !== 'granted') {
+        const req = await BarcodeScanner.requestPermissions();
+        if (req.camera !== 'granted') {
+          throw new Error("Permission caméra refusée.");
+        }
+      }
+
+      const { barcodes } = await BarcodeScanner.scan();
+      if (barcodes && barcodes.length > 0) {
+        const scannedCode = barcodes[0].rawValue;
+        if (scannedCode) await processBarcode(scannedCode);
+      }
+    } catch (e: any) {
+      const barcodeInput = document.getElementById('hidden-barcode-input') as HTMLInputElement;
+      if (barcodeInput) barcodeInput.click();
+    }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-md">
       <div className="backdrop-blur-2xl bg-white dark:bg-slate-900 border border-white/20 dark:border-white/10 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in duration-300">
         
+        {/* Header */}
         <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20"><Refrigerator className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
+              <Refrigerator className="w-5 h-5" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Mon Frigo & Placard</h2>
@@ -365,6 +364,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
           </div>
         </div>
 
+        {/* Scan Results Bar */}
         {scanResults && (
           <div className="mx-4 sm:mx-6 mt-4 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 animate-in slide-in-from-top duration-300">
             <div className="flex items-center justify-between mb-3">
@@ -388,16 +388,94 @@ export const PantryModal: React.FC<PantryModalProps> = ({
           </div>
         )}
 
-        <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 bg-white dark:bg-slate-900">
-          <button onClick={() => setActiveTab('stock')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'stock' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Stocks</button>
-          <button onClick={() => setActiveTab('antiwaste')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'antiwaste' ? 'border-amber-600 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Anti-Gaspillage</button>
-          <button onClick={handleAskChefAI} className={`px-4 py-2 text-sm font-bold transition-all flex items-center gap-1.5 ${isPremium ? 'text-blue-600 hover:text-blue-700' : 'text-slate-300'}`}>
-            <span>Chef IA</span>
+        {/* Chef AI Proposal Card */}
+        {chefAiProposal && (
+          <div className="mx-4 sm:mx-6 mt-4 p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-blue-950 text-white border border-blue-500/30 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-white/20 mb-3">
+              <div className="flex items-center gap-2">
+                <ChefHat className="w-6 h-6 text-amber-400" />
+                <h3 className="font-bold text-lg text-amber-300">Recette proposée par le Chef IA</h3>
+              </div>
+              <button
+                onClick={() => setChefAiProposal(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              {chefAiProposal.imageUrl && (
+                <img
+                  src={chefAiProposal.imageUrl}
+                  alt={chefAiProposal.title}
+                  className="w-full sm:w-44 h-32 object-cover rounded-xl border border-white/20 shadow-md shrink-0"
+                />
+              )}
+              <div className="flex-1">
+                <h4 className="font-extrabold text-xl text-white mb-1">
+                  {chefAiProposal.title}
+                </h4>
+                <p className="text-xs text-slate-300 mb-3 line-clamp-2 leading-relaxed">
+                  {chefAiProposal.description}
+                </p>
+                <div className="flex items-center gap-3 text-xs font-semibold text-slate-300 flex-wrap">
+                  <span className="px-2.5 py-1 bg-white/10 rounded-lg border border-white/10">⏱️ Prép : {chefAiProposal.prepTimeMinutes} min</span>
+                  <span className="px-2.5 py-1 bg-white/10 rounded-lg border border-white/10">🔥 Cuisson : {chefAiProposal.cookTimeMinutes} min</span>
+                  <span className="px-2.5 py-1 bg-white/10 rounded-lg border border-white/10">👥 {chefAiProposal.servings} pers.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/20 flex-wrap">
+              <button
+                onClick={() => setChefAiProposal(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-white/10 transition-colors"
+              >
+                Ignorer
+              </button>
+              <button
+                onClick={handleAskChefAI}
+                disabled={isScanning}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white flex items-center gap-1.5 border border-white/20 transition-colors disabled:opacity-50"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                Proposer autre chose
+              </button>
+              <button
+                onClick={() => {
+                  saveRecipe(chefAiProposal);
+                  alert(`La recette "${chefAiProposal.title}" a été ajoutée à vos recettes avec succès !`);
+                  setChefAiProposal(null);
+                }}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg flex items-center gap-2 transition-colors"
+              >
+                <Check className="w-4 h-4" />
+                Enregistrer dans mes recettes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation */}
+        <div className="px-4 sm:px-6 pt-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
+          <div className="flex items-center gap-2">
+            <button onClick={() => setActiveTab('stock')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'stock' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Stocks</button>
+            <button onClick={() => setActiveTab('antiwaste')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${activeTab === 'antiwaste' ? 'border-amber-600 text-amber-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>Anti-Gaspillage</button>
+          </div>
+          <button
+            onClick={handleAskChefAI}
+            disabled={isScanning}
+            className={`px-4 py-2 text-sm font-bold transition-all flex items-center gap-1.5 rounded-xl ${isScanning ? 'opacity-50' : 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30'}`}
+          >
+            {isScanning ? <Loader2 className="w-4 h-4 animate-spin text-blue-600" /> : <Sparkles className="w-4 h-4 text-blue-600" />}
+            <span>Chef IA (Suggérer Recette)</span>
             {!isPremium && <PremiumBadge size="xs" />}
           </button>
         </div>
 
-        <div className="px-4 sm:px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/30 dark:bg-slate-900/40">
+        {/* Barcode Scanner Strip */}
+        <div className="px-4 sm:px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 flex items-center gap-3 bg-slate-50/30 dark:bg-slate-900/40">
            <button
              onClick={handleNativeBarcodeScan}
              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold cursor-pointer hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
@@ -417,6 +495,7 @@ export const PantryModal: React.FC<PantryModalProps> = ({
            <button onClick={handleSearchByBarcode} className="text-[10px] text-slate-500 underline font-medium">Saisir manuellement</button>
         </div>
 
+        {/* Stock Tab / Ingredient List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {activeTab === 'stock' ? (
             <div className="space-y-4">
@@ -447,87 +526,72 @@ export const PantryModal: React.FC<PantryModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                   {filteredIngredients.map(ing => {
                     const isInStock = !!pantryMap[ing.id];
-                    const expiry = getExpiryInfo(ing.id, ing.categoryId);
                     return (
-                      <button
+                      <div
                         key={ing.id}
                         onClick={() => onTogglePantryItem(ing.id)}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={(e) => handleTouchEnd(e, ing.id)}
-                        className={`text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 select-none active:scale-[0.98] ${
+                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between select-none ${
                           isInStock
-                            ? 'bg-emerald-100 border-emerald-600 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                            ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-emerald-500/40 text-emerald-900 dark:text-emerald-200'
+                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 hover:border-slate-300'
                         }`}
                       >
-                        <div className="flex justify-between items-start gap-2">
-                          <span className={`font-bold text-sm leading-tight line-clamp-2 ${isInStock ? 'text-emerald-900' : 'text-slate-800 dark:text-slate-200'}`}>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isInStock ? 'bg-emerald-600 text-white' : 'border border-slate-300 dark:border-slate-600'}`}>
+                            {isInStock && <Check className="w-3.5 h-3.5" />}
+                          </div>
+                          <span className="text-xs font-bold truncate">
                             {translateIngredient(ing.id, ing.name)}
                           </span>
-                          <div className={`w-5 h-5 rounded-lg border shrink-0 flex items-center justify-center transition-colors ${
-                            isInStock ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600'
-                          }`}>
-                            {isInStock && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
-                          </div>
                         </div>
-
-                        {expiry && (
-                          <div className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md border w-fit ${expiry.color}`}>
-                            <AlertTriangle className="w-3 h-3" />
-                            <span>{expiry.label}</span>
-                          </div>
-                        )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {antiWasteMatches.filter(m => m.matchPercentage > 0).map(({ recipe, matchPercentage, missingIngredients }) => (
-                <div key={recipe.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 shadow-sm flex flex-col gap-3">
-                  <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 line-clamp-1">{translateRecipe(recipe).title}</h3>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${matchPercentage === 100 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {matchPercentage}% prêt
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                    <div className={`h-full transition-all duration-500 ${matchPercentage === 100 ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${matchPercentage}%` }} />
-                  </div>
-                  {missingIngredients.length > 0 && (
-                    <p className="text-[10px] text-slate-500 line-clamp-1 italic">
-                      Manque : {missingIngredients.map(mi => translateIngredient(mi.id, mi.name)).join(', ')}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-auto">
-                    {onPreviewRecipe && (
-                      <button onClick={() => onPreviewRecipe(recipe)} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold rounded-xl hover:bg-slate-200">
-                        Détails
-                      </button>
-                    )}
-                    {onSelectRecipeForMeal && (
-                      <button onClick={() => { onSelectRecipeForMeal(recipe); onClose(); }} className="flex-1 py-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-xl shadow-sm active:scale-95 transition-all">
-                        Ajouter au planning
-                      </button>
-                    )}
-                  </div>
+            /* Anti-Waste Tab */
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-3">
+                <Sparkles className="w-6 h-6 text-amber-600 shrink-0" />
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">Recettes réalisables avec votre stock</h4>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">Recettes contenant la majorité de vos ingrédients en stock.</p>
                 </div>
-              ))}
-              {antiWasteMatches.filter(m => m.matchPercentage > 0).length === 0 && (
-                <div className="col-span-full py-12 text-center text-slate-400">
-                  <Refrigerator className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                  <p className="text-sm font-medium italic">Aucune recette ne correspond à votre stock actuel.</p>
+              </div>
+
+              {matchedRecipes.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  Cochez d'avantage d'ingrédients dans votre stock pour voir les recettes réalisables.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {matchedRecipes.map(({ recipe, matchedCount, totalCount, percentage }) => (
+                    <div
+                      key={recipe.id}
+                      onClick={() => onPreviewRecipe && onPreviewRecipe(recipe)}
+                      className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-emerald-500/40 transition-all cursor-pointer flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">{recipe.title}</h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                            {percentage}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-2">{recipe.description}</p>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>{matchedCount}/{totalCount} ingrédients en stock</span>
+                        <span className="text-emerald-600 font-bold flex items-center gap-1">Voir <ArrowRight className="w-3 h-3" /></span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
-        </div>
-
-        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
-          <p className="text-xs text-slate-500 font-medium">{inStockCount} ingrédients en stock.</p>
-          <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold shadow-md active:scale-95 transition-all">Fermer</button>
         </div>
       </div>
     </div>

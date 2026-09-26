@@ -9,9 +9,12 @@ import {
   Users, 
   Layers,
   AlertCircle,
-  Minus
+  Minus,
+  Sparkles,
+  Globe
 } from 'lucide-react';
-import { 
+import { ImageSearchModal } from './ImageSearchModal';
+import {
   Recipe, 
   RecipeCategory, 
   Ingredient, 
@@ -91,6 +94,8 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
     recipeToEdit?.difficulty || 'easy'
   );
   const [description, setDescription] = useState(recipeToEdit?.description || '');
+  const [imageUrl, setImageUrl] = useState(recipeToEdit?.imageUrl || '');
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [tagsInput, setTagsInput] = useState(recipeToEdit?.tags.join(', ') || '');
   
   const [recipeIngredients, setRecipeIngredients] = useState<RecipeIngredient[]>(
@@ -197,6 +202,7 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
       instructions: validInstructions.length > 0 ? validInstructions : ['Prepare and serve warm.'],
       ingredients: validIngredients,
       tags,
+      imageUrl: imageUrl.trim() || undefined,
       rating: recipeToEdit?.rating || 1,
       isCustom: true
     };
@@ -329,6 +335,29 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
                   <option value="hard">{translateDifficulty('hard')}</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  URL de la Photo
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsImageModalOpen(true)}
+                  className="px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1 transition-colors shadow-2xs"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  Recherche Google Images
+                </button>
+              </div>
+              <input
+                type="url"
+                value={imageUrl}
+                onChange={e => setImageUrl(e.target.value)}
+                placeholder="https://images.unsplash.com/photo-..."
+                className="w-full px-3.5 py-2 text-sm rounded-xl backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-white/50 dark:border-white/10 text-slate-900 dark:text-slate-100"
+              />
             </div>
 
             <div>
@@ -502,6 +531,13 @@ export const RecipeEditorModal: React.FC<RecipeEditorModalProps> = ({
           </button>
         </div>
       </div>
+
+      <ImageSearchModal
+        title={title || 'Plat'}
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSelectImage={(newUrl) => setImageUrl(newUrl)}
+      />
     </div>
   );
 };
